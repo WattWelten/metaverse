@@ -1,0 +1,56 @@
+import { Object3D, GLTFLoader } from 'three';
+import { getDracoLoader } from '@metaverse/core/render/loaders/draco.js';
+
+/**
+ * Ready Player Me Avatar Loader
+ * Primary avatar solution - easy setup, seamless integration
+ */
+export async function loadReadyPlayerMeAvatar(avatarUrl: string): Promise<Object3D> {
+  const loader = new GLTFLoader();
+  const dracoLoader = getDracoLoader();
+  loader.setDRACOLoader(dracoLoader);
+
+  return new Promise((resolve, reject) => {
+    loader.load(
+      avatarUrl,
+      (gltf) => {
+        const avatar = gltf.scene;
+        
+        // Scale and position adjustments for Ready Player Me avatars
+        avatar.scale.set(1, 1, 1);
+        avatar.position.set(0, 0, 0);
+        
+        // Enable shadows
+        avatar.traverse((child) => {
+          if (child.type === 'Mesh') {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+
+        resolve(avatar);
+      },
+      undefined,
+      (error) => {
+        console.error('Failed to load Ready Player Me avatar:', error);
+        reject(error);
+      }
+    );
+  });
+}
+
+/**
+ * Get Ready Player Me avatar URL from user ID or custom URL
+ */
+export function getReadyPlayerMeUrl(userIdOrUrl: string, apiKey?: string): string {
+  // If it's already a full URL, return it
+  if (userIdOrUrl.startsWith('http://') || userIdOrUrl.startsWith('https://')) {
+    return userIdOrUrl;
+  }
+
+  // Otherwise, construct Ready Player Me URL
+  // Format: https://models.readyplayer.me/{userId}.glb
+  const baseUrl = 'https://models.readyplayer.me';
+  return `${baseUrl}/${userIdOrUrl}.glb`;
+}
+

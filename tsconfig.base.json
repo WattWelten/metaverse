@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "removeComments": false,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["./packages/core/src/*"],
+      "@ui/*": ["./packages/ui/src/*"],
+      "@avatars/*": ["./packages/avatars/src/*"],
+      "@voice/*": ["./packages/voice/src/*"],
+      "@audio/*": ["./packages/audio/src/*"],
+      "@net/*": ["./packages/net/src/*"],
+      "@ai/*": ["./packages/ai/src/*"],
+      "@content/*": ["./packages/content/src/*"],
+      "@assets/*": ["./packages/assets/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "build", ".next", "coverage"]
+}
+
