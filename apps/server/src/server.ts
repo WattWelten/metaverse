@@ -59,6 +59,21 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('avatar-update', { userId, position, rotation, animation });
   });
 
+  // WebRTC Signalisierung (für Voice/Audio)
+  socket.on('webrtc-signal', (data: { from: string; to: string; signal: unknown; type: string }) => {
+    const { to, signal, type } = data;
+    const userInfo = presenceService.getUserInfo(socket.id);
+    if (!userInfo) return;
+
+    // Weiterleite Signal an Ziel-User
+    socket.to(userInfo.roomId).emit('webrtc-signal', {
+      from: userInfo.userId,
+      to,
+      signal,
+      type,
+    });
+  });
+
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
     const userInfo = presenceService.getUserInfo(socket.id);

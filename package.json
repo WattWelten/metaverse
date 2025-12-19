@@ -6,6 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:client": "turbo run dev --filter=@metaverse/web",
+    "dev:server": "turbo run dev --filter=@metaverse/server",
+    "dev:all": "concurrently \"pnpm dev:server\" \"pnpm dev:client\"",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
@@ -17,11 +20,14 @@
     "changeset": "changeset",
     "preview": "turbo run preview",
     "clean": "turbo run clean && rm -rf node_modules",
-    "update-deps": "node scripts/update-deps.js"
+    "update-deps": "node scripts/update-deps.js",
+    "import-template": "node scripts/import-template.js"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
     "@types/node": "^25.0.3",
+    "adm-zip": "^0.5.16",
+    "concurrently": "^9.2.1",
     "prettier": "^3.7.4",
     "turbo": "^2.7.0",
     "typescript": "^5.9.3"

@@ -50,6 +50,9 @@ export class NetClient {
       this.connected = true;
       console.log('Connected to server');
       
+      // Emit custom event for external listeners
+      this.socket?.emit('connected');
+      
       if (this.config.roomId) {
         this.joinRoom(this.config.roomId);
       }
@@ -182,6 +185,10 @@ export class NetClient {
 
   off(event: string, callback?: (...args: unknown[]) => void): void {
     this.socket?.off(event, callback);
+  }
+
+  emit(event: string, data: unknown): void {
+    this.socket?.emit(event, data);
   }
 }
 

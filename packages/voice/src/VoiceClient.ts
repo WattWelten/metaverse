@@ -1,4 +1,4 @@
-import { WebRTCAdapter } from './adapters/webrtc.js';
+import { WebRTCAdapter, type WebRTCAdapterConfig } from './adapters/webrtc.js';
 import { SpatialAudioManager } from './spatial/SpatialAudioManager.js';
 
 export interface VoiceClientConfig {
@@ -6,6 +6,10 @@ export interface VoiceClientConfig {
   userId: string;
   roomId: string;
   enableSpatialAudio?: boolean;
+  netClient?: {
+    on: (event: string, callback: (data: unknown) => void) => void;
+    emit?: (event: string, data: unknown) => void;
+  };
 }
 
 export class VoiceClient {
@@ -19,6 +23,7 @@ export class VoiceClient {
       userId: config.userId,
       roomId: config.roomId,
       serverUrl: config.serverUrl,
+      netClient: config.netClient as WebRTCAdapterConfig['netClient'],
     });
     this.spatialAudioManager = new SpatialAudioManager(
       config.enableSpatialAudio !== false

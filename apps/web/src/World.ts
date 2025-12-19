@@ -10,7 +10,11 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TemplateHost } from './TemplateHost';
 import { XRSetup } from './xr/XRSetup';
 import { PostProcessing } from './render/Post';
-import { getFeatureFlags } from './FeatureFlags';
+import { getFeatureFlags, type FeatureFlags } from './FeatureFlags';
+import { NetClient } from '@metaverse/net';
+import { AvatarManager } from '@metaverse/avatars';
+import { AmbientManager } from '@metaverse/audio';
+import { VoiceClient } from '@metaverse/voice';
 import type { TemplateInstance } from '@metaverse/core';
 
 export class World {
@@ -24,9 +28,20 @@ export class World {
   private clock: Clock;
   private animationFrameId: number | null = null;
   private container: HTMLElement;
+  
+  // Multiplayer & Networking
+  private netClient: NetClient | null = null;
+  private avatarManager: AvatarManager | null = null;
+  private ambientManager: AmbientManager | null = null;
+  private voiceClient: VoiceClient | null = null;
+  private userId: string;
+  private lastAvatarUpdate = 0;
+  private readonly AVATAR_UPDATE_THROTTLE = 100; // ms
+  private soloMode = false;
 
   constructor(container: HTMLElement) {
     this.container = container;
+    this.userId = this.generateUserId();
 
     // Scene
     this.scene = new Scene();
@@ -62,7 +77,7 @@ export class World {
     this.controls.maxDistance = 100;
 
     // Template Host
-    this.templateHost = new TemplateHost(this.scene);
+    this.templateHost = new TemplateHost(this.scene, this.renderer);
 
     // XR Setup
     const flags = getFeatureFlags();
@@ -76,8 +91,69 @@ export class World {
     // Clock
     this.clock = new Clock();
 
+    // Initialize Multiplayer & Audio Systems
+    this.initMultiplayer(flags);
+    this.initAudio(flags);
+
     // Resize handler
     window.addEventListener('resize', this.handleResize.bind(this));
+  }
+
+  private generateUserId(): string {
+    return `user-${Math.random().toString(36).substr(2, 9)}-${Date.now()}`;
+  }
+
+  private initMultiplayer(flags: FeatureFlags): void {
+    if (!flags.MULTIPLAYER_ENABLED) {
+      console.log('Multiplayer disabled via feature flag');
+      return;
+    }
+
+    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+    
+    this.netClient = new NetClient({
+      serverUrl,
+      userId: this.userId,
+      roomId: 'default-room',
+      autoConnect: false, // Manuell verbinden nach Template-Load
+    });
+
+    // Avatar Manager initialisieren
+    this.avatarManager = new AvatarManager(this.scene);
+    if (this.netClient) {
+      this.avatarManager.setNetClient(this.netClient as unknown as AvatarManager['netClient']);
+    }
+
+    // Fallback: Solo-Modus wenn Server nicht erreichbar
+    this.netClient.on('connect_error', () => {
+      console.warn('Server nicht erreichbar - Fallback zu Solo-Modus');
+      this.soloMode = true;
+    });
+
+    this.netClient.on('connect', () => {
+      console.log('✅ Connected to multiplayer server');
+      this.soloMode = false;
+    });
+  }
+
+  private initAudio(flags: FeatureFlags): void {
+    // Ambient Audio
+    if (flags.AMBIENT_AUDIO_ENABLED) {
+      this.ambientManager = new AmbientManager();
+    }
+
+    // Voice Client
+    if (flags.VOICE_ENABLED && this.netClient) {
+      this.voiceClient = new VoiceClient({
+        userId: this.userId,
+        roomId: 'default-room',
+        enableSpatialAudio: true,
+        netClient: this.netClient as unknown as {
+          on: (event: string, callback: (data: unknown) => void) => void;
+          emit?: (event: string, data: unknown) => void;
+        },
+      });
+    }
   }
 
   async init(): Promise<void> {
@@ -86,8 +162,105 @@ export class World {
     // Load default template
     await this.templateHost.loadTemplate(flags.TEMPLATE_ID);
 
+    // Apply lighting from template manifest
+    const template = this.templateHost.getCurrentTemplate();
+    if (template) {
+      await this.applyTemplateLighting(template);
+    }
+
+    // Ambient Audio aus Template laden
+    if (this.ambientManager && template) {
+      this.ambientManager.loadFromTemplate(template.manifest);
+      this.ambientManager.playAll();
+    }
+
+    // Multiplayer verbinden (nach Template-Load)
+    if (this.netClient && flags.MULTIPLAYER_ENABLED) {
+      try {
+        this.netClient.connect();
+        
+        // Warte auf Verbindung mit Timeout
+        await new Promise<void>((resolve) => {
+          if (!this.netClient) {
+            resolve();
+            return;
+          }
+
+          const timeout = setTimeout(() => {
+            console.warn('Connection timeout - continuing in solo mode');
+            this.soloMode = true;
+            resolve();
+          }, 3000);
+
+          // Socket.io 'connect' Event wird bereits von NetClient intern behandelt
+          // Wir prüfen einfach isConnected() in einem Intervall
+          const checkInterval = setInterval(() => {
+            if (this.netClient?.isConnected()) {
+              clearTimeout(timeout);
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 100);
+
+          // Prüfe ob bereits verbunden
+          if (this.netClient.isConnected()) {
+            clearTimeout(timeout);
+            clearInterval(checkInterval);
+            resolve();
+          }
+        });
+        
+        if (this.netClient.isConnected() && !this.soloMode) {
+          this.netClient.joinRoom('default-room');
+          // Lokalen Avatar erstellen
+          await this.createLocalAvatar();
+        } else {
+          console.log('Running in solo mode');
+        }
+      } catch (error) {
+        console.warn('Multiplayer-Verbindung fehlgeschlagen:', error);
+        this.soloMode = true;
+      }
+    }
+
     // Start render loop
     this.animate();
+  }
+
+  private async applyTemplateLighting(_template: TemplateInstance): Promise<void> {
+    // Lighting wird von TemplateHost.applyLighting() behandelt
+    // Diese Methode wird beim mount() aufgerufen
+  }
+
+  private async createLocalAvatar(): Promise<void> {
+    if (!this.avatarManager || !this.netClient || this.soloMode) return;
+
+    try {
+      // Versuche Ready Player Me Avatar zu laden (Placeholder URL)
+      const avatarUrl = import.meta.env.VITE_READY_PLAYER_ME_AVATAR_URL || 
+        'https://models.readyplayer.me/placeholder.glb';
+      
+      await this.avatarManager.loadAvatar(
+        this.userId,
+        avatarUrl,
+        { x: 0, y: 0, z: 0 }
+      );
+    } catch (error) {
+      console.warn('Failed to load Ready Player Me avatar, using capsule:', error);
+      // Fallback: Einfache Kapsel erstellen
+      await this.createCapsuleAvatar();
+    }
+  }
+
+  private async createCapsuleAvatar(): Promise<void> {
+    if (!this.avatarManager) return;
+    
+    // Erstelle Kapsel-Avatar als Fallback
+    this.avatarManager.createCapsuleAvatar(this.userId, {
+      x: this.camera.position.x,
+      y: 0,
+      z: this.camera.position.z,
+    });
   }
 
   private handleResize(): void {
@@ -110,6 +283,37 @@ export class World {
 
     // Update template host
     this.templateHost.update(delta);
+
+    // Avatar-Interpolation für smooth movement
+    if (this.avatarManager) {
+      this.avatarManager.updateInterpolation(delta);
+    }
+
+    // Avatar-Position synchronisieren (throttled)
+    const now = Date.now();
+    if (this.netClient && this.avatarManager && !this.soloMode && 
+        now - this.lastAvatarUpdate > this.AVATAR_UPDATE_THROTTLE) {
+      const cameraPos = this.camera.position;
+      const cameraRot = this.camera.rotation;
+      
+      this.avatarManager.updateAvatar(
+        this.userId,
+        { x: cameraPos.x, y: cameraPos.y, z: cameraPos.z },
+        { x: cameraRot.x, y: cameraRot.y, z: cameraRot.z }
+      );
+      
+      this.lastAvatarUpdate = now;
+    }
+
+    // Spatial Audio: Listener-Position aktualisieren
+    if (this.voiceClient) {
+      const cameraPos = this.camera.position;
+      this.voiceClient.updateListenerPosition({
+        x: cameraPos.x,
+        y: cameraPos.y,
+        z: cameraPos.z,
+      });
+    }
 
     // Render
     this.postProcessing.render(delta);
@@ -138,6 +342,29 @@ export class World {
 
     window.removeEventListener('resize', this.handleResize.bind(this));
 
+    // Cleanup Multiplayer
+    if (this.netClient) {
+      this.netClient.disconnect();
+    }
+    
+    // Cleanup Avatars
+    if (this.avatarManager) {
+      // Alle Avatare entfernen
+      const allAvatars = this.avatarManager.getAllAvatars();
+      allAvatars.forEach((avatar) => {
+        this.avatarManager?.removeAvatar(avatar.userId);
+      });
+    }
+
+    // Cleanup Audio
+    if (this.ambientManager) {
+      this.ambientManager.dispose();
+    }
+    
+    if (this.voiceClient) {
+      this.voiceClient.disable();
+    }
+
     this.templateHost.dispose();
     this.postProcessing.dispose();
     if (this.xrSetup) {
@@ -149,6 +376,18 @@ export class World {
     if (this.container.contains(this.renderer.domElement)) {
       this.container.removeChild(this.renderer.domElement);
     }
+  }
+
+  getNetClient(): NetClient | null {
+    return this.netClient;
+  }
+
+  getAvatarManager(): AvatarManager | null {
+    return this.avatarManager;
+  }
+
+  isSoloMode(): boolean {
+    return this.soloMode;
   }
 }
 

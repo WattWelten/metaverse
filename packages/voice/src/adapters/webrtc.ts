@@ -24,19 +24,37 @@ export class WebRTCAdapter {
     this.localStream = localStream;
 
     if (this.netClient) {
-      // Set up signaling through network client
+      // Set up signaling through network client (WebRTC Signalling Pattern)
       this.netClient.on('user-joined', (data: unknown) => {
-        const userData = data as { userId: string };
+        const userData = data as { userId: string; socketId?: string };
         if (userData.userId !== this.config.userId) {
-          this.createPeer(userData.userId, false);
+          // Erstelle Peer-Verbindung für neuen User
+          this.createPeer(userData.userId, true); // Initiator = true für neuen User
         }
       });
 
-      this.netClient.on('signal', (data: unknown) => {
-        const signalData = data as { userId: string; signal: Peer.SignalData };
-        const peer = this.peers.get(signalData.userId);
+      // Empfange Signalisierungs-Daten vom Server
+      this.netClient.on('webrtc-signal', (data: unknown) => {
+        const signalData = data as { 
+          from: string; 
+          to: string; 
+          signal: Peer.SignalData;
+          type: 'offer' | 'answer' | 'candidate';
+        };
+        
+        // Nur Signale für diesen User verarbeiten
+        if (signalData.to !== this.config.userId) return;
+        
+        const peer = this.peers.get(signalData.from);
         if (peer) {
           peer.signal(signalData.signal);
+        } else if (signalData.type === 'offer') {
+          // Neuer Peer für eingehendes Offer
+          this.createPeer(signalData.from, false);
+          const newPeer = this.peers.get(signalData.from);
+          if (newPeer) {
+            newPeer.signal(signalData.signal);
+          }
         }
       });
     }
@@ -51,10 +69,16 @@ export class WebRTCAdapter {
       stream: this.localStream,
     });
 
-    peer.on('signal', (_signal: Peer.SignalData) => {
-      if (this.netClient) {
-        // Signal would be sent through network client
-        console.log('Signal generated for', userId);
+    peer.on('signal', (signal: Peer.SignalData) => {
+      if (this.netClient && 'emit' in this.netClient && typeof this.netClient.emit === 'function') {
+        // Sende Signalisierungs-Daten über Socket.io
+        // Pattern aus threejs-webrtc: Signal wird als Event gesendet
+        this.netClient.emit('webrtc-signal', {
+          from: this.config.userId,
+          to: userId,
+          signal,
+          type: initiator ? 'offer' : 'answer',
+        });
       }
     });
 
