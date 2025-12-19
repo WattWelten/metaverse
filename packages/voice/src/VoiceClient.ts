@@ -11,12 +11,10 @@ export interface VoiceClientConfig {
 export class VoiceClient {
   private adapter: WebRTCAdapter;
   private spatialAudioManager: SpatialAudioManager;
-  private config: VoiceClientConfig;
   private isEnabled = false;
   private localStream: MediaStream | null = null;
 
   constructor(config: VoiceClientConfig) {
-    this.config = { ...config };
     this.adapter = new WebRTCAdapter({
       userId: config.userId,
       roomId: config.roomId,

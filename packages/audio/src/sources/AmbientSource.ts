@@ -22,6 +22,10 @@ export class AmbientSource {
     this.init();
   }
 
+  getMixer(): AudioMixer {
+    return this.mixer;
+  }
+
   private init(): void {
     this.howl = new Howl({
       src: [this.config.file],

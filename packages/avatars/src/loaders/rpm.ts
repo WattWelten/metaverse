@@ -1,6 +1,6 @@
 import { Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { getDracoLoader } from '@metaverse/core';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 /**
  * Ready Player Me Avatar Loader
@@ -8,7 +8,8 @@ import { getDracoLoader } from '@metaverse/core';
  */
 export async function loadReadyPlayerMeAvatar(avatarUrl: string): Promise<Object3D> {
   const loader = new GLTFLoader();
-  const dracoLoader = getDracoLoader();
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('/libs/draco/');
   loader.setDRACOLoader(dracoLoader);
 
   return new Promise((resolve, reject) => {
@@ -32,9 +33,9 @@ export async function loadReadyPlayerMeAvatar(avatarUrl: string): Promise<Object
         resolve(avatar);
       },
       undefined,
-      (error: Error) => {
+      (error: unknown) => {
         console.error('Failed to load Ready Player Me avatar:', error);
-        reject(error);
+        reject(error instanceof Error ? error : new Error(String(error)));
       }
     );
   });

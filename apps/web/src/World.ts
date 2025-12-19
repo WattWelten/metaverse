@@ -4,9 +4,7 @@ import {
   WebGLRenderer,
   ACESFilmicToneMapping,
   Color,
-  PMREMGenerator,
   Clock,
-  Vector3,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TemplateHost } from './TemplateHost';
@@ -21,7 +19,7 @@ export class World {
   private renderer: WebGLRenderer;
   private controls: OrbitControls;
   private templateHost: TemplateHost;
-  private xrSetup: XRSetup;
+  private xrSetup: XRSetup | undefined;
   private postProcessing: PostProcessing;
   private clock: Clock;
   private animationFrameId: number | null = null;
@@ -142,6 +140,9 @@ export class World {
 
     this.templateHost.dispose();
     this.postProcessing.dispose();
+    if (this.xrSetup) {
+      this.xrSetup.dispose();
+    }
     this.controls.dispose();
     this.renderer.dispose();
 

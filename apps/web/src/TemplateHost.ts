@@ -1,7 +1,6 @@
 import { Scene, Object3D, Mesh, BoxGeometry, MeshStandardMaterial } from 'three';
 import { templateRegistry, type TemplateInstance, type TemplateManifest } from '@metaverse/core';
 import { useGLTFCache } from '@metaverse/core';
-import { getFeatureFlags } from './FeatureFlags';
 
 export class TemplateHost {
   private scene: Scene;
@@ -51,7 +50,7 @@ export class TemplateHost {
         },
         unmount: () => {
           if (sceneObject) {
-            scene.remove(sceneObject);
+            this.scene.remove(sceneObject);
           }
         },
         applyTheme: () => {
@@ -95,7 +94,7 @@ export class TemplateHost {
     return this.currentTemplate;
   }
 
-  update(delta: number): void {
+  update(_delta: number): void {
     // Update template animations, etc.
   }
 

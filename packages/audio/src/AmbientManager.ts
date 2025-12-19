@@ -1,7 +1,20 @@
-import { Howl } from 'howler';
 import { AmbientSource } from './sources/AmbientSource.js';
 import { AudioMixer } from './mixer/AudioMixer.js';
-import type { TemplateManifest } from '@metaverse/core';
+
+// TemplateManifest type definition (to avoid circular dependency)
+export interface TemplateManifest {
+  name: string;
+  version: string;
+  ambient?: {
+    sources: Array<{
+      id: string;
+      file: string;
+      volume: number;
+      loop: boolean;
+      position?: { x: number; y: number; z: number };
+    }>;
+  };
+}
 
 export interface AmbientConfig {
   id: string;

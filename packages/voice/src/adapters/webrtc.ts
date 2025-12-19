@@ -25,16 +25,18 @@ export class WebRTCAdapter {
 
     if (this.netClient) {
       // Set up signaling through network client
-      this.netClient.on('user-joined', (data: { userId: string }) => {
-        if (data.userId !== this.config.userId) {
-          this.createPeer(data.userId, false);
+      this.netClient.on('user-joined', (data: unknown) => {
+        const userData = data as { userId: string };
+        if (userData.userId !== this.config.userId) {
+          this.createPeer(userData.userId, false);
         }
       });
 
-      this.netClient.on('signal', (data: { userId: string; signal: unknown }) => {
-        const peer = this.peers.get(data.userId);
+      this.netClient.on('signal', (data: unknown) => {
+        const signalData = data as { userId: string; signal: Peer.SignalData };
+        const peer = this.peers.get(signalData.userId);
         if (peer) {
-          peer.signal(data.signal);
+          peer.signal(signalData.signal);
         }
       });
     }
@@ -49,7 +51,7 @@ export class WebRTCAdapter {
       stream: this.localStream,
     });
 
-    peer.on('signal', (signal: Peer.SignalData) => {
+    peer.on('signal', (_signal: Peer.SignalData) => {
       if (this.netClient) {
         // Signal would be sent through network client
         console.log('Signal generated for', userId);

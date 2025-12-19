@@ -44,18 +44,18 @@ export class LocalProvider implements ContentProvider {
     }
   }
 
-  async create<T = unknown>(type: string, data: T): Promise<T> {
+  async create<T = unknown>(_type: string, _data: T): Promise<T> {
     // Local provider doesn't support creation in MVP
     // This would require a backend or file system access
     throw new Error('LocalProvider does not support create operations');
   }
 
-  async update<T = unknown>(type: string, id: string, data: Partial<T>): Promise<T> {
+  async update<T = unknown>(_type: string, _id: string, _data: Partial<T>): Promise<T> {
     // Local provider doesn't support updates in MVP
     throw new Error('LocalProvider does not support update operations');
   }
 
-  async uploadAsset(file: File | Blob, path?: string): Promise<{ url: string; id: string }> {
+  async uploadAsset(_file: File | Blob, _path?: string): Promise<{ url: string; id: string }> {
     // Local provider doesn't support uploads in MVP
     throw new Error('LocalProvider does not support upload operations');
   }

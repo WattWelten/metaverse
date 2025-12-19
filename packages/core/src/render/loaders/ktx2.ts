@@ -1,5 +1,5 @@
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
-import type { MeshStandardMaterial } from 'three';
+import type { MeshStandardMaterial, Texture } from 'three';
 
 let ktx2Loader: KTX2Loader | null = null;
 
@@ -33,11 +33,11 @@ export function applyKTX2ToMaterial(
     normalMap ? useKTX2(normalMap) : Promise.resolve(null),
   ]).then(([mapTexture, normalTexture]) => {
     if (mapTexture) {
-      material.map = mapTexture as unknown as THREE.Texture;
+      material.map = mapTexture as Texture;
       material.needsUpdate = true;
     }
     if (normalTexture) {
-      material.normalMap = normalTexture as unknown as THREE.Texture;
+      material.normalMap = normalTexture as Texture;
       material.needsUpdate = true;
     }
   });

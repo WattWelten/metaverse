@@ -11,12 +11,12 @@ export class PostProcessing {
     this.camera = camera;
   }
 
-  render(delta: number): void {
+  render(_delta: number): void {
     // Basic rendering, can be extended with post-processing effects
     this.renderer.render(this.scene, this.camera);
   }
 
-  setSize(width: number, height: number): void {
+  setSize(_width: number, _height: number): void {
     // Handle resize for post-processing
   }
 

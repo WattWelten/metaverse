@@ -33,9 +33,11 @@ export class AvatarManager {
     this.netClient = netClient;
     
     // Listen to avatar updates from network
-    netClient.getReplicator().onAvatarUpdate((update) => {
-      this.updateRemoteAvatar(update.userId, update);
-    });
+    if (netClient) {
+      netClient.getReplicator().onAvatarUpdate((update) => {
+        this.updateRemoteAvatar(update.userId, update);
+      });
+    }
   }
 
   async loadAvatar(userId: string, avatarUrl: string, position?: { x: number; y: number; z: number }): Promise<Avatar> {
@@ -64,8 +66,8 @@ export class AvatarManager {
     const avatar = this.avatars.get(userId);
     if (!avatar) return;
 
-    avatar.position.copy(position);
-    avatar.rotation.copy(rotation);
+    avatar.position = { ...position };
+    avatar.rotation = { ...rotation };
     avatar.animation = animation;
 
     avatar.object.position.set(position.x, position.y, position.z);
@@ -89,8 +91,8 @@ export class AvatarManager {
     const avatar = this.avatars.get(userId);
     if (!avatar) return;
 
-    avatar.position.set(update.position.x, update.position.y, update.position.z);
-    avatar.rotation.set(update.rotation.x, update.rotation.y, update.rotation.z);
+    avatar.position = { ...update.position };
+    avatar.rotation = { ...update.rotation };
     avatar.animation = update.animation;
 
     avatar.object.position.set(update.position.x, update.position.y, update.position.z);
