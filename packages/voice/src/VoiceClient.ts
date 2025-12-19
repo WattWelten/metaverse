@@ -1,6 +1,5 @@
 import { WebRTCAdapter } from './adapters/webrtc.js';
 import { SpatialAudioManager } from './spatial/SpatialAudioManager.js';
-import type { Vector3 } from 'three';
 
 export interface VoiceClientConfig {
   serverUrl?: string;
@@ -17,7 +16,7 @@ export class VoiceClient {
   private localStream: MediaStream | null = null;
 
   constructor(config: VoiceClientConfig) {
-    this.config = config;
+    this.config = { ...config };
     this.adapter = new WebRTCAdapter({
       userId: config.userId,
       roomId: config.roomId,
@@ -60,11 +59,11 @@ export class VoiceClient {
     this.isEnabled = false;
   }
 
-  updateListenerPosition(position: Vector3): void {
+  updateListenerPosition(position: { x: number; y: number; z: number }): void {
     this.spatialAudioManager.updateListenerPosition(position);
   }
 
-  updateSpeakerPosition(userId: string, position: Vector3): void {
+  updateSpeakerPosition(userId: string, position: { x: number; y: number; z: number }): void {
     this.spatialAudioManager.updateSpeakerPosition(userId, position);
   }
 

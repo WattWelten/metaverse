@@ -16,14 +16,15 @@
     "release": "changeset publish",
     "changeset": "changeset",
     "preview": "turbo run preview",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "update-deps": "node scripts/update-deps.js"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.1",
-    "@types/node": "^20.11.5",
-    "prettier": "^3.2.4",
-    "turbo": "^1.12.3",
-    "typescript": "^5.3.3"
+    "@changesets/cli": "^2.29.8",
+    "@types/node": "^25.0.3",
+    "prettier": "^3.7.4",
+    "turbo": "^2.7.0",
+    "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@8.15.0",
   "engines": {
@@ -35,4 +36,3 @@
     "packages/*"
   ]
 }
-

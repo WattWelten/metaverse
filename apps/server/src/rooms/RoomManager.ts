@@ -34,7 +34,7 @@ export class RoomManager {
     });
   }
 
-  async leaveRoom(socketId: string, roomId: string, userId: string): Promise<void> {
+  async leaveRoom(socketId: string, roomId: string, _userId: string): Promise<void> {
     const room = this.rooms.get(roomId);
     if (!room) return;
 

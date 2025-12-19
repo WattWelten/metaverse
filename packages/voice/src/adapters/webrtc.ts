@@ -1,18 +1,19 @@
 import Peer from 'simple-peer';
-import type { NetClient } from '@metaverse/net';
 
 export interface WebRTCAdapterConfig {
   userId: string;
   roomId: string;
   serverUrl?: string;
-  netClient?: NetClient;
+  netClient?: {
+    on: (event: string, callback: (data: unknown) => void) => void;
+  };
 }
 
 export class WebRTCAdapter {
   private config: WebRTCAdapterConfig;
   private peers = new Map<string, Peer.Instance>();
   private localStream: MediaStream | null = null;
-  private netClient: NetClient | null = null;
+  private netClient: WebRTCAdapterConfig['netClient'] | null = null;
 
   constructor(config: WebRTCAdapterConfig) {
     this.config = config;
@@ -48,9 +49,10 @@ export class WebRTCAdapter {
       stream: this.localStream,
     });
 
-    peer.on('signal', (signal) => {
+    peer.on('signal', (signal: Peer.SignalData) => {
       if (this.netClient) {
-        this.netClient.on('signal', { userId, signal });
+        // Signal would be sent through network client
+        console.log('Signal generated for', userId);
       }
     });
 
@@ -66,7 +68,7 @@ export class WebRTCAdapter {
     this.peers.set(userId, peer);
   }
 
-  private handleRemoteStream(userId: string, stream: MediaStream): void {
+  private handleRemoteStream(userId: string, _stream: MediaStream): void {
     // This will be connected to SpatialAudioManager
     console.log(`Received stream from ${userId}`);
   }

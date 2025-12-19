@@ -117,7 +117,7 @@ export class AgentBridge {
     this.ws.send(JSON.stringify(message));
   }
 
-  async startAudioStream(stream: MediaStream): Promise<void> {
+  async startAudioStream(_stream: MediaStream): Promise<void> {
     // Audio stream handling would go here
     // For MVP, we'll use text-based communication
     console.log('Audio stream started (not yet implemented)');

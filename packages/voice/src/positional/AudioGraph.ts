@@ -30,7 +30,7 @@ export class AudioGraph {
 
   addSource(
     id: string,
-    stream: MediaStream | AudioBuffer,
+    _stream: MediaStream | AudioBuffer,
     position: { x: number; y: number; z: number }
   ): AudioSource {
     const source = this.audioContext.createBufferSource();

@@ -68,7 +68,7 @@ export class NetClient {
   private setupEventHandlers(): void {
     if (!this.socket) return;
 
-    this.socket.on('room-state', (data: { roomId: string; users: unknown[] }) => {
+    this.socket.on('room-state', (data: { roomId: string; users: Array<{ userId: string; socketId: string; avatar?: unknown }> }) => {
       this.roomManager.handleRoomState(data);
     });
 

@@ -1,26 +1,35 @@
-import { Object3D, Scene, Vector3 } from 'three';
+import { Object3D, Scene } from 'three';
 import { loadReadyPlayerMeAvatar } from './loaders/rpm.js';
-import type { NetClient } from '@metaverse/net';
 
 export interface Avatar {
   id: string;
   userId: string;
   object: Object3D;
-  position: Vector3;
-  rotation: Vector3;
+  position: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number };
   animation?: string;
 }
 
 export class AvatarManager {
   private avatars = new Map<string, Avatar>();
   private scene: Scene;
-  private netClient: NetClient | null = null;
+  private netClient: {
+    getReplicator: () => {
+      onAvatarUpdate: (callback: (update: {
+        userId: string;
+        position: { x: number; y: number; z: number };
+        rotation: { x: number; y: number; z: number };
+        animation?: string;
+      }) => void) => () => void;
+    };
+    updateAvatar: (position: { x: number; y: number; z: number }, rotation: { x: number; y: number; z: number }, animation?: string) => void;
+  } | null = null;
 
   constructor(scene: Scene) {
     this.scene = scene;
   }
 
-  setNetClient(netClient: NetClient): void {
+  setNetClient(netClient: AvatarManager['netClient']): void {
     this.netClient = netClient;
     
     // Listen to avatar updates from network
@@ -29,7 +38,7 @@ export class AvatarManager {
     });
   }
 
-  async loadAvatar(userId: string, avatarUrl: string, position?: Vector3): Promise<Avatar> {
+  async loadAvatar(userId: string, avatarUrl: string, position?: { x: number; y: number; z: number }): Promise<Avatar> {
     try {
       const avatarObject = await loadReadyPlayerMeAvatar(avatarUrl);
       
@@ -37,8 +46,8 @@ export class AvatarManager {
         id: `avatar-${userId}`,
         userId,
         object: avatarObject,
-        position: position || new Vector3(0, 0, 0),
-        rotation: new Vector3(0, 0, 0),
+        position: position || { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
       };
 
       this.scene.add(avatar.object);
@@ -51,7 +60,7 @@ export class AvatarManager {
     }
   }
 
-  updateAvatar(userId: string, position: Vector3, rotation: Vector3, animation?: string): void {
+  updateAvatar(userId: string, position: { x: number; y: number; z: number }, rotation: { x: number; y: number; z: number }, animation?: string): void {
     const avatar = this.avatars.get(userId);
     if (!avatar) return;
 
@@ -59,7 +68,7 @@ export class AvatarManager {
     avatar.rotation.copy(rotation);
     avatar.animation = animation;
 
-    avatar.object.position.copy(position);
+    avatar.object.position.set(position.x, position.y, position.z);
     avatar.object.rotation.set(rotation.x, rotation.y, rotation.z);
 
     // Sync to network

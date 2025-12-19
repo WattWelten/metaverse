@@ -1,5 +1,6 @@
-import { Object3D, GLTFLoader } from 'three';
-import { getDracoLoader } from '@metaverse/core/render/loaders/draco.js';
+import { Object3D } from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { getDracoLoader } from '@metaverse/core';
 
 /**
  * Ready Player Me Avatar Loader
@@ -13,7 +14,7 @@ export async function loadReadyPlayerMeAvatar(avatarUrl: string): Promise<Object
   return new Promise((resolve, reject) => {
     loader.load(
       avatarUrl,
-      (gltf) => {
+      (gltf: { scene: Object3D }) => {
         const avatar = gltf.scene;
         
         // Scale and position adjustments for Ready Player Me avatars
@@ -21,7 +22,7 @@ export async function loadReadyPlayerMeAvatar(avatarUrl: string): Promise<Object
         avatar.position.set(0, 0, 0);
         
         // Enable shadows
-        avatar.traverse((child) => {
+        avatar.traverse((child: Object3D) => {
           if (child.type === 'Mesh') {
             child.castShadow = true;
             child.receiveShadow = true;
@@ -31,7 +32,7 @@ export async function loadReadyPlayerMeAvatar(avatarUrl: string): Promise<Object
         resolve(avatar);
       },
       undefined,
-      (error) => {
+      (error: Error) => {
         console.error('Failed to load Ready Player Me avatar:', error);
         reject(error);
       }
@@ -42,7 +43,7 @@ export async function loadReadyPlayerMeAvatar(avatarUrl: string): Promise<Object
 /**
  * Get Ready Player Me avatar URL from user ID or custom URL
  */
-export function getReadyPlayerMeUrl(userIdOrUrl: string, apiKey?: string): string {
+export function getReadyPlayerMeUrl(userIdOrUrl: string, _apiKey?: string): string {
   // If it's already a full URL, return it
   if (userIdOrUrl.startsWith('http://') || userIdOrUrl.startsWith('https://')) {
     return userIdOrUrl;

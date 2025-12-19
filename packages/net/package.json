@@ -20,12 +20,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "socket.io-client": "^4.6.1"
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@metaverse/eslint-config": "workspace:*",
     "@metaverse/tsconfig": "workspace:*",
-    "typescript": "^5.3.3"
+    "typescript": "^5.9.3"
   }
 }
 

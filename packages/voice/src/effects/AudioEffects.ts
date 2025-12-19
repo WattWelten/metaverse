@@ -20,7 +20,7 @@ export class AudioEffects {
 
     // Reverb based on distance (more reverb when further away)
     if (distance > 10) {
-      this.applyReverb(userId, distance);
+      this.applyReverb(userId);
     } else {
       this.removeReverb(userId);
     }
@@ -34,7 +34,7 @@ export class AudioEffects {
     return this.gainNodes.get(userId)!;
   }
 
-  private applyReverb(userId: string, distance: number): void {
+  private applyReverb(userId: string): void {
     // Create reverb effect based on distance
     // This is a simplified implementation
     if (!this.reverbNodes.has(userId)) {
@@ -53,7 +53,7 @@ export class AudioEffects {
     }
   }
 
-  applyDopplerEffect(userId: string, velocity: { x: number; y: number; z: number }): void {
+  applyDopplerEffect(_userId: string, _velocity: { x: number; y: number; z: number }): void {
     // Doppler effect implementation
     // This would adjust playback rate based on relative velocity
   }

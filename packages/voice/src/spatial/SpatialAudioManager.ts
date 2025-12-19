@@ -1,30 +1,29 @@
-import { Vector3 } from 'three';
 import { AudioGraph } from '../positional/AudioGraph.js';
 import { AudioEffects } from '../effects/AudioEffects.js';
 
 export class SpatialAudioManager {
   private audioGraph: AudioGraph;
   private audioEffects: AudioEffects;
-  private listenerPosition: Vector3;
-  private speakerPositions = new Map<string, Vector3>();
+  private listenerPosition: { x: number; y: number; z: number };
+  private speakerPositions = new Map<string, { x: number; y: number; z: number }>();
   private enabled: boolean;
 
   constructor(enabled = true) {
     this.enabled = enabled;
     this.audioGraph = new AudioGraph();
     this.audioEffects = new AudioEffects(this.audioGraph.getAudioContext());
-    this.listenerPosition = new Vector3(0, 0, 0);
+    this.listenerPosition = { x: 0, y: 0, z: 0 };
   }
 
-  updateListenerPosition(position: Vector3): void {
-    this.listenerPosition.copy(position);
+  updateListenerPosition(position: { x: number; y: number; z: number }): void {
+    this.listenerPosition = { ...position };
     if (this.enabled) {
       this.audioGraph.setListenerPosition(position.x, position.y, position.z);
     }
   }
 
-  updateSpeakerPosition(userId: string, position: Vector3): void {
-    this.speakerPositions.set(userId, position.clone());
+  updateSpeakerPosition(userId: string, position: { x: number; y: number; z: number }): void {
+    this.speakerPositions.set(userId, { ...position });
     if (this.enabled) {
       this.audioGraph.updateSourcePosition(userId, {
         x: position.x,
@@ -33,13 +32,16 @@ export class SpatialAudioManager {
       });
 
       // Apply distance-based effects
-      const distance = this.listenerPosition.distanceTo(position);
+      const dx = position.x - this.listenerPosition.x;
+      const dy = position.y - this.listenerPosition.y;
+      const dz = position.z - this.listenerPosition.z;
+      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
       this.audioEffects.applyDistanceEffects(userId, distance);
     }
   }
 
-  addSpeaker(userId: string, stream: MediaStream, position: Vector3): void {
-    this.speakerPositions.set(userId, position.clone());
+  addSpeaker(userId: string, stream: MediaStream, position: { x: number; y: number; z: number }): void {
+    this.speakerPositions.set(userId, { ...position });
     if (this.enabled) {
       this.audioGraph.addSource(userId, stream, {
         x: position.x,

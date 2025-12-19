@@ -32,7 +32,7 @@ export class KIAdapter {
   /**
    * Send text message to AI agent
    */
-  async sendText(text: string): Promise<string> {
+  async sendText(_text: string): Promise<string> {
     if (!this.isEnabled) {
       throw new Error('KI Adapter is not enabled');
     }
@@ -61,7 +61,7 @@ export class KIAdapter {
   /**
    * Update avatar lipsync based on audio
    */
-  updateLipsync(audioBuffer: AudioBuffer): void {
+  updateLipsync(_audioBuffer: AudioBuffer): void {
     if (!this.avatar || !this.isEnabled) return;
     // Lipsync logic would go here
   }

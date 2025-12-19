@@ -20,14 +20,14 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@readyplayerme/web-3d-viewer": "^1.0.0",
-    "three": "^0.160.0"
+    "@readyplayerme/web-3d-viewer": "^1.1.7",
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "@metaverse/eslint-config": "workspace:*",
     "@metaverse/tsconfig": "workspace:*",
-    "@types/three": "^0.160.0",
-    "typescript": "^5.3.3"
+    "@types/three": "^0.170.0",
+    "typescript": "^5.9.3"
   }
 }
 

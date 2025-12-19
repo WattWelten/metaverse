@@ -20,13 +20,13 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "three": "^0.160.0"
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "@metaverse/eslint-config": "workspace:*",
     "@metaverse/tsconfig": "workspace:*",
-    "@types/three": "^0.160.0",
-    "typescript": "^5.3.3"
+    "@types/three": "^0.170.0",
+    "typescript": "^5.9.3"
   }
 }
 
