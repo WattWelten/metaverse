@@ -78,3 +78,14 @@
 - Warum: Bessere Fehlerbehandlung bei fehlenden Assets
 - Dateien:
   - scripts/import-template.js (Asset-Validierung erweitert)
+
+## [2025-01-XX] - Strategische Integrationen
+
+- Was: VoiceClient, HUD, Performance-Monitoring, Player-Count vollständig integriert
+- Warum: Production-Ready Features für MVP
+- Dateien:
+  - apps/web/src/World.ts (FPS-Monitoring, enableVoice(), getPlayerCount())
+  - apps/web/src/App.tsx (HUD, ConsentModal Integration)
+  - packages/net/src/NetClient.ts (getPlayerCount() Methode)
+  - docs/PR_DESCRIPTION.md (PR-Beschreibung erstellt)
+  - package.json (lint-staged vereinfacht)

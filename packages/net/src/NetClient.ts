@@ -226,4 +226,8 @@ export class NetClient {
       emit: (event, data) => this.emit(event, data),
     };
   }
+
+  getPlayerCount(): number {
+    return this.roomManager.getUserCount();
+  }
 }

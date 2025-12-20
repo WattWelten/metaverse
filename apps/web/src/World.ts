@@ -372,9 +372,7 @@ export class World {
 
   getPlayerCount(): number {
     if (!this.netClient || this.soloMode) return 1;
-    // NetClient sollte eine Methode haben, um die Anzahl der Spieler im Room zu bekommen
-    // Für jetzt: Placeholder
-    return 1;
+    return this.netClient.getPlayerCount() || 1;
   }
 
   async enableVoice(): Promise<void> {
