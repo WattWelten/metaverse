@@ -19,6 +19,7 @@ export class TemplateHost {
   private currentTemplate: TemplateInstance | null = null;
   private renderer: WebGLRenderer | null = null;
   private lights: Object3D[] = [];
+  private loadingAbortController: AbortController | null = null;
 
   constructor(scene: Scene, renderer?: WebGLRenderer) {
     this.scene = scene;
@@ -26,15 +27,42 @@ export class TemplateHost {
   }
 
   async loadTemplate(templateId: string): Promise<void> {
+    // Abort previous load if still in progress
+    if (this.loadingAbortController) {
+      this.loadingAbortController.abort();
+    }
+    
+    this.loadingAbortController = new AbortController();
+    const signal = this.loadingAbortController.signal;
+    
     try {
       // Register default template loader if not already registered
       if (!templateRegistry.getCurrentInstance()) {
         templateRegistry.register('watt-default', this.createDefaultTemplateLoader());
       }
 
+      // Check if aborted before loading
+      if (signal.aborted) {
+        return;
+      }
+
       const instance = await templateRegistry.load(templateId, this.scene);
+      
+      // Check if aborted after loading
+      if (signal.aborted) {
+        // Cleanup the loaded instance
+        instance.unmount();
+        return;
+      }
+      
       this.currentTemplate = instance;
+      this.loadingAbortController = null;
     } catch (error) {
+      // Ignore abort errors
+      if (signal.aborted) {
+        return;
+      }
+      
       console.error(`Failed to load template "${templateId}":`, error);
       // Fallback to default
       if (templateId !== 'watt-default') {
@@ -227,6 +255,12 @@ export class TemplateHost {
   }
 
   dispose(): void {
+    // Abort any ongoing loads
+    if (this.loadingAbortController) {
+      this.loadingAbortController.abort();
+      this.loadingAbortController = null;
+    }
+    
     if (this.currentTemplate) {
       this.currentTemplate.unmount();
       this.currentTemplate = null;

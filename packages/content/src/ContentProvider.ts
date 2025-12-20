@@ -6,3 +6,5 @@ export interface ContentProvider {
   uploadAsset(file: File | Blob, path?: string): Promise<{ url: string; id: string }>;
 }
 
+
+

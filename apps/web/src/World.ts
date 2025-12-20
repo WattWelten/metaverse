@@ -28,6 +28,7 @@ export class World {
   private clock: Clock;
   private animationFrameId: number | null = null;
   private container: HTMLElement;
+  private boundHandleResize: () => void; // Speichere bound function für cleanup
   
   // Multiplayer & Networking
   private netClient: NetClient | null = null;
@@ -38,6 +39,9 @@ export class World {
   private lastAvatarUpdate = 0;
   private readonly AVATAR_UPDATE_THROTTLE = 100; // ms
   private soloMode = false;
+  
+  // Event listener cleanup
+  private netClientEventCleanups: Array<() => void> = [];
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -95,8 +99,9 @@ export class World {
     this.initMultiplayer(flags);
     this.initAudio(flags);
 
-    // Resize handler
-    window.addEventListener('resize', this.handleResize.bind(this));
+    // Resize handler - bound function speichern für cleanup
+    this.boundHandleResize = this.handleResize.bind(this);
+    window.addEventListener('resize', this.boundHandleResize);
   }
 
   private generateUserId(): string {
@@ -121,19 +126,28 @@ export class World {
     // Avatar Manager initialisieren
     this.avatarManager = new AvatarManager(this.scene);
     if (this.netClient) {
-      this.avatarManager.setNetClient(this.netClient as unknown as AvatarManager['netClient']);
+      this.avatarManager.setNetClient(this.netClient.asAvatarManagerClient());
     }
 
     // Fallback: Solo-Modus wenn Server nicht erreichbar
-    this.netClient.on('connect_error', () => {
+    const onConnectError = () => {
       console.warn('Server nicht erreichbar - Fallback zu Solo-Modus');
       this.soloMode = true;
-    });
-
-    this.netClient.on('connect', () => {
+    };
+    
+    const onConnect = () => {
       console.log('✅ Connected to multiplayer server');
       this.soloMode = false;
-    });
+    };
+    
+    this.netClient.on('connect_error', onConnectError);
+    this.netClient.on('connect', onConnect);
+    
+    // Cleanup-Funktionen speichern
+    this.netClientEventCleanups.push(
+      () => this.netClient?.off('connect_error', onConnectError),
+      () => this.netClient?.off('connect', onConnect)
+    );
   }
 
   private initAudio(flags: FeatureFlags): void {
@@ -148,10 +162,7 @@ export class World {
         userId: this.userId,
         roomId: 'default-room',
         enableSpatialAudio: true,
-        netClient: this.netClient as unknown as {
-          on: (event: string, callback: (data: unknown) => void) => void;
-          emit?: (event: string, data: unknown) => void;
-        },
+        netClient: this.netClient.asVoiceClient(),
       });
     }
   }
@@ -186,27 +197,40 @@ export class World {
             return;
           }
 
-          const timeout = setTimeout(() => {
+          let timeout: NodeJS.Timeout | null = null;
+          let checkInterval: NodeJS.Timeout | null = null;
+          let resolved = false;
+
+          const cleanup = () => {
+            if (timeout) clearTimeout(timeout);
+            if (checkInterval) clearInterval(checkInterval);
+            resolved = true;
+          };
+
+          const safeResolve = () => {
+            if (!resolved) {
+              cleanup();
+              resolve();
+            }
+          };
+
+          timeout = setTimeout(() => {
             console.warn('Connection timeout - continuing in solo mode');
             this.soloMode = true;
-            resolve();
+            safeResolve();
           }, 3000);
 
           // Socket.io 'connect' Event wird bereits von NetClient intern behandelt
           // Wir prüfen einfach isConnected() in einem Intervall
-          const checkInterval = setInterval(() => {
+          checkInterval = setInterval(() => {
             if (this.netClient?.isConnected()) {
-              clearTimeout(timeout);
-              clearInterval(checkInterval);
-              resolve();
+              safeResolve();
             }
           }, 100);
 
           // Prüfe ob bereits verbunden
           if (this.netClient.isConnected()) {
-            clearTimeout(timeout);
-            clearInterval(checkInterval);
-            resolve();
+            safeResolve();
           }
         });
         
@@ -335,12 +359,35 @@ export class World {
     return this.templateHost.getCurrentTemplate();
   }
 
+  async loadTemplate(templateId: string): Promise<void> {
+    await this.templateHost.loadTemplate(templateId);
+    
+    // Apply lighting from new template
+    const template = this.templateHost.getCurrentTemplate();
+    if (template) {
+      await this.applyTemplateLighting(template);
+    }
+    
+    // Load ambient audio from new template
+    if (this.ambientManager && template) {
+      this.ambientManager.stopAll();
+      this.ambientManager.loadFromTemplate(template.manifest);
+      this.ambientManager.playAll();
+    }
+  }
+
   dispose(): void {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
     }
 
-    window.removeEventListener('resize', this.handleResize.bind(this));
+    // Event listener cleanup
+    window.removeEventListener('resize', this.boundHandleResize);
+    
+    // NetClient event cleanup
+    this.netClientEventCleanups.forEach(cleanup => cleanup());
+    this.netClientEventCleanups = [];
 
     // Cleanup Multiplayer
     if (this.netClient) {

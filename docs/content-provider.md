@@ -60,3 +60,5 @@ const provider = createContentProvider('strapi', {
 });
 ```
 
+
+

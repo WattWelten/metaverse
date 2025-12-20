@@ -40,3 +40,5 @@ Build a production-grade, modular Three.js WebXR metaverse (TS, Vite) with swapp
 - After each major step, produce a short TASK LOG with created/modified files.
 - Open PR `feat/mvp` against `main` with checklists in the description.
 
+
+

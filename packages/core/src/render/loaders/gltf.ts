@@ -31,3 +31,5 @@ export function useGLTFCache(url: string): Promise<Object3D> {
   });
 }
 
+
+

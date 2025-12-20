@@ -73,3 +73,5 @@ Templates können zur Laufzeit gewechselt werden:
 await templateRegistry.load('another-template', scene);
 ```
 
+
+

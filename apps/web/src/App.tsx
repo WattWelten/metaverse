@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { World } from './World';
 import { FeatureFlags, getFeatureFlags } from './FeatureFlags';
 import { OverlayHost } from '@metaverse/ui';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export function App() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -31,8 +32,20 @@ export function App() {
         if (action.payload && typeof action.payload === 'object' && 'templateId' in action.payload) {
           const newTemplateId = action.payload.templateId as string;
           setTemplateId(newTemplateId);
-          worldRef.current?.getCurrentTemplate()?.unmount();
-          worldRef.current?.getCurrentTemplate()?.mount(worldRef.current?.getScene()!);
+          
+          const world = worldRef.current;
+          if (!world) return;
+          
+          const template = world.getCurrentTemplate();
+          const scene = world.getScene();
+          
+          if (template && scene) {
+            template.unmount();
+            // Template wird beim nächsten Render neu gemountet
+            world.loadTemplate(newTemplateId).catch((error) => {
+              console.error('Failed to switch template:', error);
+            });
+          }
         }
         break;
       case 'open-menu':
@@ -44,10 +57,12 @@ export function App() {
   };
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <FeatureFlags />
-      <OverlayHost templateId={templateId} onAction={handleOverlayAction} />
-    </div>
+    <ErrorBoundary>
+      <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
+        <FeatureFlags />
+        <OverlayHost templateId={templateId} onAction={handleOverlayAction} />
+      </div>
+    </ErrorBoundary>
   );
 }
 

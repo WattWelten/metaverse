@@ -27,3 +27,5 @@ Das Metaverse ist als Monorepo mit folgenden Hauptkomponenten aufgebaut:
 - **packages/ai**: AI-Bridge
 - **packages/content**: Content Provider
 
+
+

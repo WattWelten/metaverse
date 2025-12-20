@@ -64,3 +64,5 @@ Vordefinierte Presets:
 - `urban`: Verkehr, Stadtgeräusche
 - `indoor`: Innenraum-Ambient
 
+
+

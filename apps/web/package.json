@@ -10,6 +10,8 @@
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui",
     "e2e": "playwright test",
     "clean": "rm -rf dist"
   },

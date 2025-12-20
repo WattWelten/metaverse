@@ -3,6 +3,7 @@ import { Presence } from './presence/Presence.js';
 import { StateSync } from './sync/StateSync.js';
 import { RoomManager } from './rooms/RoomManager.js';
 import { Replicator } from './replication/Replicator.js';
+import type { NetClientForAvatarManager, NetClientForVoice } from './types.js';
 
 export interface NetClientConfig {
   serverUrl: string;
@@ -189,6 +190,24 @@ export class NetClient {
 
   emit(event: string, data: unknown): void {
     this.socket?.emit(event, data);
+  }
+
+  // Type-safe adapters for different use cases
+  asAvatarManagerClient(): NetClientForAvatarManager {
+    return {
+      getReplicator: () => this.replicator,
+      updateAvatar: (position, rotation, animation) => {
+        this.updateAvatar(position, rotation, animation);
+      },
+    };
+  }
+
+  asVoiceClient(): NetClientForVoice {
+    return {
+      on: (event, callback) => this.on(event, callback),
+      off: (event, callback) => this.off(event, callback),
+      emit: (event, data) => this.emit(event, data),
+    };
   }
 }
 

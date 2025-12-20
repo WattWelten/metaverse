@@ -106,3 +106,5 @@ class TemplateRegistry {
 
 export const templateRegistry = new TemplateRegistry();
 
+
+

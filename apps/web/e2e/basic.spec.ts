@@ -11,3 +11,5 @@ test('canvas is rendered', async ({ page }) => {
   await expect(canvas).toBeVisible();
 });
 
+
+

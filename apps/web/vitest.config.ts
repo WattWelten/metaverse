@@ -7,6 +7,19 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/__tests__/**',
+        '**/dist/**',
+        '**/build/**',
+      ],
+    },
+    setupFiles: ['./src/__tests__/setup.ts'],
   },
   resolve: {
     alias: {
@@ -22,4 +35,6 @@ export default defineConfig({
     },
   },
 });
+
+
 

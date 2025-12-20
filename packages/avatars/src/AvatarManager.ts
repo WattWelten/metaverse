@@ -12,6 +12,7 @@ import {
   Vector3
 } from 'three';
 import { loadReadyPlayerMeAvatar } from './loaders/rpm.js';
+import type { NetClientForAvatarManager } from '@metaverse/net';
 
 export interface Avatar {
   id: string;
@@ -29,28 +30,23 @@ export interface Avatar {
 export class AvatarManager {
   private avatars = new Map<string, Avatar>();
   private scene: Scene;
-  private netClient: {
-    getReplicator: () => {
-      onAvatarUpdate: (callback: (update: {
-        userId: string;
-        position: { x: number; y: number; z: number };
-        rotation: { x: number; y: number; z: number };
-        animation?: string;
-      }) => void) => () => void;
-    };
-    updateAvatar: (position: { x: number; y: number; z: number }, rotation: { x: number; y: number; z: number }, animation?: string) => void;
-  } | null = null;
+  private netClient: NetClientForAvatarManager | null = null;
 
   constructor(scene: Scene) {
     this.scene = scene;
   }
 
-  setNetClient(netClient: AvatarManager['netClient']): void {
+  setNetClient(netClient: NetClientForAvatarManager): void {
     this.netClient = netClient;
     
     // Listen to avatar updates from network
     if (netClient) {
-      netClient.getReplicator().onAvatarUpdate((update) => {
+      netClient.getReplicator().onAvatarUpdate((update: {
+        userId: string;
+        position: { x: number; y: number; z: number };
+        rotation: { x: number; y: number; z: number };
+        animation?: string;
+      }) => {
         this.updateRemoteAvatar(update.userId, update);
       });
     }
@@ -298,6 +294,26 @@ export class AvatarManager {
   removeAvatar(userId: string): void {
     const avatar = this.avatars.get(userId);
     if (avatar) {
+      // Three.js Resource Cleanup
+      avatar.object.traverse((child) => {
+        if (child instanceof Mesh) {
+          if (child.geometry) {
+            child.geometry.dispose();
+          }
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((mat) => mat.dispose());
+            } else {
+              child.material.dispose();
+              // Dispose texture if present
+              if ('map' in child.material && child.material.map) {
+                child.material.map.dispose();
+              }
+            }
+          }
+        }
+      });
+      
       this.scene.remove(avatar.object);
       this.avatars.delete(userId);
     }

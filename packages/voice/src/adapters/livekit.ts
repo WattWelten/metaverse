@@ -7,3 +7,5 @@ export class LiveKitAdapter {
   // This is a placeholder for future implementation
 }
 
+
+
