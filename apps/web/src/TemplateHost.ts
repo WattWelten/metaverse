@@ -24,10 +24,21 @@ export class TemplateHost {
   private renderer: WebGLRenderer | null = null;
   private lights: Object3D[] = [];
   private loadingAbortController: AbortController | null = null;
+  private lodObjects: Map<
+    Object3D,
+    { lod0: Object3D | null; lod1: Object3D | null; lod2: Object3D | null }
+  > = new Map();
+  private lastLodCheck = 0;
+  private readonly LOD_CHECK_INTERVAL = 250; // ms
+  private camera: { position: { x: number; y: number; z: number } } | null = null;
 
   constructor(scene: Scene, renderer?: WebGLRenderer) {
     this.scene = scene;
     this.renderer = renderer || null;
+  }
+
+  setCamera(camera: { position: { x: number; y: number; z: number } }): void {
+    this.camera = camera;
   }
 
   async loadTemplate(templateId: string): Promise<void> {
@@ -87,12 +98,17 @@ export class TemplateHost {
         sceneObject = this.createDefaultScene();
       }
 
+      // Detect and organize LOD nodes
+      const lodMap = this.detectLODNodes(sceneObject);
+
       return {
         manifest,
         scene: sceneObject,
         mount: async (scene: Scene) => {
           if (sceneObject) {
             scene.add(sceneObject);
+            // Initialize LOD visibility
+            this.initializeLOD(lodMap);
           }
           // Apply lighting from manifest
           await this.applyLighting(manifest);
@@ -100,6 +116,8 @@ export class TemplateHost {
         unmount: () => {
           if (sceneObject) {
             this.scene.remove(sceneObject);
+            // Cleanup LOD tracking
+            lodMap.forEach((_lod, obj) => this.lodObjects.delete(obj));
           }
           // Remove lighting
           this.removeLighting();
@@ -141,8 +159,14 @@ export class TemplateHost {
     return this.currentTemplate;
   }
 
-  update(_delta: number): void {
+  update(delta: number): void {
     // Update template animations, etc.
+    // LOD switching (throttled)
+    const now = Date.now();
+    if (now - this.lastLodCheck >= this.LOD_CHECK_INTERVAL && this.camera) {
+      this.updateLOD();
+      this.lastLodCheck = now;
+    }
   }
 
   private async applyLighting(manifest: TemplateManifest): Promise<void> {
@@ -251,6 +275,92 @@ export class TemplateHost {
 
   setRenderer(renderer: WebGLRenderer): void {
     this.renderer = renderer;
+  }
+
+  setCamera(camera: { position: { x: number; y: number; z: number } }): void {
+    this.camera = camera;
+  }
+
+  private detectLODNodes(
+    root: Object3D | null
+  ): Map<Object3D, { lod0: Object3D | null; lod1: Object3D | null; lod2: Object3D | null }> {
+    const lodMap = new Map<
+      Object3D,
+      { lod0: Object3D | null; lod1: Object3D | null; lod2: Object3D | null }
+    >();
+
+    if (!root) return lodMap;
+
+    root.traverse((obj) => {
+      const name = obj.name.toLowerCase();
+      if (name.includes('_lod0') || name.includes('_lod1') || name.includes('_lod2')) {
+        // Extract base name (e.g., "Turbine_LOD0" -> "Turbine")
+        const baseName = name.replace(/_lod[012]/i, '').trim();
+        const parent = obj.parent || root;
+
+        if (!lodMap.has(parent)) {
+          lodMap.set(parent, { lod0: null, lod1: null, lod2: null });
+        }
+
+        const lod = lodMap.get(parent)!;
+        if (name.includes('_lod0')) {
+          lod.lod0 = obj;
+        } else if (name.includes('_lod1')) {
+          lod.lod1 = obj;
+        } else if (name.includes('_lod2')) {
+          lod.lod2 = obj;
+        }
+      }
+    });
+
+    return lodMap;
+  }
+
+  private initializeLOD(
+    lodMap: Map<Object3D, { lod0: Object3D | null; lod1: Object3D | null; lod2: Object3D | null }>
+  ): void {
+    lodMap.forEach((lod, parent) => {
+      // Show LOD0 by default, hide others
+      if (lod.lod0) lod.lod0.visible = true;
+      if (lod.lod1) lod.lod1.visible = false;
+      if (lod.lod2) lod.lod2.visible = false;
+      this.lodObjects.set(parent, lod);
+    });
+  }
+
+  private updateLOD(): void {
+    if (!this.camera) return;
+
+    const cameraPos = this.camera.position;
+    const LOD1_DISTANCE = 40;
+    const LOD2_DISTANCE = 80;
+
+    this.lodObjects.forEach((lod, parent) => {
+      // Calculate distance from camera to parent object
+      const distance = Math.sqrt(
+        Math.pow(parent.position.x - cameraPos.x, 2) +
+          Math.pow(parent.position.y - cameraPos.y, 2) +
+          Math.pow(parent.position.z - cameraPos.z, 2)
+      );
+
+      // Switch LOD based on distance
+      if (distance > LOD2_DISTANCE && lod.lod2) {
+        // Use LOD2
+        if (lod.lod0) lod.lod0.visible = false;
+        if (lod.lod1) lod.lod1.visible = false;
+        lod.lod2.visible = true;
+      } else if (distance > LOD1_DISTANCE && lod.lod1) {
+        // Use LOD1
+        if (lod.lod0) lod.lod0.visible = false;
+        lod.lod1.visible = true;
+        if (lod.lod2) lod.lod2.visible = false;
+      } else if (lod.lod0) {
+        // Use LOD0
+        lod.lod0.visible = true;
+        if (lod.lod1) lod.lod1.visible = false;
+        if (lod.lod2) lod.lod2.visible = false;
+      }
+    });
   }
 
   dispose(): void {

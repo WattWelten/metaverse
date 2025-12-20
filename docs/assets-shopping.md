@@ -73,17 +73,50 @@ Kostenlose und kostenpflichtige Assets für das WattWelten Metaverse.
 1. **Model-Import:**
    - Importiere FBX/OBJ/Blend
    - Reduziere Polygone (Decimate Modifier)
-   - Erstelle LOD-Varianten
+   - Erstelle LOD-Varianten (benennen: `Turbine_LOD0`, `Turbine_LOD1`, `Turbine_LOD2`)
 
-2. **Textur-Optimierung:**
-   - Konvertiere zu KTX2 (Basis Universal)
-   - Größe: 512x512 bis 2048x2048
-   - Format: KTX2 für Web
+2. **LOD-Erstellung:**
+   - **LOD0** (Hero): ≤ 25k Tris, vollständige Details
+   - **LOD1** (Medium): ≤ 10-15k Tris, Decimate Ratio 0.35-0.5
+   - **LOD2** (Far): ≤ 3-5k Tris, Decimate Ratio 0.1-0.2
+   - **Naming:** Parent-Empty mit Base-Name, Children als `*_LOD0/1/2`
+   - **Merge by Distance** nach Decimate (lose Vertices verschmelzen)
+   - **Normals:** Recalculate Outside, harte Kanten nur wo nötig
 
-3. **Export:**
-   - Format: GLTF Binary (.glb)
-   - Draco-Kompression: Aktivieren
+3. **Textur-Optimierung:**
+   - **KTX2 Kompression:**
+     - ETC1S (klein, gut für Vegetation): `-q 128`
+     - UASTC (höhere Qualität für Hero-Objekte): `-uastc 2` (ggf. `--zstd 18`)
+   - **Auflösung:**
+     - Turbine: 1× 2048 (Albedo/Rough/Metal/Normal)
+     - Vegetation: 512-1024
+   - **Normal Maps:** OpenGL-Konvention (-Y), in Blender "Non-Color"
+
+4. **Export:**
+   - Format: **GLTF Binary (.glb)**
+   - "Apply Modifiers", "+Tangents", **Y-Up**, "+Materials", "+Vertex Colors"
+   - Draco (optional): Quantization Pos 14, Normals 10, UVs 12, Colors 8
+   - **Naming:** Parent-Empty "Turbine", Child "Rotor" (für Rotation im Code)
+   - **Scale:** 1m = 1 Blender-Einheit, `Apply All Transforms`
    - Pfad: `/packages/assets/templates/watt-eco/`
+
+### Asset-Import
+
+Verwende das Asset-Import-Tool:
+
+```bash
+# HDRI und Scene importieren
+pnpm assets:import -- --hdri ./downloads/sunset_forest.hdr --scene ./downloads/windturbine.glb --template watt-eco
+
+# Attribution generieren
+pnpm assets:attr
+```
+
+Das Tool:
+
+- Kopiert Assets in das Template-Verzeichnis
+- Aktualisiert `manifest.json` automatisch
+- Erstellt `ATTRIBUTION.md` falls nicht vorhanden
 
 ## Pfad-Struktur
 

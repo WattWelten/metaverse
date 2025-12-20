@@ -101,3 +101,18 @@
   - apps/web/e2e/template-load.spec.ts (Template-Switching unter Last)
   - apps/web/src/**tests**/integration.test.ts (Unit Integration-Tests)
   - .github/workflows/ci.yml (E2E mit Server-Setup erweitert)
+
+## [2025-01-XX] - Asset-Import & LOD Support
+
+- Was: Asset-Import-Tools, LOD-System, Windrad-Rotation, .env.example
+- Warum: Production-Ready Asset-Management und Performance-Optimierung
+- Dateien:
+  - .env.example (alle Feature-Flags und Server-Config)
+  - scripts/import-assets.ts (CLI-Tool für HDRI/GLB Import)
+  - scripts/generate-attribution.ts (Attribution-Generator)
+  - package.json (assets:import, assets:attr Scripts)
+  - apps/web/src/TemplateHost.ts (LOD-Support mit Distanz-basiertem Switching)
+  - apps/web/src/World.ts (Windrad-Rotation für Rotor-Nodes)
+  - scripts/health.ts (Erweiterte Checks für .env.example, Asset-Scripts, LOD)
+  - docs/README.md (Asset-Import-Dokumentation)
+  - docs/assets-shopping.md (Blender-Optimierungs-Checkliste, KTX2-Tipps)

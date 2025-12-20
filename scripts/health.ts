@@ -15,6 +15,9 @@ interface HealthReport {
   flags: Record<string, boolean | string>;
   ci: { workflows: string[]; status: 'ok' | 'missing' };
   docs: { files: string[]; coverage: number };
+  env?: { exampleExists: boolean };
+  scripts?: { importAssets: boolean; generateAttribution: boolean };
+  features?: { lodSupport: boolean };
 }
 
 function getPackageVersion(packageJson: Record<string, unknown>, name: string): string {
@@ -183,7 +186,44 @@ ${
 - Files: ${report.docs.files.join(', ') || 'none'}
 `;
 
-  writeFileSync(reportPath, reportContent, 'utf-8');
+  // Check for .env.example
+  const envExampleExists = existsSync(join(rootDir, '.env.example'));
+  report.env = { exampleExists: envExampleExists };
+
+  // Check for asset import scripts
+  const importAssetsExists = existsSync(join(rootDir, 'scripts', 'import-assets.ts'));
+  const generateAttrExists = existsSync(join(rootDir, 'scripts', 'generate-attribution.ts'));
+  report.scripts = {
+    importAssets: importAssetsExists,
+    generateAttribution: generateAttrExists,
+  };
+
+  // Check for LOD support in TemplateHost
+  const templateHostPath = join(rootDir, 'apps', 'web', 'src', 'TemplateHost.ts');
+  let lodSupport = false;
+  if (existsSync(templateHostPath)) {
+    const templateHostContent = readFileSync(templateHostPath, 'utf-8');
+    lodSupport = templateHostContent.includes('LOD') || templateHostContent.includes('lod');
+  }
+  report.features = { lodSupport };
+
+  // Update report content with new sections
+  const updatedReportContent =
+    reportContent +
+    `
+
+## Environment
+- .env.example: ${envExampleExists ? '✅' : '❌'}
+
+## Asset Scripts
+- import-assets.ts: ${importAssetsExists ? '✅' : '❌'}
+- generate-attribution.ts: ${generateAttrExists ? '✅' : '❌'}
+
+## Features
+- LOD Support: ${lodSupport ? '✅' : '❌'}
+`;
+
+  writeFileSync(reportPath, updatedReportContent, 'utf-8');
   console.log('✅ Health report written to docs/health-report.md');
   console.log(JSON.stringify(report, null, 2));
 }

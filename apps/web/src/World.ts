@@ -11,6 +11,7 @@ import {
   ACESFilmicToneMapping,
   Color,
   Clock,
+  Object3D,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -91,6 +92,8 @@ export class World {
 
     // Template Host
     this.templateHost = new TemplateHost(this.scene, this.renderer);
+    // Set camera reference for LOD calculations
+    this.templateHost.setCamera(this.camera);
 
     // XR Setup
     const flags = getFeatureFlags();
@@ -352,8 +355,36 @@ export class World {
     // Update FPS
     this.updateFPS();
 
+    // Windrad-Rotor Rotation (if present)
+    this.updateWindTurbineRotation(delta);
+
     // Render
     this.postProcessing.render(delta);
+  }
+
+  private rotorNode: Object3D | null = null;
+  private rotorFound = false;
+
+  private updateWindTurbineRotation(delta: number): void {
+    // Find rotor node on first frame (throttled search)
+    if (!this.rotorFound && this.scene) {
+      this.scene.traverse((obj) => {
+        const name = obj.name.toLowerCase();
+        if ((name.includes('rotor') || name.includes('blade')) && !this.rotorNode) {
+          this.rotorNode = obj;
+          this.rotorFound = true;
+        }
+      });
+    }
+
+    // Rotate rotor if found (90°/s = Math.PI/2 per second)
+    if (this.rotorNode) {
+      const rotationSpeed = Math.PI / 2; // radians per second
+      // Optional: Slow down rotation at distance (temporal aliasing prevention)
+      const distance = this.rotorNode.position.distanceTo(this.camera.position);
+      const distanceFactor = distance > 50 ? 0.5 : 1.0; // Slow down at >50 units
+      this.rotorNode.rotation.y += rotationSpeed * delta * distanceFactor;
+    }
   }
 
   private updateFPS(): void {
