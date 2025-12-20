@@ -26,10 +26,11 @@ export default defineConfig({
     target: 'esnext',
     sourcemap: true,
     rollupOptions: {
+      external: ['@pixiv/three-vrm'], // Optional dependency, not bundled
       output: {
         manualChunks: {
-          'three': ['three'],
-          'react': ['react', 'react-dom'],
+          three: ['three'],
+          react: ['react', 'react-dom'],
         },
       },
     },
@@ -41,6 +42,3 @@ export default defineConfig({
     include: ['three'],
   },
 });
-
-
-

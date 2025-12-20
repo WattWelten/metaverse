@@ -1,3 +1,9 @@
+import { AmbientManager } from '@metaverse/audio';
+import { AvatarManager } from '@metaverse/avatars';
+import type { TemplateInstance } from '@metaverse/core';
+import { setPhysicallyCorrectLights } from '@metaverse/core';
+import { NetClient } from '@metaverse/net';
+import { VoiceClient } from '@metaverse/voice';
 import {
   Scene,
   PerspectiveCamera,
@@ -7,15 +13,11 @@ import {
   Clock,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+import { getFeatureFlags, type FeatureFlags } from './FeatureFlags';
+import { PostProcessing } from './render/Post';
 import { TemplateHost } from './TemplateHost';
 import { XRSetup } from './xr/XRSetup';
-import { PostProcessing } from './render/Post';
-import { getFeatureFlags, type FeatureFlags } from './FeatureFlags';
-import { NetClient } from '@metaverse/net';
-import { AvatarManager } from '@metaverse/avatars';
-import { AmbientManager } from '@metaverse/audio';
-import { VoiceClient } from '@metaverse/voice';
-import type { TemplateInstance } from '@metaverse/core';
 
 export class World {
   private scene: Scene;
@@ -29,7 +31,7 @@ export class World {
   private animationFrameId: number | null = null;
   private container: HTMLElement;
   private boundHandleResize: () => void; // Speichere bound function für cleanup
-  
+
   // Multiplayer & Networking
   private netClient: NetClient | null = null;
   private avatarManager: AvatarManager | null = null;
@@ -39,7 +41,13 @@ export class World {
   private lastAvatarUpdate = 0;
   private readonly AVATAR_UPDATE_THROTTLE = 100; // ms
   private soloMode = false;
-  
+
+  // Performance monitoring
+  private fps = 0;
+  private frameCount = 0;
+  private lastFpsUpdate = 0;
+  private readonly FPS_UPDATE_INTERVAL = 1000; // ms
+
   // Event listener cleanup
   private netClientEventCleanups: Array<() => void> = [];
 
@@ -71,6 +79,7 @@ export class World {
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
+    setPhysicallyCorrectLights(this.renderer);
     container.appendChild(this.renderer.domElement);
 
     // Controls
@@ -115,7 +124,7 @@ export class World {
     }
 
     const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
-    
+
     this.netClient = new NetClient({
       serverUrl,
       userId: this.userId,
@@ -134,15 +143,15 @@ export class World {
       console.warn('Server nicht erreichbar - Fallback zu Solo-Modus');
       this.soloMode = true;
     };
-    
+
     const onConnect = () => {
       console.log('✅ Connected to multiplayer server');
       this.soloMode = false;
     };
-    
+
     this.netClient.on('connect_error', onConnectError);
     this.netClient.on('connect', onConnect);
-    
+
     // Cleanup-Funktionen speichern
     this.netClientEventCleanups.push(
       () => this.netClient?.off('connect_error', onConnectError),
@@ -189,7 +198,7 @@ export class World {
     if (this.netClient && flags.MULTIPLAYER_ENABLED) {
       try {
         this.netClient.connect();
-        
+
         // Warte auf Verbindung mit Timeout
         await new Promise<void>((resolve) => {
           if (!this.netClient) {
@@ -233,7 +242,7 @@ export class World {
             safeResolve();
           }
         });
-        
+
         if (this.netClient.isConnected() && !this.soloMode) {
           this.netClient.joinRoom('default-room');
           // Lokalen Avatar erstellen
@@ -261,14 +270,11 @@ export class World {
 
     try {
       // Versuche Ready Player Me Avatar zu laden (Placeholder URL)
-      const avatarUrl = import.meta.env.VITE_READY_PLAYER_ME_AVATAR_URL || 
+      const avatarUrl =
+        import.meta.env.VITE_READY_PLAYER_ME_AVATAR_URL ||
         'https://models.readyplayer.me/placeholder.glb';
-      
-      await this.avatarManager.loadAvatar(
-        this.userId,
-        avatarUrl,
-        { x: 0, y: 0, z: 0 }
-      );
+
+      await this.avatarManager.loadAvatar(this.userId, avatarUrl, { x: 0, y: 0, z: 0 });
     } catch (error) {
       console.warn('Failed to load Ready Player Me avatar, using capsule:', error);
       // Fallback: Einfache Kapsel erstellen
@@ -278,7 +284,7 @@ export class World {
 
   private async createCapsuleAvatar(): Promise<void> {
     if (!this.avatarManager) return;
-    
+
     // Erstelle Kapsel-Avatar als Fallback
     this.avatarManager.createCapsuleAvatar(this.userId, {
       x: this.camera.position.x,
@@ -315,17 +321,21 @@ export class World {
 
     // Avatar-Position synchronisieren (throttled)
     const now = Date.now();
-    if (this.netClient && this.avatarManager && !this.soloMode && 
-        now - this.lastAvatarUpdate > this.AVATAR_UPDATE_THROTTLE) {
+    if (
+      this.netClient &&
+      this.avatarManager &&
+      !this.soloMode &&
+      now - this.lastAvatarUpdate > this.AVATAR_UPDATE_THROTTLE
+    ) {
       const cameraPos = this.camera.position;
       const cameraRot = this.camera.rotation;
-      
+
       this.avatarManager.updateAvatar(
         this.userId,
         { x: cameraPos.x, y: cameraPos.y, z: cameraPos.z },
         { x: cameraRot.x, y: cameraRot.y, z: cameraRot.z }
       );
-      
+
       this.lastAvatarUpdate = now;
     }
 
@@ -339,8 +349,46 @@ export class World {
       });
     }
 
+    // Update FPS
+    this.updateFPS();
+
     // Render
     this.postProcessing.render(delta);
+  }
+
+  private updateFPS(): void {
+    this.frameCount++;
+    const now = Date.now();
+    if (now - this.lastFpsUpdate >= this.FPS_UPDATE_INTERVAL) {
+      this.fps = Math.round((this.frameCount * 1000) / (now - this.lastFpsUpdate));
+      this.frameCount = 0;
+      this.lastFpsUpdate = now;
+    }
+  }
+
+  getFPS(): number {
+    return this.fps;
+  }
+
+  getPlayerCount(): number {
+    if (!this.netClient || this.soloMode) return 1;
+    // NetClient sollte eine Methode haben, um die Anzahl der Spieler im Room zu bekommen
+    // Für jetzt: Placeholder
+    return 1;
+  }
+
+  async enableVoice(): Promise<void> {
+    if (!this.voiceClient) {
+      console.warn('VoiceClient not initialized');
+      return;
+    }
+    try {
+      await this.voiceClient.enable();
+      console.log('Voice enabled successfully');
+    } catch (error) {
+      console.error('Failed to enable voice:', error);
+      throw error;
+    }
   }
 
   getScene(): Scene {
@@ -359,15 +407,19 @@ export class World {
     return this.templateHost.getCurrentTemplate();
   }
 
+  setExposure(exposure: number): void {
+    this.renderer.toneMappingExposure = Math.max(0.1, Math.min(3.0, exposure));
+  }
+
   async loadTemplate(templateId: string): Promise<void> {
     await this.templateHost.loadTemplate(templateId);
-    
+
     // Apply lighting from new template
     const template = this.templateHost.getCurrentTemplate();
     if (template) {
       await this.applyTemplateLighting(template);
     }
-    
+
     // Load ambient audio from new template
     if (this.ambientManager && template) {
       this.ambientManager.stopAll();
@@ -384,16 +436,16 @@ export class World {
 
     // Event listener cleanup
     window.removeEventListener('resize', this.boundHandleResize);
-    
+
     // NetClient event cleanup
-    this.netClientEventCleanups.forEach(cleanup => cleanup());
+    this.netClientEventCleanups.forEach((cleanup) => cleanup());
     this.netClientEventCleanups = [];
 
     // Cleanup Multiplayer
     if (this.netClient) {
       this.netClient.disconnect();
     }
-    
+
     // Cleanup Avatars
     if (this.avatarManager) {
       // Alle Avatare entfernen
@@ -407,7 +459,7 @@ export class World {
     if (this.ambientManager) {
       this.ambientManager.dispose();
     }
-    
+
     if (this.voiceClient) {
       this.voiceClient.disable();
     }
@@ -437,4 +489,3 @@ export class World {
     return this.soloMode;
   }
 }
-

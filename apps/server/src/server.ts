@@ -1,9 +1,11 @@
-import express from 'express';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
+
 import cors from 'cors';
-import { RoomManager } from './rooms/RoomManager.js';
+import express from 'express';
+import { Server } from 'socket.io';
+
 import { PresenceService } from './presence/PresenceService.js';
+import { RoomManager } from './rooms/RoomManager.js';
 import { StateSyncService } from './sync/StateSyncService.js';
 
 const app = express();
@@ -14,11 +16,11 @@ app.use(express.json());
 
 // Health check endpoint
 app.get('/', (_req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     service: 'WattWelten Metaverse Server',
     version: '0.1.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -41,11 +43,11 @@ io.on('connection', (socket) => {
     const { roomId, userId, avatar } = data;
     await roomManager.joinRoom(socket.id, roomId, userId, avatar);
     socket.join(roomId);
-    
+
     const roomState = roomManager.getRoomState(roomId);
     socket.emit('room-state', roomState);
     socket.to(roomId).emit('user-joined', { userId, socketId: socket.id, avatar });
-    
+
     presenceService.addUser(socket.id, userId, roomId);
   });
 
@@ -53,7 +55,7 @@ io.on('connection', (socket) => {
     const { roomId, userId } = data;
     await roomManager.leaveRoom(socket.id, roomId, userId);
     socket.leave(roomId);
-    
+
     socket.to(roomId).emit('user-left', { userId, socketId: socket.id });
     presenceService.removeUser(socket.id);
   });
@@ -64,25 +66,37 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('state-update', { userId, state });
   });
 
-  socket.on('avatar-update', (data: { roomId: string; userId: string; position: { x: number; y: number; z: number }; rotation: { x: number; y: number; z: number }; animation?: string }) => {
-    const { roomId, userId, position, rotation, animation } = data;
-    socket.to(roomId).emit('avatar-update', { userId, position, rotation, animation });
-  });
+  socket.on(
+    'avatar-update',
+    (data: {
+      roomId: string;
+      userId: string;
+      position: { x: number; y: number; z: number };
+      rotation: { x: number; y: number; z: number };
+      animation?: string;
+    }) => {
+      const { roomId, userId, position, rotation, animation } = data;
+      socket.to(roomId).emit('avatar-update', { userId, position, rotation, animation });
+    }
+  );
 
   // WebRTC Signalisierung (für Voice/Audio)
-  socket.on('webrtc-signal', (data: { from: string; to: string; signal: unknown; type: string }) => {
-    const { to, signal, type } = data;
-    const userInfo = presenceService.getUserInfo(socket.id);
-    if (!userInfo) return;
+  socket.on(
+    'webrtc-signal',
+    (data: { from: string; to: string; signal: unknown; type: string }) => {
+      const { to, signal, type } = data;
+      const userInfo = presenceService.getUserInfo(socket.id);
+      if (!userInfo) return;
 
-    // Weiterleite Signal an Ziel-User
-    socket.to(userInfo.roomId).emit('webrtc-signal', {
-      from: userInfo.userId,
-      to,
-      signal,
-      type,
-    });
-  });
+      // Weiterleite Signal an Ziel-User
+      socket.to(userInfo.roomId).emit('webrtc-signal', {
+        from: userInfo.userId,
+        to,
+        signal,
+        type,
+      });
+    }
+  );
 
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
@@ -99,4 +113,3 @@ const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
   console.log(`🚀 Metaverse Server running on port ${PORT}`);
 });
-

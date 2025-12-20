@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { World } from '../World.js';
 
 // Mock Three.js modules
@@ -8,14 +9,14 @@ vi.mock('three', () => {
     add: vi.fn(),
     remove: vi.fn(),
   };
-  
+
   const mockCamera = {
     position: { set: vi.fn(), x: 0, y: 5, z: 10 },
     rotation: { x: 0, y: 0, z: 0 },
     aspect: 1,
     updateProjectionMatrix: vi.fn(),
   };
-  
+
   const mockRenderer = {
     domElement: document.createElement('canvas'),
     setSize: vi.fn(),
@@ -26,7 +27,7 @@ vi.mock('three', () => {
     shadowMap: { enabled: true },
     dispose: vi.fn(),
   };
-  
+
   return {
     Scene: vi.fn(() => mockScene),
     PerspectiveCamera: vi.fn(() => mockCamera),
@@ -139,7 +140,7 @@ describe('World', () => {
     container.style.width = '800px';
     container.style.height = '600px';
     document.body.appendChild(container);
-    
+
     world = new World(container);
   });
 
@@ -182,4 +183,3 @@ describe('World', () => {
     expect(netClient === null || netClient !== null).toBe(true);
   });
 });
-

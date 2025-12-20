@@ -8,7 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "lint": "eslint src",
+    "lint": "eslint src --fix",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -27,4 +27,3 @@
     "typescript": "^5.9.3"
   }
 }
-

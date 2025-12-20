@@ -25,13 +25,20 @@ export class VoiceClient {
       serverUrl: config.serverUrl,
       netClient: config.netClient as WebRTCAdapterConfig['netClient'],
     });
-    this.spatialAudioManager = new SpatialAudioManager(
-      config.enableSpatialAudio !== false
-    );
+    this.spatialAudioManager = new SpatialAudioManager(config.enableSpatialAudio !== false);
   }
 
   async enable(): Promise<void> {
     if (this.isEnabled) return;
+
+    // No-Op if VOICE_ENABLED=false
+    // Note: This check is done at runtime in the browser, not during typecheck
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const env = (import.meta as any).env;
+    if (env?.VITE_VOICE_ENABLED === 'false') {
+      console.log('Voice disabled via feature flag');
+      return;
+    }
 
     try {
       // Request microphone access
@@ -99,4 +106,3 @@ export class VoiceClient {
     return this.spatialAudioManager;
   }
 }
-

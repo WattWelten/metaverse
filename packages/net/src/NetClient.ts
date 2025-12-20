@@ -1,8 +1,9 @@
 import { io, Socket } from 'socket.io-client';
+
 import { Presence } from './presence/Presence.js';
-import { StateSync } from './sync/StateSync.js';
-import { RoomManager } from './rooms/RoomManager.js';
 import { Replicator } from './replication/Replicator.js';
+import { RoomManager } from './rooms/RoomManager.js';
+import { StateSync } from './sync/StateSync.js';
 import type { NetClientForAvatarManager, NetClientForVoice } from './types.js';
 
 export interface NetClientConfig {
@@ -50,10 +51,10 @@ export class NetClient {
     this.socket.on('connect', () => {
       this.connected = true;
       console.log('Connected to server');
-      
+
       // Emit custom event for external listeners
       this.socket?.emit('connected');
-      
+
       if (this.config.roomId) {
         this.joinRoom(this.config.roomId);
       }
@@ -72,14 +73,23 @@ export class NetClient {
   private setupEventHandlers(): void {
     if (!this.socket) return;
 
-    this.socket.on('room-state', (data: { roomId: string; users: Array<{ userId: string; socketId: string; avatar?: unknown }> }) => {
-      this.roomManager.handleRoomState(data);
-    });
+    this.socket.on(
+      'room-state',
+      (data: {
+        roomId: string;
+        users: Array<{ userId: string; socketId: string; avatar?: unknown }>;
+      }) => {
+        this.roomManager.handleRoomState(data);
+      }
+    );
 
-    this.socket.on('user-joined', (data: { userId: string; socketId: string; avatar?: unknown }) => {
-      this.presence.addUser(data.userId, data.socketId, data.avatar);
-      this.roomManager.handleUserJoined(data);
-    });
+    this.socket.on(
+      'user-joined',
+      (data: { userId: string; socketId: string; avatar?: unknown }) => {
+        this.presence.addUser(data.userId, data.socketId, data.avatar);
+        this.roomManager.handleUserJoined(data);
+      }
+    );
 
     this.socket.on('user-left', (data: { userId: string; socketId: string }) => {
       this.presence.removeUser(data.userId);
@@ -90,14 +100,17 @@ export class NetClient {
       this.stateSync.handleStateUpdate(data.userId, data.state);
     });
 
-    this.socket.on('avatar-update', (data: {
-      userId: string;
-      position: { x: number; y: number; z: number };
-      rotation: { x: number; y: number; z: number };
-      animation?: string;
-    }) => {
-      this.replicator.handleAvatarUpdate(data.userId, data);
-    });
+    this.socket.on(
+      'avatar-update',
+      (data: {
+        userId: string;
+        position: { x: number; y: number; z: number };
+        rotation: { x: number; y: number; z: number };
+        animation?: string;
+      }) => {
+        this.replicator.handleAvatarUpdate(data.userId, data);
+      }
+    );
   }
 
   disconnect(): void {
@@ -146,7 +159,11 @@ export class NetClient {
     });
   }
 
-  updateAvatar(position: { x: number; y: number; z: number }, rotation: { x: number; y: number; z: number }, animation?: string): void {
+  updateAvatar(
+    position: { x: number; y: number; z: number },
+    rotation: { x: number; y: number; z: number },
+    animation?: string
+  ): void {
     if (!this.socket?.connected || !this.config.roomId) {
       return;
     }
@@ -210,4 +227,3 @@ export class NetClient {
     };
   }
 }
-

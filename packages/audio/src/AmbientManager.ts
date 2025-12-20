@@ -1,5 +1,5 @@
-import { AmbientSource } from './sources/AmbientSource.js';
 import { AudioMixer } from './mixer/AudioMixer.js';
+import { AmbientSource } from './sources/AmbientSource.js';
 
 // TemplateManifest type definition (to avoid circular dependency)
 export interface TemplateManifest {
@@ -110,4 +110,3 @@ export class AmbientManager {
     this.mixer.dispose();
   }
 }
-

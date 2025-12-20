@@ -39,7 +39,13 @@ export class PresenceService {
   getAllUsers(): UserInfo[] {
     return Array.from(this.users.values());
   }
+
+  getSocketIdByUserId(userId: string): string | undefined {
+    for (const user of this.users.values()) {
+      if (user.userId === userId) {
+        return user.socketId;
+      }
+    }
+    return undefined;
+  }
 }
-
-
-

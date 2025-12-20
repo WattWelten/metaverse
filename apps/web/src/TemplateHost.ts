@@ -1,18 +1,22 @@
-import { 
-  Scene, 
-  Object3D, 
-  Mesh, 
-  BoxGeometry, 
+import {
+  templateRegistry,
+  type TemplateInstance,
+  type TemplateManifest,
+  pmremCache,
+} from '@metaverse/core';
+import { useGLTFCache } from '@metaverse/core';
+import {
+  Scene,
+  Object3D,
+  Mesh,
+  BoxGeometry,
   MeshStandardMaterial,
   AmbientLight,
   DirectionalLight,
   Color,
-  PMREMGenerator,
   WebGLRenderer,
 } from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
-import { templateRegistry, type TemplateInstance, type TemplateManifest } from '@metaverse/core';
-import { useGLTFCache } from '@metaverse/core';
 
 export class TemplateHost {
   private scene: Scene;
@@ -31,10 +35,10 @@ export class TemplateHost {
     if (this.loadingAbortController) {
       this.loadingAbortController.abort();
     }
-    
+
     this.loadingAbortController = new AbortController();
     const signal = this.loadingAbortController.signal;
-    
+
     try {
       // Register default template loader if not already registered
       if (!templateRegistry.getCurrentInstance()) {
@@ -47,14 +51,14 @@ export class TemplateHost {
       }
 
       const instance = await templateRegistry.load(templateId, this.scene);
-      
+
       // Check if aborted after loading
       if (signal.aborted) {
         // Cleanup the loaded instance
         instance.unmount();
         return;
       }
-      
+
       this.currentTemplate = instance;
       this.loadingAbortController = null;
     } catch (error) {
@@ -62,7 +66,7 @@ export class TemplateHost {
       if (signal.aborted) {
         return;
       }
-      
+
       console.error(`Failed to load template "${templateId}":`, error);
       // Fallback to default
       if (templateId !== 'watt-default') {
@@ -125,11 +129,7 @@ export class TemplateHost {
         color: Math.random() * 0xffffff,
       });
       const cube = new Mesh(geometry, material);
-      cube.position.set(
-        (Math.random() - 0.5) * 10,
-        0.5,
-        (Math.random() - 0.5) * 10
-      );
+      cube.position.set((Math.random() - 0.5) * 10, 0.5, (Math.random() - 0.5) * 10);
       cube.castShadow = true;
       group.add(cube);
     }
@@ -155,22 +155,27 @@ export class TemplateHost {
     const hdriPath = manifest.lighting?.hdri;
     if (hdriPath && typeof hdriPath === 'string' && this.renderer) {
       try {
-        const pmremGenerator = new PMREMGenerator(this.renderer);
-        pmremGenerator.compileEquirectangularShader();
-        
-        const rgbeLoader = new RGBELoader();
-        const hdri = await new Promise<unknown>((resolve, reject) => {
-          rgbeLoader.load(hdriPath, resolve, undefined, reject);
-        });
-        
-        // Type assertion für HDRI-Texture (RGBELoader gibt DataTexture zurück)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const envMap = pmremGenerator.fromEquirectangular(hdri as any).texture;
+        // Prüfe Cache zuerst
+        let envMap = pmremCache.getCached(hdriPath);
+
+        if (!envMap) {
+          const pmremGenerator = pmremCache.getGenerator(this.renderer);
+
+          const rgbeLoader = new RGBELoader();
+          const hdri = await new Promise<unknown>((resolve, reject) => {
+            rgbeLoader.load(hdriPath, resolve, undefined, reject);
+          });
+
+          // Type assertion für HDRI-Texture (RGBELoader gibt DataTexture zurück)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          envMap = pmremGenerator.fromEquirectangular(hdri as any).texture;
+          pmremCache.setCached(hdriPath, envMap);
+        }
+
         this.scene.environment = envMap;
         this.scene.background = envMap;
-        pmremGenerator.dispose();
-      } catch (error) {
-        console.warn('Failed to load HDRI:', error);
+      } catch {
+        console.warn(`HDRI not found: ${hdriPath}, using default lighting`);
       }
     }
 
@@ -192,7 +197,7 @@ export class TemplateHost {
         dirColor,
         manifest.lighting.directional.intensity || 0.8
       );
-      
+
       const pos = manifest.lighting.directional.position || { x: 5, y: 10, z: 5 };
       dirLight.position.set(pos.x, pos.y, pos.z);
       dirLight.castShadow = true;
@@ -204,7 +209,7 @@ export class TemplateHost {
       dirLight.shadow.camera.right = 10;
       dirLight.shadow.camera.top = 10;
       dirLight.shadow.camera.bottom = -10;
-      
+
       this.scene.add(dirLight);
       this.lights.push(dirLight);
     }
@@ -212,14 +217,11 @@ export class TemplateHost {
     // Fill Light (optional)
     if (manifest.lighting.fill) {
       const fillColor = new Color(manifest.lighting.fill.color || '#ffffff');
-      const fillLight = new DirectionalLight(
-        fillColor,
-        manifest.lighting.fill.intensity || 0.3
-      );
-      
+      const fillLight = new DirectionalLight(fillColor, manifest.lighting.fill.intensity || 0.3);
+
       const pos = manifest.lighting.fill.position || { x: -5, y: 5, z: -5 };
       fillLight.position.set(pos.x, pos.y, pos.z);
-      
+
       this.scene.add(fillLight);
       this.lights.push(fillLight);
     }
@@ -227,14 +229,11 @@ export class TemplateHost {
     // Rim Light (optional)
     if (manifest.lighting.rim) {
       const rimColor = new Color(manifest.lighting.rim.color || '#ffffff');
-      const rimLight = new DirectionalLight(
-        rimColor,
-        manifest.lighting.rim.intensity || 0.2
-      );
-      
+      const rimLight = new DirectionalLight(rimColor, manifest.lighting.rim.intensity || 0.2);
+
       const pos = manifest.lighting.rim.position || { x: 0, y: 5, z: -10 };
       rimLight.position.set(pos.x, pos.y, pos.z);
-      
+
       this.scene.add(rimLight);
       this.lights.push(rimLight);
     }
@@ -260,7 +259,7 @@ export class TemplateHost {
       this.loadingAbortController.abort();
       this.loadingAbortController = null;
     }
-    
+
     if (this.currentTemplate) {
       this.currentTemplate.unmount();
       this.currentTemplate = null;
@@ -268,4 +267,3 @@ export class TemplateHost {
     this.removeLighting();
   }
 }
-

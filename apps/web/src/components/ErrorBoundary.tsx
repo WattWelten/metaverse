@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({
       error,
@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
     });
   };
 
-  render(): ReactNode {
+  override render(): ReactNode {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
@@ -64,9 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
             color: '#fff',
           }}
         >
-          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-            ⚠️ Ein Fehler ist aufgetreten
-          </h1>
+          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚠️ Ein Fehler ist aufgetreten</h1>
           <p style={{ marginBottom: '1rem', textAlign: 'center' }}>
             {this.state.error?.message || 'Unbekannter Fehler'}
           </p>
@@ -119,4 +117,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-

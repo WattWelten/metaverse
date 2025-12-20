@@ -1,12 +1,12 @@
-# Cursor Project Rules – WattWelten Metaverse
-## Mission
-Build a production-grade, modular Three.js WebXR metaverse (TS, Vite) with swappable templates, optional AI/voice/avatars, and clean integration points to `wattos_plattform`.
-
-## Style & Quality
-- TypeScript strict. No any. Exhaustive switch. Narrow types.
-- Pure ESM. Tree-shakeable packages. Folder-as-module index.ts.
-- ESLint + Prettier mandatory. Ship passing tests and a running dev server.
-- Performance budgets: PC 60fps, Mobile 40fps. Use KTX2 + Draco; avoid heavy post FX by default.
+# WattWelten Metaverse – Cursor Guardrails
+- TS strict, keine unkommentierten any.
+- Provider-agnostische Interfaces (AI, Voice, Content, Net).
+- Feature-Flags: XR_ENABLED, AI_ENABLED, VOICE_ENABLED, CMS_PROVIDER, TEMPLATE_ID.
+- Template-System: manifest-driven, Hot-Swap, Fallback sicher.
+- Performance: Desktop 60fps, Mobile 40fps; KTX2+Draco; PMREM/HDRI; sparsame PostFX.
+- CI muss grün: lint, typecheck, unit, e2e, build.
+- Keine Secrets im Repo; Mic opt-in; PII vermeiden.
+- Nach jedem Major-Step TASK_LOG aktualisieren.
 
 ## Architecture Guardrails
 - Monorepo (pnpm + turbo). Apps vs packages separation.
