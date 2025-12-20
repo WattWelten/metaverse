@@ -94,7 +94,19 @@ jobs:
           name: app-dist
           path: apps/web/dist
       - run: pnpm install --frozen-lockfile
-      - run: pnpm e2e
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Start server
+        run: |
+          cd apps/server
+          pnpm dev &
+          sleep 5
+        env:
+          PORT: 3001
+      - name: Run E2E tests
+        run: pnpm e2e
+        env:
+          VITE_SERVER_URL: http://localhost:3001
 
 
 
