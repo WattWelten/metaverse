@@ -89,3 +89,15 @@
   - packages/net/src/NetClient.ts (getPlayerCount() Methode)
   - docs/PR_DESCRIPTION.md (PR-Beschreibung erstellt)
   - package.json (lint-staged vereinfacht)
+
+## [2025-01-XX] - Umfassende Integration-Tests
+
+- Was: E2E und Unit-Tests für Multiplayer, Avatar, Voice, Template-Load
+- Warum: Qualitätssicherung und Regression-Tests
+- Dateien:
+  - apps/web/e2e/multiplayer.spec.ts (Multiplayer-Verbindung, Room-Joining)
+  - apps/web/e2e/avatar-sync.spec.ts (Avatar-Synchronisation)
+  - apps/web/e2e/voice.spec.ts (Voice-Integration, Consent-Modal)
+  - apps/web/e2e/template-load.spec.ts (Template-Switching unter Last)
+  - apps/web/src/**tests**/integration.test.ts (Unit Integration-Tests)
+  - .github/workflows/ci.yml (E2E mit Server-Setup erweitert)
