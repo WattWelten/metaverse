@@ -132,7 +132,7 @@ describe('Integration Tests - World', () => {
               on: vi.fn(() => () => {}),
               emit: vi.fn(),
             })),
-          }) as any
+          }) as unknown as InstanceType<typeof NetClient>
       );
 
       const soloWorld = new World(container);

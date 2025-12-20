@@ -37,10 +37,6 @@ export class TemplateHost {
     this.renderer = renderer || null;
   }
 
-  setCamera(camera: { position: { x: number; y: number; z: number } }): void {
-    this.camera = camera;
-  }
-
   async loadTemplate(templateId: string): Promise<void> {
     // Abort previous load if still in progress
     if (this.loadingAbortController) {
@@ -159,7 +155,7 @@ export class TemplateHost {
     return this.currentTemplate;
   }
 
-  update(delta: number): void {
+  update(_delta: number): void {
     // Update template animations, etc.
     // LOD switching (throttled)
     const now = Date.now();
@@ -294,15 +290,14 @@ export class TemplateHost {
     root.traverse((obj) => {
       const name = obj.name.toLowerCase();
       if (name.includes('_lod0') || name.includes('_lod1') || name.includes('_lod2')) {
-        // Extract base name (e.g., "Turbine_LOD0" -> "Turbine")
-        const baseName = name.replace(/_lod[012]/i, '').trim();
         const parent = obj.parent || root;
 
         if (!lodMap.has(parent)) {
           lodMap.set(parent, { lod0: null, lod1: null, lod2: null });
         }
 
-        const lod = lodMap.get(parent)!;
+        const lod = lodMap.get(parent);
+        if (!lod) return;
         if (name.includes('_lod0')) {
           lod.lod0 = obj;
         } else if (name.includes('_lod1')) {
