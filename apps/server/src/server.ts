@@ -12,6 +12,16 @@ const httpServer = createServer(app);
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoint
+app.get('/', (_req, res) => {
+  res.json({ 
+    status: 'ok', 
+    service: 'WattWelten Metaverse Server',
+    version: '0.1.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
