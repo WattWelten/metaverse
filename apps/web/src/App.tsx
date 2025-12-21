@@ -2,6 +2,7 @@ import { ConsentModal, HUD, OverlayHost } from '@metaverse/ui';
 import { useEffect, useRef, useState } from 'react';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { DebugOverlay } from './DebugOverlay';
 import { FeatureFlags, getFeatureFlags } from './FeatureFlags';
 import { World } from './World';
 
@@ -12,6 +13,23 @@ export function App() {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [fps, setFps] = useState(0);
   const [playerCount, setPlayerCount] = useState(1);
+
+  // Debug overlay visibility - enabled in dev mode or if flag is set
+  const [showDebug, setShowDebug] = useState(
+    import.meta.env.DEV || import.meta.env.VITE_DEBUG_ENABLED === 'true'
+  );
+
+  // F12 toggle for debug overlay
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F12') {
+        e.preventDefault();
+        setShowDebug((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -39,8 +57,24 @@ export function App() {
       setShowConsentModal(true);
     }
 
+    // Resume audio context on first user interaction
+    const handleFirstInteraction = async () => {
+      const { resumeContext } = await import('@metaverse/audio');
+      await resumeContext();
+      window.removeEventListener('pointerdown', handleFirstInteraction);
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    window.addEventListener('pointerdown', handleFirstInteraction, { once: true });
+    window.addEventListener('click', handleFirstInteraction, { once: true });
+    window.addEventListener('keydown', handleFirstInteraction, { once: true });
+
     return () => {
       world.dispose();
+      window.removeEventListener('pointerdown', handleFirstInteraction);
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
     };
   }, []);
 
@@ -105,6 +139,7 @@ export function App() {
           onAccept={() => handleVoiceConsent(true)}
           onDecline={() => handleVoiceConsent(false)}
         />
+        {showDebug && <DebugOverlay world={worldRef.current} />}
       </div>
     </ErrorBoundary>
   );

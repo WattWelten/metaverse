@@ -24,13 +24,63 @@ export interface AmbientConfig {
   position?: { x: number; y: number; z: number };
 }
 
+// Singleton AudioContext for ambient audio
+let audioContext: AudioContext | null = null;
+
+/**
+ * Gets or creates the singleton AudioContext instance.
+ * @returns The AudioContext instance
+ */
+export function getContext(): AudioContext {
+  if (!audioContext) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    audioContext = new AudioContextClass();
+  }
+  return audioContext;
+}
+
+/**
+ * Resumes the AudioContext after user interaction.
+ * This is required by browser autoplay policies.
+ * @returns Promise that resolves when the context is resumed
+ */
+export async function resumeContext(): Promise<void> {
+  try {
+    const ctx = getContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+  } catch (error) {
+    console.warn('Failed to resume audio context:', error);
+  }
+}
+
 export class AmbientManager {
   private sources = new Map<string, AmbientSource>();
   private mixer: AudioMixer;
   private enabled = true;
+  private contextResumed = false;
 
   constructor() {
     this.mixer = new AudioMixer();
+  }
+
+  /**
+   * Gets the AudioContext instance.
+   * @returns The AudioContext instance
+   */
+  getContext(): AudioContext {
+    return getContext();
+  }
+
+  /**
+   * Resumes the AudioContext after user interaction.
+   * @returns Promise that resolves when the context is resumed
+   */
+  async resumeContext(): Promise<void> {
+    await resumeContext();
+    this.contextResumed = true;
   }
 
   loadFromTemplate(manifest: TemplateManifest): void {
@@ -49,7 +99,8 @@ export class AmbientManager {
     const source = new AmbientSource(config, this.mixer);
     this.sources.set(config.id, source);
 
-    if (this.enabled) {
+    // Only play if enabled and context is resumed
+    if (this.enabled && this.contextResumed) {
       source.play();
     }
   }
@@ -63,7 +114,11 @@ export class AmbientManager {
     }
   }
 
-  playAll(): void {
+  async playAll(): Promise<void> {
+    // Ensure context is resumed before playing
+    if (!this.contextResumed) {
+      await this.resumeContext();
+    }
     this.enabled = true;
     this.sources.forEach((source) => {
       source.play();

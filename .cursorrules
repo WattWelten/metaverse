@@ -1,44 +1,26 @@
 # WattWelten Metaverse – Cursor Guardrails
-- TS strict, keine unkommentierten any.
-- Provider-agnostische Interfaces (AI, Voice, Content, Net).
-- Feature-Flags: XR_ENABLED, AI_ENABLED, VOICE_ENABLED, CMS_PROVIDER, TEMPLATE_ID.
-- Template-System: manifest-driven, Hot-Swap, Fallback sicher.
-- Performance: Desktop 60fps, Mobile 40fps; KTX2+Draco; PMREM/HDRI; sparsame PostFX.
-- CI muss grün: lint, typecheck, unit, e2e, build.
-- Keine Secrets im Repo; Mic opt-in; PII vermeiden.
-- Nach jedem Major-Step TASK_LOG aktualisieren.
 
-## Architecture Guardrails
-- Monorepo (pnpm + turbo). Apps vs packages separation.
-- Do not couple app code to providers: use interfaces (AI, Voice, Content, Net).
-- All features behind flags (env). Defaults: AI=false, VOICE=true, XR=true, CMS=local, MULTIPLAYER=true, AMBIENT_AUDIO=true.
-- Template system: manifest-driven loader. Hot-swap at runtime.
-- Never block on external repos: if unavailable, scaffold equivalent.
-- Multiplayer-first: All features are multiplayer-ready by default.
-- Ready Player Me is the primary avatar solution.
+## Code Quality
+- TS strict, keine unkommentierten any
+- Provider-agnostische Interfaces (AI, Voice, Content, Net)
+- Feature-Flags: XR_ENABLED, AI_ENABLED, VOICE_ENABLED, CMS_PROVIDER, TEMPLATE_ID
+- Performance: Desktop 60fps, Mobile 40fps; KTX2+Draco; PMREM/HDRI
+- CI muss grün: lint, typecheck, unit, e2e, build
 
-## DX
-- Generate docs (docs/), scripts for scaffold/import-template.
-- Conventional Commits + Changesets. CI must lint, typecheck, test, build.
+## Architecture
+- Monorepo (pnpm + turbo). Apps vs packages separation
+- Provider-Interfaces verwenden, keine direkten Abhängigkeiten
+- Features hinter Flags (env). Defaults: AI=false, VOICE=true, XR=true, CMS=local
+- Template-System: manifest-driven, Hot-Swap, Fallback sicher
+- Multiplayer-first: Alle Features sind multiplayer-ready
 
-## Don'ts
-- No vendor lock-in to a single CMS/voice provider.
-- No inline secrets. No PII logging. Respect user consent for mic.
-- No single-player-only modes - everything is multiplayer-ready.
+## Security & Privacy
+- Keine Secrets im Repo; Mic opt-in; PII vermeiden
+- No vendor lock-in; No single-player-only modes
 
-## Tasks (execute in order)
-1) Scaffold full repo layout and config files.
-2) Implement minimal but working MVP in apps/web with watt-default template.
-3) Implement packages: core, ui, avatars, voice, net, ai, content – with real code.
-4) Create LocalProvider; StrapiProvider skeleton with 1-2 methods complete.
-5) Implement AgentBridge placeholders that can talk to a mock server (WS + REST).
-6) Add basic e2e smoke (Playwright): page loads, template switch works.
-7) Set up GitHub Actions, Changesets, and initial release draft.
-8) Produce README with quickstart and ENV table. Generate docs skeleton.
-
-## Output
-- After each major step, produce a short TASK LOG with created/modified files.
-- Open PR `feat/mvp` against `main` with checklists in the description.
+## Workflow
+- Nach jedem Major-Step TASK_LOG aktualisieren
+- Conventional Commits + Changesets
 
 
 

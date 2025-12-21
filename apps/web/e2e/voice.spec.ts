@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+import { waitForAppReady } from './helpers/wait-for-app.js';
+
 test.describe('Voice Integration', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
@@ -15,7 +17,7 @@ test.describe('Voice Integration', () => {
     });
 
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait for consent modal to appear
     await page.waitForTimeout(1000);
@@ -35,7 +37,7 @@ test.describe('Voice Integration', () => {
     });
 
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait for modal
     await page.waitForTimeout(1000);
@@ -83,7 +85,7 @@ test.describe('Voice Integration', () => {
     });
 
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait for voice attempt
     await page.waitForTimeout(2000);
@@ -108,14 +110,14 @@ test.describe('Voice Integration', () => {
 
   test('updates listener position for spatial audio', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait for voice client initialization
     await page.waitForTimeout(2000);
 
     // Move camera (should update listener position)
-    const canvas = page.locator('canvas');
-    await canvas.click({ position: { x: 100, y: 100 } });
+    // Use mouse.move instead of canvas.click to avoid overlay blocking
+    await page.mouse.move(100, 100);
     await page.mouse.move(200, 200);
     await page.waitForTimeout(500);
 

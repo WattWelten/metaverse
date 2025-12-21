@@ -61,15 +61,52 @@ function generateAttributionForTemplate(
   ccbyAssets: Array<{ name: string; url?: string; license: string }>
 ): void {
   const attributionPath = join(templateDir, 'ATTRIBUTION.md');
+  const manifestPath = join(templateDir, 'manifest.json');
 
   let existingContent = '';
   if (existsSync(attributionPath)) {
     existingContent = readFileSync(attributionPath, 'utf-8');
   }
 
+  // Read manifest to extract asset names
+  let manifestAssets: Record<string, string> = {};
+  if (existsSync(manifestPath)) {
+    try {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+      if (manifest.assets) {
+        manifestAssets = manifest.assets as Record<string, string>;
+      }
+      if (manifest.audio?.ambient) {
+        manifestAssets.ambient = manifest.audio.ambient as string;
+      }
+    } catch (error) {
+      console.warn(`⚠️  Could not parse manifest.json for ${basename(templateDir)}:`, error);
+    }
+  }
+
   const header = `# Attribution
 
 Generated: ${new Date().toISOString()}
+
+## Files
+
+`;
+
+  let filesSection = '';
+  if (manifestAssets.hdri) {
+    filesSection += `- **HDRI**: ${manifestAssets.hdri} (PolyHaven CC0 empfohlen)\n`;
+  }
+  if (manifestAssets.scene) {
+    filesSection += `- **Scene**: ${manifestAssets.scene}\n`;
+  }
+  if (manifestAssets.ambient) {
+    filesSection += `- **Ambient Audio**: ${manifestAssets.ambient}\n`;
+  }
+  if (!filesSection) {
+    filesSection = 'No assets listed in manifest.\n';
+  }
+
+  const ccbyHeader = `
 
 ## CC-BY Assets (Attribution Required)
 
@@ -104,7 +141,7 @@ For detailed asset sources and links, see:
     ccbySection = 'No CC-BY assets found in this template.\n';
   }
 
-  const newContent = header + ccbySection + footer;
+  const newContent = header + filesSection + ccbyHeader + ccbySection + footer;
 
   // Append to existing if it exists and is different
   if (existingContent && existingContent !== newContent) {

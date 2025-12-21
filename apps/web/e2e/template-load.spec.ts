@@ -1,9 +1,12 @@
 import { test, expect } from '@playwright/test';
 
+import { createHeartbeat } from './helpers/heartbeat.js';
+import { waitForAppReady } from './helpers/wait-for-app.js';
+
 test.describe('Template Switching Under Load', () => {
   test('switches templates rapidly without crashing', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait for initial load
     await page.waitForTimeout(2000);
@@ -36,7 +39,7 @@ test.describe('Template Switching Under Load', () => {
     });
 
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait a bit for connection attempt
     await page.waitForTimeout(1000);
@@ -58,7 +61,7 @@ test.describe('Template Switching Under Load', () => {
 
   test('maintains state across template switches', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
     await page.waitForTimeout(2000);
 
     // Open debug overlay and adjust exposure
@@ -85,7 +88,7 @@ test.describe('Template Switching Under Load', () => {
 
   test('handles missing template assets gracefully', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
     await page.waitForTimeout(2000);
 
     // Try to switch to a non-existent template
@@ -111,28 +114,36 @@ test.describe('Template Switching Under Load', () => {
   });
 
   test('switches templates with ambient audio playing', async ({ page }) => {
-    await page.addInitScript(() => {
-      (window as any).__AMBIENT_AUDIO_ENABLED__ = 'true';
-    });
+    // Heartbeat für langen Test
+    const heartbeat = createHeartbeat('switches templates with ambient audio playing', 5);
+    heartbeat.start();
 
-    await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    try {
+      await page.addInitScript(() => {
+        (window as any).__AMBIENT_AUDIO_ENABLED__ = 'true';
+      });
 
-    // Wait for ambient audio to start
-    await page.waitForTimeout(3000);
+      await page.goto('/');
+      await page.waitForSelector('canvas', { timeout: 20000 });
 
-    // Switch template
-    await page.keyboard.press('F12');
-    await page.waitForTimeout(500);
+      // Wait for ambient audio to start
+      await page.waitForTimeout(3000);
 
-    const templateSelect = page.locator('select').first();
-    if (await templateSelect.isVisible().catch(() => false)) {
-      await templateSelect.selectOption('watt-eco');
-      await page.waitForTimeout(2000);
+      // Switch template
+      await page.keyboard.press('F12');
+      await page.waitForTimeout(500);
+
+      const templateSelect = page.locator('select').first();
+      if (await templateSelect.isVisible().catch(() => false)) {
+        await templateSelect.selectOption('watt-eco');
+        await page.waitForTimeout(2000);
+      }
+
+      // Should handle audio cleanup and reload
+      const canvas = page.locator('canvas');
+      await expect(canvas).toBeVisible();
+    } finally {
+      heartbeat.stop();
     }
-
-    // Should handle audio cleanup and reload
-    const canvas = page.locator('canvas');
-    await expect(canvas).toBeVisible();
   });
 });

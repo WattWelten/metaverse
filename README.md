@@ -1,3 +1,6 @@
+> 🧭 **Cursor Global Playbook aktiv** · Diesen Leitfaden nutzen wir als Source of Truth.
+> Datei: `docs/CURSOR_GLOBAL_PLAYBOOK.md` (oder zentral: `WattWelten/cursor.ai`).
+
 # WattWelten Metaverse
 
 Three.js WebXR Multiplayer Metaverse Platform mit Ready Player Me Integration, Spatial Audio, Ambient-Sound-System und AI-Bridge zu wattos_plattform.
@@ -20,6 +23,7 @@ pnpm dev
 ```
 
 Die Anwendung läuft dann auf:
+
 - Client: http://localhost:5173
 - Server: http://localhost:3001
 
@@ -96,6 +100,3 @@ metaverse/
 ## Lizenz
 
 Private - WattWelten
-
-
-

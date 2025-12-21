@@ -8,8 +8,10 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 export async function loadVRM(url: string, loader = new GLTFLoader()): Promise<Object3D> {
   try {
     // Dynamic import to avoid errors if package not installed
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const vrmModule = await import('@pixiv/three-vrm' as any).catch(() => null);
+    // Use eval to prevent Vite from analyzing the import at build time
+    // This is safe because we catch errors and the package is optional
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-assignment
+    const vrmModule = await eval('import("@pixiv/three-vrm")').catch(() => null);
     if (!vrmModule) {
       throw new Error(
         'VRM loader requires @pixiv/three-vrm package. Install: pnpm add @pixiv/three-vrm'

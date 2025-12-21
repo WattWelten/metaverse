@@ -11,6 +11,7 @@ const rootDir = join(__dirname, '..');
 interface ImportOptions {
   hdri?: string;
   scene?: string;
+  audio?: string;
   attr?: string;
   templateId?: string;
 }
@@ -25,6 +26,8 @@ function parseArgs(): ImportOptions {
       options.hdri = args[++i];
     } else if (arg === '--scene' && i + 1 < args.length) {
       options.scene = args[++i];
+    } else if (arg === '--audio' && i + 1 < args.length) {
+      options.audio = args[++i];
     } else if (arg === '--attr' && i + 1 < args.length) {
       options.attr = args[++i];
     } else if (arg === '--template' && i + 1 < args.length) {
@@ -90,6 +93,18 @@ function updateManifest(templateDir: string, options: ImportOptions): void {
     assets.scene = `scene${ext}`;
   }
 
+  // Audio support
+  if (options.audio) {
+    const ext = extname(options.audio);
+    const audioFileName = `ambient${ext}`;
+    if (!manifest.audio) {
+      manifest.audio = {};
+    }
+    const audio = manifest.audio as Record<string, unknown>;
+    audio.ambient = audioFileName;
+    audio.gain = audio.gain || 0.2;
+  }
+
   // Ensure lighting defaults
   if (!manifest.lighting) {
     manifest.lighting = { exposure: 1.0 };
@@ -135,10 +150,10 @@ Generated: ${new Date().toISOString()}
 async function main() {
   const options = parseArgs();
 
-  if (!options.hdri && !options.scene && !options.attr) {
+  if (!options.hdri && !options.scene && !options.audio && !options.attr) {
     console.error('❌ No assets specified. Usage:');
     console.error(
-      '  pnpm assets:import -- --hdri <path.hdr> --scene <path.glb> [--attr <path.txt>] [--template <id>]'
+      '  pnpm assets:import -- --hdri <path.hdr> --scene <path.glb> [--audio <path.wav>] [--attr <path.txt>] [--template <id>]'
     );
     process.exit(1);
   }
@@ -173,6 +188,19 @@ async function main() {
       const ext = extname(options.scene);
       const dest = join(templateDir, `scene${ext}`);
       if (!copyAsset(options.scene, dest, 'Scene')) {
+        hasErrors = true;
+      }
+    }
+  }
+
+  // Copy Audio
+  if (options.audio) {
+    if (!validatePath(options.audio, 'Audio')) {
+      hasErrors = true;
+    } else {
+      const ext = extname(options.audio);
+      const dest = join(templateDir, `ambient${ext}`);
+      if (!copyAsset(options.audio, dest, 'Audio')) {
         hasErrors = true;
       }
     }

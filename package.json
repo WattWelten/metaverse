@@ -13,7 +13,11 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:progress": "tsx scripts/test-with-progress.ts test",
+    "test:heartbeat": "powershell -ExecutionPolicy Bypass -File scripts/test-with-heartbeat.ps1 test",
     "e2e": "turbo run e2e",
+    "e2e:progress": "tsx scripts/test-with-progress.ts e2e",
+    "e2e:heartbeat": "powershell -ExecutionPolicy Bypass -File scripts/test-with-heartbeat.ps1 e2e",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "release": "changeset publish",
@@ -24,6 +28,8 @@
     "import-template": "node scripts/import-template.js",
     "assets:import": "tsx scripts/import-assets.ts",
     "assets:attr": "tsx scripts/generate-attribution.ts",
+    "setup:decoders": "tsx scripts/setup-decoders.ts",
+    "analyze:bundle": "tsx scripts/analyze-bundle.ts",
     "prepare": "husky"
   },
   "devDependencies": {

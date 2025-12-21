@@ -3,7 +3,13 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, it, expect } from 'vitest';
 
 import { getDracoLoader, createDraco } from '../render/loaders/draco.js';
-import { useGLTFCache, createGLTFCacher, getGLTFCache } from '../render/loaders/gltf.js';
+import {
+  useGLTFCache,
+  createGLTFCacher,
+  getGLTFCache,
+  createGLTFLoader,
+  clearGLTFCache,
+} from '../render/loaders/gltf.js';
 import { getKTX2Loader, createKTX2 } from '../render/loaders/ktx2.js';
 
 describe('Loaders', () => {
@@ -57,6 +63,27 @@ describe('Loaders', () => {
         // Expected to fail, but should not crash
         expect(error).toBeDefined();
       }
+    });
+  });
+
+  describe('createGLTFLoader', () => {
+    it('should create loader with cache', () => {
+      const loader = createGLTFLoader();
+      expect(loader).toBeTruthy();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(typeof (loader as any).loadAsync).toBe('function');
+    });
+
+    it('should create loader with renderer for KTX2 support', () => {
+      const renderer = new WebGLRenderer();
+      const loader = createGLTFLoader(renderer);
+      expect(loader).toBeTruthy();
+    });
+
+    it('should clear cache', () => {
+      clearGLTFCache();
+      const cache = getGLTFCache();
+      expect(cache.size).toBe(0);
     });
   });
 });

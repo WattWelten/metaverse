@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+import { waitForAppReady } from './helpers/wait-for-app.js';
+
 test.describe('Avatar Synchronisation', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
@@ -9,7 +11,7 @@ test.describe('Avatar Synchronisation', () => {
 
   test('creates local avatar on room join', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait for avatar creation
     await page.waitForTimeout(3000);
@@ -38,14 +40,14 @@ test.describe('Avatar Synchronisation', () => {
 
   test('sends avatar position updates', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait for initial setup
     await page.waitForTimeout(2000);
 
     // Move camera (which should trigger avatar updates)
-    const canvas = page.locator('canvas');
-    await canvas.click({ position: { x: 100, y: 100 } });
+    // Use mouse.move instead of canvas.click to avoid overlay blocking
+    await page.mouse.move(100, 100);
     await page.mouse.move(200, 200);
     await page.waitForTimeout(500);
 
@@ -69,7 +71,7 @@ test.describe('Avatar Synchronisation', () => {
 
   test('receives avatar updates from other players', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait for connection
     await page.waitForTimeout(3000);
@@ -90,7 +92,7 @@ test.describe('Avatar Synchronisation', () => {
 
   test('handles avatar loading errors gracefully', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 5000 });
+    await waitForAppReady(page);
 
     // Wait for avatar creation attempt
     await page.waitForTimeout(3000);

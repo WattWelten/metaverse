@@ -6,7 +6,7 @@ let dracoLoader: DRACOLoader | null = null;
 export function getDracoLoader(): DRACOLoader {
   if (!dracoLoader) {
     dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('/libs/draco/');
+    dracoLoader.setDecoderPath('/draco/');
   }
   return dracoLoader;
 }
@@ -17,6 +17,6 @@ export function useDraco(): DRACOLoader {
 
 export function createDraco(loader: GLTFLoader): void {
   const draco = new DRACOLoader();
-  draco.setDecoderPath('/libs/draco/');
+  draco.setDecoderPath('/draco/');
   loader.setDRACOLoader(draco);
 }

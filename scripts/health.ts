@@ -56,10 +56,22 @@ function checkRendering(): { toneMapping: string; colorSpace: string; physically
   }
 
   const worldContent = readFileSync(worldPath, 'utf-8');
-  const hasACES = worldContent.includes('ACESFilmicToneMapping');
-  const hasSRGB = worldContent.includes("outputColorSpace = 'srgb'");
+
+  // Check for ACES tone mapping
+  const hasACES = /toneMapping\s*=\s*ACESFilmicToneMapping/.test(worldContent);
+
+  // Check for sRGB color space (supports both 'srgb' string and SRGBColorSpace enum)
+  const hasSRGB = /outputColorSpace\s*=\s*(SRGBColorSpace|'srgb'|"srgb")/.test(worldContent);
+
+  // Check for physically correct lights
+  // Look for setPhysicallyCorrectLights call or explicit useLegacyLights = false
   const hasPhysicallyCorrect =
-    worldContent.includes('physicallyCorrectLights') || worldContent.includes('useLegacyLights');
+    /setPhysicallyCorrectLights\s*\(/.test(worldContent) ||
+    /useLegacyLights\s*=\s*false/.test(worldContent) ||
+    /physicallyCorrectLights\s*=\s*true/.test(worldContent);
+
+  // Also check exposure
+  const hasExposure = /toneMappingExposure\s*=\s*1(\.0)?/.test(worldContent);
 
   return {
     toneMapping: hasACES ? 'ACESFilmic' : 'unknown',
@@ -145,6 +157,8 @@ function main(): void {
     docs: checkDocs(),
   };
 
+  // Additional checks - will be used later in report
+
   // Write report
   const reportPath = join(rootDir, 'docs/health-report.md');
   const reportContent = `# Health Report
@@ -201,11 +215,22 @@ ${
   // Check for LOD support in TemplateHost
   const templateHostPath = join(rootDir, 'apps', 'web', 'src', 'TemplateHost.ts');
   let lodSupport = false;
+  let usesCreateGLTFLoader = false;
   if (existsSync(templateHostPath)) {
     const templateHostContent = readFileSync(templateHostPath, 'utf-8');
     lodSupport = templateHostContent.includes('LOD') || templateHostContent.includes('lod');
+    usesCreateGLTFLoader = templateHostContent.includes('createGLTFLoader');
   }
   report.features = { lodSupport };
+
+  // Check for decoder directories
+  const dracoDir = join(rootDir, 'apps', 'web', 'public', 'draco');
+  const ktx2Dir = join(rootDir, 'apps', 'web', 'public', 'ktx2');
+  const decoderDirsExist = existsSync(dracoDir) && existsSync(ktx2Dir);
+
+  // Check for XR adapter
+  const xrAdapterPath = join(rootDir, 'packages', 'xr', 'src', 'createXR.ts');
+  const xrAdapterExists = existsSync(xrAdapterPath);
 
   // Update report content with new sections
   const updatedReportContent =
@@ -221,6 +246,9 @@ ${
 
 ## Features
 - LOD Support: ${lodSupport ? '✅' : '❌'}
+- Uses createGLTFLoader: ${usesCreateGLTFLoader ? '✅' : '❌'}
+- Decoder Directories: ${decoderDirsExist ? '✅' : '❌'}
+- XR Adapter: ${xrAdapterExists ? '✅' : '❌'}
 `;
 
   writeFileSync(reportPath, updatedReportContent, 'utf-8');

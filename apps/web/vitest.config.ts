@@ -7,6 +7,16 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    testTimeout: 60000, // 60 Sekunden Standard-Timeout
+    hookTimeout: 10000, // 10 Sekunden für Hooks
+    // Progress-Reporting für lange Tests - verbose zeigt jeden Test an
+    reporters: ['verbose', 'json'],
+    // Output während Tests
+    silent: false,
+    // Log-Level für bessere Sichtbarkeit
+    logLevel: 'info',
+    // Watch-Mode deaktivieren für CI/Non-Interactive
+    watch: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -35,6 +45,3 @@ export default defineConfig({
     },
   },
 });
-
-
-

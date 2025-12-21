@@ -26,6 +26,7 @@
     "@metaverse/eslint-config": "workspace:*",
     "@metaverse/tsconfig": "workspace:*",
     "@types/howler": "^2.2.11",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
   }
 }

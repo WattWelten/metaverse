@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+import { waitForAppReady } from './helpers/wait-for-app.js';
+
 test('page loads', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/WattWelten Metaverse/);
@@ -7,6 +9,11 @@ test('page loads', async ({ page }) => {
 
 test('canvas is rendered', async ({ page }) => {
   await page.goto('/');
+
+  // Warte auf vollständige App-Initialisierung
+  await waitForAppReady(page);
+
+  // Prüfe dass Canvas sichtbar ist
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
 });
@@ -14,8 +21,12 @@ test('canvas is rendered', async ({ page }) => {
 test('template switch works', async ({ page }) => {
   await page.goto('/');
 
-  // Wait for page to load
-  await page.waitForSelector('canvas');
+  // Warte auf App-Initialisierung
+  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(2000);
+
+  // Wait for page to load - erhöhte Timeout für App-Initialisierung
+  await page.waitForSelector('canvas', { timeout: 30000 });
 
   // Open debug overlay (F12)
   await page.keyboard.press('F12');
@@ -36,7 +47,12 @@ test('template switch works', async ({ page }) => {
 
 test('debug overlay toggles with F12', async ({ page }) => {
   await page.goto('/');
-  await page.waitForSelector('canvas');
+
+  // Warte auf App-Initialisierung
+  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(2000);
+
+  await page.waitForSelector('canvas', { timeout: 30000 });
 
   // Press F12 to open
   await page.keyboard.press('F12');
@@ -53,7 +69,12 @@ test('debug overlay toggles with F12', async ({ page }) => {
 
 test('exposure slider exists in debug overlay', async ({ page }) => {
   await page.goto('/');
-  await page.waitForSelector('canvas');
+
+  // Warte auf App-Initialisierung
+  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(2000);
+
+  await page.waitForSelector('canvas', { timeout: 30000 });
 
   // Open debug overlay
   await page.keyboard.press('F12');

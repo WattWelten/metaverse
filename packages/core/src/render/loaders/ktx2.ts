@@ -7,14 +7,14 @@ let ktx2Loader: KTX2Loader | null = null;
 export function getKTX2Loader(): KTX2Loader {
   if (!ktx2Loader) {
     ktx2Loader = new KTX2Loader();
-    ktx2Loader.setTranscoderPath('/libs/basis/');
+    ktx2Loader.setTranscoderPath('/ktx2/');
   }
   return ktx2Loader;
 }
 
 export function createKTX2(loader: GLTFLoader, renderer: WebGLRenderer): void {
   const ktx2 = new KTX2Loader();
-  ktx2.setTranscoderPath('/libs/basis/');
+  ktx2.setTranscoderPath('/ktx2/');
   ktx2.detectSupport(renderer);
   loader.setKTX2Loader(ktx2);
 }

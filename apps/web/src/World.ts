@@ -4,6 +4,8 @@ import type { TemplateInstance } from '@metaverse/core';
 import { setPhysicallyCorrectLights } from '@metaverse/core';
 import { NetClient } from '@metaverse/net';
 import { VoiceClient } from '@metaverse/voice';
+import type { IXRAdapter } from '@metaverse/xr';
+import { createXRAdapter } from '@metaverse/xr';
 import {
   Scene,
   PerspectiveCamera,
@@ -18,7 +20,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { getFeatureFlags, type FeatureFlags } from './FeatureFlags';
 import { PostProcessing } from './render/Post';
 import { TemplateHost } from './TemplateHost';
-import { XRSetup } from './xr/XRSetup';
 
 export class World {
   private scene: Scene;
@@ -26,7 +27,7 @@ export class World {
   private renderer: WebGLRenderer;
   private controls: OrbitControls;
   private templateHost: TemplateHost;
-  private xrSetup: XRSetup | undefined;
+  private xrAdapter: IXRAdapter | null = null;
   private postProcessing: PostProcessing;
   private clock: Clock;
   private animationFrameId: number | null = null;
@@ -95,10 +96,10 @@ export class World {
     // Set camera reference for LOD calculations
     this.templateHost.setCamera(this.camera);
 
-    // XR Setup
+    // XR Setup - using new adapter pattern
     const flags = getFeatureFlags();
     if (flags.XR_ENABLED) {
-      this.xrSetup = new XRSetup(this.renderer);
+      this.initXR();
     }
 
     // Post Processing
@@ -179,6 +180,36 @@ export class World {
     }
   }
 
+  private async initXR(): Promise<void> {
+    try {
+      const adapter = await createXRAdapter();
+      if (!adapter) {
+        return;
+      }
+
+      // Check if XR is supported
+      if (await adapter.supported()) {
+        await adapter.enable(this.renderer, this.scene, this.camera);
+        this.xrAdapter = adapter;
+
+        // Optional: Adjust exposure when XR starts/ends
+        adapter.onStart?.(() => {
+          // Reduce exposure in VR for better comfort
+          this.renderer.toneMappingExposure = 0.8;
+        });
+
+        adapter.onEnd?.(() => {
+          // Restore normal exposure
+          this.renderer.toneMappingExposure = 1.0;
+        });
+      } else {
+        console.warn('XR is not supported on this device');
+      }
+    } catch (error) {
+      console.error('Failed to initialize XR:', error);
+    }
+  }
+
   async init(): Promise<void> {
     const flags = getFeatureFlags();
 
@@ -194,7 +225,10 @@ export class World {
     // Ambient Audio aus Template laden
     if (this.ambientManager && template) {
       this.ambientManager.loadFromTemplate(template.manifest);
-      this.ambientManager.playAll();
+      // playAll() is async and handles context resume automatically
+      this.ambientManager.playAll().catch((error) => {
+        console.warn('Failed to play ambient audio:', error);
+      });
     }
 
     // Multiplayer verbinden (nach Template-Load)
@@ -453,7 +487,10 @@ export class World {
     if (this.ambientManager && template) {
       this.ambientManager.stopAll();
       this.ambientManager.loadFromTemplate(template.manifest);
-      this.ambientManager.playAll();
+      // playAll() is async and handles context resume automatically
+      this.ambientManager.playAll().catch((error) => {
+        console.warn('Failed to play ambient audio:', error);
+      });
     }
   }
 
@@ -495,8 +532,8 @@ export class World {
 
     this.templateHost.dispose();
     this.postProcessing.dispose();
-    if (this.xrSetup) {
-      this.xrSetup.dispose();
+    if (this.xrAdapter && 'dispose' in this.xrAdapter) {
+      (this.xrAdapter as { dispose: () => void }).dispose();
     }
     this.controls.dispose();
     this.renderer.dispose();

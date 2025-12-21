@@ -24,6 +24,7 @@
     "@metaverse/net": "workspace:*",
     "@metaverse/ai": "workspace:*",
     "@metaverse/content": "workspace:*",
+    "@metaverse/xr": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.170.0"

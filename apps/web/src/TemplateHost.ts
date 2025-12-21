@@ -3,8 +3,8 @@ import {
   type TemplateInstance,
   type TemplateManifest,
   pmremCache,
+  createGLTFLoader,
 } from '@metaverse/core';
-import { useGLTFCache } from '@metaverse/core';
 import {
   Scene,
   Object3D,
@@ -88,7 +88,10 @@ export class TemplateHost {
 
       // Try to load scene.glb, fallback to generated scene
       try {
-        sceneObject = await useGLTFCache(`/templates/${manifest.name}/scene.glb`);
+        // Use createGLTFLoader which handles cache, Draco, and KTX2 automatically
+        const loader = createGLTFLoader(this.renderer || undefined);
+        const gltf = await loader.loadAsync(`/templates/${manifest.name}/scene.glb`);
+        sceneObject = gltf.scene || gltf.scenes?.[0] || new Object3D();
       } catch {
         // Generate a simple default scene
         sceneObject = this.createDefaultScene();
