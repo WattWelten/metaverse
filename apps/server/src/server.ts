@@ -180,6 +180,53 @@ io.on('connection', (socket) => {
     }
   );
 
+  // Chat Messages
+  socket.on(
+    'chat-message',
+    (data: { roomId: string; userId: string; message: string; timestamp: number }) => {
+      const { roomId, userId, message, timestamp } = data;
+      const userInfo = presenceService.getUserInfo(socket.id);
+      if (!userInfo || userInfo.roomId !== roomId) return;
+
+      // Broadcast to all users in room (including sender for consistency)
+      io.to(roomId).emit('chat-message', {
+        userId,
+        message,
+        timestamp,
+      });
+    }
+  );
+
+  // Media Sharing
+  socket.on(
+    'media-share',
+    (data: {
+      roomId: string;
+      userId: string;
+      url: string;
+      type: 'image' | 'video';
+      position: { x: number; y: number; z: number };
+      width?: number;
+      height?: number;
+      timestamp: number;
+    }) => {
+      const { roomId, userId, url, type, position, width, height, timestamp } = data;
+      const userInfo = presenceService.getUserInfo(socket.id);
+      if (!userInfo || userInfo.roomId !== roomId) return;
+
+      // Broadcast to all users in room
+      io.to(roomId).emit('media-share', {
+        userId,
+        url,
+        type,
+        position,
+        width,
+        height,
+        timestamp,
+      });
+    }
+  );
+
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
     const userInfo = presenceService.getUserInfo(socket.id);

@@ -52,4 +52,3 @@ echo "   - VITE_NET_URL=https://realtime.wattwelten.de (after server deployment)
 echo ""
 echo "2. Configure custom domain: mvp.wattwelten.de"
 echo "3. Redeploy after setting VITE_NET_URL"
-

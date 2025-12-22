@@ -67,4 +67,3 @@ echo "Next steps:"
 echo "1. Configure custom domain: realtime.wattwelten.de"
 echo "2. Test health check: curl https://realtime.wattwelten.de/health"
 echo "3. Update VITE_NET_URL in Vercel with the server URL"
-

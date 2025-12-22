@@ -177,6 +177,63 @@ export class NetClient {
     });
   }
 
+  sendChat(message: string): void {
+    if (!this.socket?.connected || !this.config.roomId) {
+      return;
+    }
+
+    this.socket.emit('chat-message', {
+      roomId: this.config.roomId,
+      userId: this.config.userId,
+      message,
+      timestamp: Date.now(),
+    });
+  }
+
+  onChat(callback: (data: { userId: string; message: string; timestamp: number }) => void): void {
+    this.socket?.on(
+      'chat-message',
+      (data: { userId: string; message: string; timestamp: number }) => {
+        callback(data);
+      }
+    );
+  }
+
+  shareMedia(data: {
+    url: string;
+    type: 'image' | 'video';
+    position: { x: number; y: number; z: number };
+    width?: number;
+    height?: number;
+  }): void {
+    if (!this.socket?.connected || !this.config.roomId) {
+      return;
+    }
+
+    this.socket.emit('media-share', {
+      roomId: this.config.roomId,
+      userId: this.config.userId,
+      ...data,
+      timestamp: Date.now(),
+    });
+  }
+
+  onMediaShare(
+    callback: (data: {
+      userId: string;
+      url: string;
+      type: 'image' | 'video';
+      position: { x: number; y: number; z: number };
+      width?: number;
+      height?: number;
+      timestamp: number;
+    }) => void
+  ): void {
+    this.socket?.on('media-share', (data) => {
+      callback(data);
+    });
+  }
+
   isConnected(): boolean {
     return this.connected;
   }

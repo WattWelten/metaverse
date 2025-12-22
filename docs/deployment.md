@@ -189,6 +189,7 @@ Das MVP besteht aus zwei Hauptkomponenten:
    ```
 
 3. **Nginx Reverse Proxy (optional):**
+
    ```nginx
    server {
      listen 443 ssl;

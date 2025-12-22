@@ -1,4 +1,12 @@
-import { ConsentModal, HUD, OverlayHost, RoomUI } from '@metaverse/ui';
+import {
+  ChatUI,
+  ConsentModal,
+  EmoteUI,
+  HUD,
+  MediaUploadUI,
+  OverlayHost,
+  RoomUI,
+} from '@metaverse/ui';
 import { useEffect, useRef, useState } from 'react';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -18,6 +26,12 @@ export function App() {
     return params.get('room') || 'default-room';
   });
   const [isMuted, setIsMuted] = useState(false);
+  const [chatMessages, setChatMessages] = useState<
+    Array<{ userId: string; message: string; timestamp: number }>
+  >([]);
+  const [showChat, setShowChat] = useState(false);
+  const [showMediaUpload, setShowMediaUpload] = useState(false);
+  const [showEmotes, setShowEmotes] = useState(false);
 
   // Debug overlay visibility - enabled in dev mode or if flag is set
   const [showDebug, setShowDebug] = useState(
@@ -42,9 +56,19 @@ export function App() {
     const world = new World(containerRef.current);
     worldRef.current = world;
 
-    world.init().catch((error) => {
-      console.error('Failed to initialize world:', error);
-    });
+    world
+      .init()
+      .then(() => {
+        // Chat message listener (after world is initialized)
+        if (getFeatureFlags().MULTIPLAYER_ENABLED && worldRef.current) {
+          chatCleanup = worldRef.current.onChatMessage((message) => {
+            setChatMessages((prev) => [...prev, message]);
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to initialize world:', error);
+      });
 
     // Performance monitoring
     const updateStats = () => {
@@ -76,7 +100,24 @@ export function App() {
     window.addEventListener('click', handleFirstInteraction, { once: true });
     window.addEventListener('keydown', handleFirstInteraction, { once: true });
 
+    let chatCleanup: (() => void) | undefined;
+
+    // Setup chat listener after world init
+    world
+      .init()
+      .then(() => {
+        if (getFeatureFlags().MULTIPLAYER_ENABLED && worldRef.current) {
+          chatCleanup = worldRef.current.onChatMessage((message) => {
+            setChatMessages((prev) => [...prev, message]);
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to initialize world:', error);
+      });
+
     return () => {
+      chatCleanup?.();
       world.dispose();
       window.removeEventListener('pointerdown', handleFirstInteraction);
       window.removeEventListener('click', handleFirstInteraction);
@@ -161,6 +202,27 @@ export function App() {
     }
   };
 
+  const handleSendChatMessage = (message: string) => {
+    const world = worldRef.current;
+    if (world) {
+      world.sendChatMessage(message);
+    }
+  };
+
+  const handleMediaUpload = (url: string, type: 'image' | 'video') => {
+    const world = worldRef.current;
+    if (world) {
+      world.shareMedia(url, type);
+    }
+  };
+
+  const handleEmote = (emote: string) => {
+    const world = worldRef.current;
+    if (world) {
+      world.setAvatarAnimation(emote);
+    }
+  };
+
   return (
     <ErrorBoundary>
       <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -177,6 +239,27 @@ export function App() {
           />
         )}
         <OverlayHost templateId={templateId} onAction={handleOverlayAction} />
+        {getFeatureFlags().MULTIPLAYER_ENABLED && (
+          <>
+            <ChatUI
+              messages={chatMessages}
+              onSendMessage={handleSendChatMessage}
+              currentUserId={worldRef.current?.getUserId()}
+              visible={showChat}
+              onToggle={() => setShowChat(!showChat)}
+            />
+            <MediaUploadUI
+              onUpload={handleMediaUpload}
+              visible={showMediaUpload}
+              onToggle={() => setShowMediaUpload(!showMediaUpload)}
+            />
+            <EmoteUI
+              onEmote={handleEmote}
+              visible={showEmotes}
+              onToggle={() => setShowEmotes(!showEmotes)}
+            />
+          </>
+        )}
         <ConsentModal
           visible={showConsentModal}
           onAccept={() => handleVoiceConsent(true)}

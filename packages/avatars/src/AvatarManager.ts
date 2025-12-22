@@ -11,6 +11,10 @@ import {
   CanvasTexture,
   Group,
   Vector3,
+  AnimationMixer,
+  AnimationAction,
+  AnimationClip,
+  LoopRepeat,
 } from 'three';
 
 import { loadReadyPlayerMeAvatar } from './loaders/rpm.js';
@@ -26,6 +30,10 @@ export interface Avatar {
   targetPosition?: { x: number; y: number; z: number };
   targetRotation?: { x: number; y: number; z: number };
   lastUpdateTime?: number;
+  // Animation state
+  animationMixer?: AnimationMixer;
+  animationActions?: Map<string, AnimationAction>;
+  currentAnimationAction?: AnimationAction;
 }
 
 export class AvatarManager {
@@ -65,12 +73,44 @@ export class AvatarManager {
     try {
       const avatarObject = await loadReadyPlayerMeAvatar(avatarUrl);
 
+      // Setup animation mixer if GLTF has animations
+      let animationMixer: AnimationMixer | undefined;
+      let animationActions = new Map<string, AnimationAction>();
+
+      // Try to load with animations
+      try {
+        const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+        const loader = new GLTFLoader();
+        const gltf = await loader.loadAsync(avatarUrl);
+
+        if (gltf.animations && gltf.animations.length > 0) {
+          animationMixer = new AnimationMixer(avatarObject);
+          gltf.animations.forEach((clip: AnimationClip) => {
+            // clipAction signature: clipAction(clip, optionalRoot)
+            // Use type assertion to handle Three.js version differences
+            const action = (animationMixer as any).clipAction(
+              clip,
+              avatarObject
+            ) as AnimationAction;
+            if (action) {
+              // setLoop signature: setLoop(mode: AnimationActionLoopStyles, repetitions?: number)
+              (action as any).setLoop(LoopRepeat, Infinity);
+              animationActions.set(clip.name, action);
+            }
+          });
+        }
+      } catch {
+        // No animations available - continue without animations
+      }
+
       const avatar: Avatar = {
         id: `avatar-${userId}`,
         userId,
         object: avatarObject,
         position: position || { x: 0, y: 0, z: 0 },
         rotation: { x: 0, y: 0, z: 0 },
+        animationMixer,
+        animationActions,
       };
 
       this.scene.add(avatar.object);
@@ -254,7 +294,12 @@ export class AvatarManager {
 
     avatar.position = { ...position };
     avatar.rotation = { ...rotation };
-    avatar.animation = animation;
+
+    // Update animation if changed
+    if (animation && animation !== avatar.animation) {
+      this.playAnimation(avatar, animation);
+      avatar.animation = animation;
+    }
 
     avatar.object.position.set(position.x, position.y, position.z);
     avatar.object.rotation.set(rotation.x, rotation.y, rotation.z);
@@ -267,6 +312,52 @@ export class AvatarManager {
         animation
       );
     }
+  }
+
+  private playAnimation(avatar: Avatar, animationName: string): void {
+    if (!avatar.animationMixer || !avatar.animationActions) return;
+
+    // Stop current animation
+    if (avatar.currentAnimationAction) {
+      avatar.currentAnimationAction.fadeOut(0.2);
+    }
+
+    // Map animation names to clip names
+    const animationMap: Record<string, string> = {
+      idle: 'Idle',
+      walk: 'Walking',
+      wave: 'Wave',
+      dance: 'Dance',
+      sit: 'Sitting',
+      jump: 'Jump',
+      clap: 'Clap',
+      thumbsup: 'ThumbsUp',
+    };
+
+    const clipName = animationMap[animationName] || animationName;
+    const action = avatar.animationActions.get(clipName);
+
+    if (action) {
+      action.reset().fadeIn(0.2).play();
+      avatar.currentAnimationAction = action;
+    } else {
+      // Fallback: try to find any animation that contains the name
+      for (const [name, action] of avatar.animationActions.entries()) {
+        if (name.toLowerCase().includes(animationName.toLowerCase())) {
+          action.reset().fadeIn(0.2).play();
+          avatar.currentAnimationAction = action;
+          break;
+        }
+      }
+    }
+  }
+
+  updateAnimations(delta: number): void {
+    this.avatars.forEach((avatar) => {
+      if (avatar.animationMixer) {
+        avatar.animationMixer.update(delta);
+      }
+    });
   }
 
   private updateRemoteAvatar(
