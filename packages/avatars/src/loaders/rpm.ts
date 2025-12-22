@@ -1,6 +1,6 @@
 import { Object3D } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 /**
  * Ready Player Me Avatar Loader
@@ -17,11 +17,11 @@ export async function loadReadyPlayerMeAvatar(avatarUrl: string): Promise<Object
       avatarUrl,
       (gltf: { scene: Object3D }) => {
         const avatar = gltf.scene;
-        
+
         // Scale and position adjustments for Ready Player Me avatars
         avatar.scale.set(1, 1, 1);
         avatar.position.set(0, 0, 0);
-        
+
         // Enable shadows
         avatar.traverse((child: Object3D) => {
           if (child.type === 'Mesh') {
@@ -55,4 +55,3 @@ export function getReadyPlayerMeUrl(userIdOrUrl: string, _apiKey?: string): stri
   const baseUrl = 'https://models.readyplayer.me';
   return `${baseUrl}/${userIdOrUrl}.glb`;
 }
-

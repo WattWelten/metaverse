@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { NetClient } from '../NetClient.js';
 
 // Mock socket.io-client
@@ -65,13 +66,8 @@ describe('NetClient', () => {
 
   it('should update avatar state', () => {
     netClient.connect();
-    netClient.updateAvatar(
-      { x: 1, y: 2, z: 3 },
-      { x: 0, y: 0, z: 0 },
-      'idle'
-    );
+    netClient.updateAvatar({ x: 1, y: 2, z: 3 }, { x: 0, y: 0, z: 0 }, 'idle');
     // Update is async, so we just verify no errors
     expect(netClient).toBeDefined();
   });
 });
-

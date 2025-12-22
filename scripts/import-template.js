@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, statSync, readdirSync } from 'fs';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  copyFileSync,
+  existsSync,
+  statSync,
+  readdirSync,
+} from 'fs';
 import { join, dirname, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { createReadStream, createWriteStream } from 'fs';
@@ -62,7 +70,7 @@ async function importTemplate(sourcePath) {
 
     // Validiere manifest.json
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    validateManifest(manifest);
+    validateManifest(manifest, sourcePath);
 
     // Erstelle Template-Verzeichnis
     const targetDir = join(templatesDir, templateName);
@@ -110,7 +118,7 @@ function findManifest(dir) {
   return null;
 }
 
-function validateManifest(manifest) {
+function validateManifest(manifest, sourceDir) {
   const required = ['name', 'version'];
   for (const field of required) {
     if (!manifest[field]) {
@@ -124,6 +132,29 @@ function validateManifest(manifest) {
 
   if (typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+/.test(manifest.version)) {
     throw new Error('manifest.version must be a valid semver string');
+  }
+
+  // Validate referenced assets (optional, warnings only)
+  if (manifest.assets) {
+    if (manifest.assets.scene && !existsSync(join(sourceDir, manifest.assets.scene))) {
+      console.warn(`⚠️  Referenced scene asset not found: ${manifest.assets.scene}`);
+    }
+    if (manifest.assets.hdri && !existsSync(join(sourceDir, manifest.assets.hdri))) {
+      console.warn(`⚠️  Referenced HDRI asset not found: ${manifest.assets.hdri}`);
+    }
+  }
+
+  if (manifest.lighting?.hdri && !existsSync(join(sourceDir, manifest.lighting.hdri))) {
+    console.warn(`⚠️  Referenced HDRI in lighting not found: ${manifest.lighting.hdri}`);
+  }
+
+  // Validate ambient audio sources
+  if (manifest.ambient?.sources) {
+    for (const source of manifest.ambient.sources) {
+      if (source.file && !existsSync(join(sourceDir, source.file))) {
+        console.warn(`⚠️  Referenced ambient audio not found: ${source.file}`);
+      }
+    }
   }
 }
 
@@ -209,4 +240,3 @@ importTemplate(sourcePath).catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);
 });
-

@@ -1,19 +1,39 @@
 import type { Scene, Object3D } from 'three';
-import type { ThemeTokens } from '../theme/ThemeTokens.js';
+
 import type { LightingPreset } from '../lighting/Preset.js';
+import type { ThemeTokens } from '../theme/ThemeTokens.js';
 
 export interface TemplateManifest {
+  id?: string;
   name: string;
   version: string;
   routes?: string[];
-  spawn?: {
-    x: number;
-    y: number;
-    z: number;
+  spawn?:
+    | {
+        x: number;
+        y: number;
+        z: number;
+      }
+    | [number, number, number]
+    | {
+        position: [number, number, number];
+        rotationY?: number;
+      };
+  lighting?: LightingPreset & {
+    exposure?: number;
+    hdri?: string;
   };
-  lighting?: LightingPreset;
   skybox?: string;
   uiSkin?: string;
+  assets?: {
+    scene?: string;
+    hdri?: string;
+  };
+  portals?: Array<{
+    id: string;
+    position: { x: number; y: number; z: number };
+    target?: string;
+  }>;
   ambient?: {
     sources: Array<{
       id: string;
@@ -105,6 +125,3 @@ class TemplateRegistry {
 }
 
 export const templateRegistry = new TemplateRegistry();
-
-
-

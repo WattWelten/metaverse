@@ -1,5 +1,5 @@
-import { AudioGraph } from '../positional/AudioGraph.js';
 import { AudioEffects } from '../effects/AudioEffects.js';
+import { AudioGraph } from '../positional/AudioGraph.js';
 
 export class SpatialAudioManager {
   private audioGraph: AudioGraph;
@@ -40,7 +40,11 @@ export class SpatialAudioManager {
     }
   }
 
-  addSpeaker(userId: string, stream: MediaStream, position: { x: number; y: number; z: number }): void {
+  addSpeaker(
+    userId: string,
+    stream: MediaStream,
+    position: { x: number; y: number; z: number }
+  ): void {
     this.speakerPositions.set(userId, { ...position });
     if (this.enabled) {
       this.audioGraph.addSource(userId, stream, {
@@ -67,4 +71,3 @@ export class SpatialAudioManager {
     this.audioEffects.dispose();
   }
 }
-

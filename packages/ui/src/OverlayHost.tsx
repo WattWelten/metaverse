@@ -23,8 +23,9 @@ export function OverlayHost({ templateId, onAction }: OverlayHostProps) {
     // Template-HTML laden
     loadTemplateOverlay(templateId, shadowRoot, onAction)
       .then(() => setLoaded(true))
-      .catch((error) => {
-        console.error('Failed to load template overlay:', error);
+      .catch(() => {
+        // Silently handle template overlay errors - fallback is loaded
+        // Errors are expected when template partials don't exist
         loadFallbackOverlay(shadowRoot);
         setLoaded(true);
       });
@@ -64,6 +65,13 @@ async function loadTemplateOverlay(
     if (!manifestResponse.ok) {
       throw new Error(`Failed to load manifest: ${manifestResponse.statusText}`);
     }
+
+    // Check Content-Type before parsing JSON
+    const contentType = manifestResponse.headers.get('content-type');
+    if (contentType && !contentType.includes('application/json')) {
+      throw new Error(`Expected JSON but got ${contentType}`);
+    }
+
     const manifest = await manifestResponse.json();
 
     // UI-Skin CSS laden
@@ -82,12 +90,24 @@ async function loadTemplateOverlay(
     try {
       const htmlResponse = await fetch(`/templates/${templateId}/partials/main.html`);
       if (htmlResponse.ok) {
-        htmlText = await htmlResponse.text();
+        const htmlContentType = htmlResponse.headers.get('content-type');
+        // Only use response if it's actually HTML, not a 404 page
+        if (htmlContentType && htmlContentType.includes('text/html')) {
+          htmlText = await htmlResponse.text();
+          // Check if response is actually HTML (not a 404 page)
+          if (htmlText.trim().startsWith('<!DOCTYPE') && htmlText.includes('404')) {
+            // This is a 404 page, use fallback
+            htmlText = generateMinimalHTML(manifest);
+          }
+        } else {
+          htmlText = generateMinimalHTML(manifest);
+        }
       } else {
         // Fallback: Generiere minimales HTML
         htmlText = generateMinimalHTML(manifest);
       }
-    } catch {
+    } catch (error) {
+      // Silently fallback to minimal HTML
       htmlText = generateMinimalHTML(manifest);
     }
 
@@ -108,17 +128,23 @@ async function loadTemplateOverlay(
         e.preventDefault();
         const action = (e.target as HTMLElement).dataset.action;
         const payload = (e.target as HTMLElement).dataset.payload;
-        onAction?.({
-          type: action || 'unknown',
-          payload: payload ? JSON.parse(payload) : undefined,
-        });
+        try {
+          onAction?.({
+            type: action || 'unknown',
+            payload: payload ? JSON.parse(payload) : undefined,
+          });
+        } catch (parseError) {
+          // Silently handle JSON parse errors
+          console.warn('Failed to parse action payload:', parseError);
+        }
       });
     });
 
     // Focus-Trap für Accessibility
     setupFocusTrap(shadowRoot);
   } catch (error) {
-    console.error('Failed to load template overlay:', error);
+    // Don't log as error - this is expected when partials don't exist
+    // Fallback will be handled by caller
     throw error;
   }
 }
@@ -205,4 +231,3 @@ function setupFocusTrap(shadowRoot: ShadowRoot): void {
     }
   });
 }
-

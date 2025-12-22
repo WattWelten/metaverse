@@ -1,4 +1,5 @@
 import { Howl } from 'howler';
+
 import type { AudioMixer } from '../mixer/AudioMixer.js';
 
 export interface AmbientSourceConfig {
@@ -37,11 +38,7 @@ export class AmbientSource {
 
     // If position is provided, use 3D audio
     if (this.config.position) {
-      this.howl.pos(
-        this.config.position.x,
-        this.config.position.y,
-        this.config.position.z
-      );
+      this.howl.pos(this.config.position.x, this.config.position.y, this.config.position.z);
       this.howl.pannerAttr({
         panningModel: 'HRTF',
         distanceModel: 'inverse',
@@ -105,7 +102,7 @@ export class AmbientSource {
 
     const currentVolume = this.howl.volume();
     this.howl.fade(currentVolume, 0, duration);
-    
+
     setTimeout(() => {
       this.stop();
     }, duration);
@@ -129,4 +126,3 @@ export class AmbientSource {
     return this.isPlaying;
   }
 }
-

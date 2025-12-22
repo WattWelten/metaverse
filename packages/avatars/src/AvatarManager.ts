@@ -1,18 +1,19 @@
-import { 
-  Object3D, 
-  Scene, 
-  Mesh, 
-  CylinderGeometry, 
-  SphereGeometry, 
+import type { NetClientForAvatarManager } from '@metaverse/net';
+import {
+  Object3D,
+  Scene,
+  Mesh,
+  CylinderGeometry,
+  SphereGeometry,
   MeshStandardMaterial,
   Sprite,
   SpriteMaterial,
   CanvasTexture,
   Group,
-  Vector3
+  Vector3,
 } from 'three';
+
 import { loadReadyPlayerMeAvatar } from './loaders/rpm.js';
-import type { NetClientForAvatarManager } from '@metaverse/net';
 
 export interface Avatar {
   id: string;
@@ -38,24 +39,32 @@ export class AvatarManager {
 
   setNetClient(netClient: NetClientForAvatarManager): void {
     this.netClient = netClient;
-    
+
     // Listen to avatar updates from network
     if (netClient) {
-      netClient.getReplicator().onAvatarUpdate((update: {
-        userId: string;
-        position: { x: number; y: number; z: number };
-        rotation: { x: number; y: number; z: number };
-        animation?: string;
-      }) => {
-        this.updateRemoteAvatar(update.userId, update);
-      });
+      netClient
+        .getReplicator()
+        .onAvatarUpdate(
+          (update: {
+            userId: string;
+            position: { x: number; y: number; z: number };
+            rotation: { x: number; y: number; z: number };
+            animation?: string;
+          }) => {
+            this.updateRemoteAvatar(update.userId, update);
+          }
+        );
     }
   }
 
-  async loadAvatar(userId: string, avatarUrl: string, position?: { x: number; y: number; z: number }): Promise<Avatar> {
+  async loadAvatar(
+    userId: string,
+    avatarUrl: string,
+    position?: { x: number; y: number; z: number }
+  ): Promise<Avatar> {
     try {
       const avatarObject = await loadReadyPlayerMeAvatar(avatarUrl);
-      
+
       const avatar: Avatar = {
         id: `avatar-${userId}`,
         userId,
@@ -77,14 +86,14 @@ export class AvatarManager {
 
   createCapsuleAvatar(userId: string, position?: { x: number; y: number; z: number }): Avatar {
     const group = new Group();
-    
+
     // Kapsel-Geometrie (Cylinder + 2 Halbkugeln)
     const radius = 0.3;
     const height = 1.2;
-    
+
     // Körper (Cylinder)
     const bodyGeometry = new CylinderGeometry(radius, radius, height, 16);
-    const bodyMaterial = new MeshStandardMaterial({ 
+    const bodyMaterial = new MeshStandardMaterial({
       color: this.getColorForUserId(userId),
       metalness: 0.3,
       roughness: 0.7,
@@ -97,7 +106,7 @@ export class AvatarManager {
 
     // Kopf (Kugel)
     const headGeometry = new SphereGeometry(radius * 0.8, 16, 16);
-    const headMaterial = new MeshStandardMaterial({ 
+    const headMaterial = new MeshStandardMaterial({
       color: 0xffdbac, // Hautfarbe
       metalness: 0.1,
       roughness: 0.9,
@@ -137,36 +146,62 @@ export class AvatarManager {
     for (let i = 0; i < userId.length; i++) {
       hash = userId.charCodeAt(i) + ((hash << 5) - hash);
     }
-    
+
     // Konvertiere zu Hex-Farbe (hellere Töne)
     const hue = Math.abs(hash) % 360;
     const saturation = 60 + (Math.abs(hash) % 20); // 60-80%
     const lightness = 50 + (Math.abs(hash) % 20); // 50-70%
-    
+
     // HSL zu RGB (vereinfacht)
     const c = (1 - Math.abs(2 * (lightness / 100) - 1)) * (saturation / 100);
     const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
-    const m = (lightness / 100) - c / 2;
-    
-    let r = 0, g = 0, b = 0;
-    if (hue < 60) { r = c; g = x; b = 0; }
-    else if (hue < 120) { r = x; g = c; b = 0; }
-    else if (hue < 180) { r = 0; g = c; b = x; }
-    else if (hue < 240) { r = 0; g = x; b = c; }
-    else if (hue < 300) { r = x; g = 0; b = c; }
-    else { r = c; g = 0; b = x; }
-    
-    return ((Math.round((r + m) * 255) << 16) | 
-            (Math.round((g + m) * 255) << 8) | 
-            Math.round((b + m) * 255));
+    const m = lightness / 100 - c / 2;
+
+    let r = 0,
+      g = 0,
+      b = 0;
+    if (hue < 60) {
+      r = c;
+      g = x;
+      b = 0;
+    } else if (hue < 120) {
+      r = x;
+      g = c;
+      b = 0;
+    } else if (hue < 180) {
+      r = 0;
+      g = c;
+      b = x;
+    } else if (hue < 240) {
+      r = 0;
+      g = x;
+      b = c;
+    } else if (hue < 300) {
+      r = x;
+      g = 0;
+      b = c;
+    } else {
+      r = c;
+      g = 0;
+      b = x;
+    }
+
+    return (
+      (Math.round((r + m) * 255) << 16) |
+      (Math.round((g + m) * 255) << 8) |
+      Math.round((b + m) * 255)
+    );
   }
 
   private createNameTag(name: string): Sprite {
     const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Failed to get 2D context from canvas');
+    }
     canvas.width = 512;
     canvas.height = 128;
-    
+
     // Hintergrund mit abgerundeten Ecken
     context.fillStyle = 'rgba(0, 0, 0, 0.75)';
     context.beginPath();
@@ -178,37 +213,42 @@ export class AvatarManager {
       context.rect(10, 10, canvas.width - 20, canvas.height - 20);
     }
     context.fill();
-    
+
     // Border
     context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
     context.lineWidth = 2;
     context.stroke();
-    
+
     // Text
     context.fillStyle = '#ffffff';
     context.font = 'bold 32px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    
+
     // Kürze Namen wenn zu lang
     const displayName = name.length > 15 ? name.substring(0, 12) + '...' : name;
     context.fillText(displayName, canvas.width / 2, canvas.height / 2);
-    
+
     const texture = new CanvasTexture(canvas);
     texture.needsUpdate = true;
-    
-    const spriteMaterial = new SpriteMaterial({ 
+
+    const spriteMaterial = new SpriteMaterial({
       map: texture,
       transparent: true,
       alphaTest: 0.1,
     });
     const sprite = new Sprite(spriteMaterial);
     sprite.scale.set(2, 0.5, 1);
-    
+
     return sprite;
   }
 
-  updateAvatar(userId: string, position: { x: number; y: number; z: number }, rotation: { x: number; y: number; z: number }, animation?: string): void {
+  updateAvatar(
+    userId: string,
+    position: { x: number; y: number; z: number },
+    rotation: { x: number; y: number; z: number },
+    animation?: string
+  ): void {
     const avatar = this.avatars.get(userId);
     if (!avatar) return;
 
@@ -229,13 +269,16 @@ export class AvatarManager {
     }
   }
 
-  private updateRemoteAvatar(userId: string, update: {
-    position: { x: number; y: number; z: number };
-    rotation: { x: number; y: number; z: number };
-    animation?: string;
-  }): void {
+  private updateRemoteAvatar(
+    userId: string,
+    update: {
+      position: { x: number; y: number; z: number };
+      rotation: { x: number; y: number; z: number };
+      animation?: string;
+    }
+  ): void {
     let avatar = this.avatars.get(userId);
-    
+
     // Erstelle Avatar falls nicht vorhanden (für neue Spieler)
     if (!avatar) {
       avatar = this.createCapsuleAvatar(userId, update.position);
@@ -248,29 +291,29 @@ export class AvatarManager {
     avatar.lastUpdateTime = Date.now();
   }
 
-  updateInterpolation(delta: number): void {
-    const interpolationSpeed = 10; // Lerp-Faktor
-    
+  updateInterpolation(_delta: number): void {
+    const interpolationSpeed = 0.2; // Lerp-Faktor (0.1-0.3 für smooth movement)
+
     this.avatars.forEach((avatar) => {
       if (!avatar.targetPosition || !avatar.targetRotation) return;
-      
+
       // Interpoliere Position
       const currentPos = avatar.object.position;
       const targetPos = avatar.targetPosition;
-      
+
       currentPos.lerp(
         new Vector3(targetPos.x, targetPos.y, targetPos.z),
-        Math.min(1, delta * interpolationSpeed)
+        Math.min(1, interpolationSpeed)
       );
-      
+
       // Interpoliere Rotation
       const currentRot = avatar.object.rotation;
       const targetRot = avatar.targetRotation;
-      
-      currentRot.x = this.lerpAngle(currentRot.x, targetRot.x, Math.min(1, delta * interpolationSpeed));
-      currentRot.y = this.lerpAngle(currentRot.y, targetRot.y, Math.min(1, delta * interpolationSpeed));
-      currentRot.z = this.lerpAngle(currentRot.z, targetRot.z, Math.min(1, delta * interpolationSpeed));
-      
+
+      currentRot.x = this.lerpAngle(currentRot.x, targetRot.x, Math.min(1, interpolationSpeed));
+      currentRot.y = this.lerpAngle(currentRot.y, targetRot.y, Math.min(1, interpolationSpeed));
+      currentRot.z = this.lerpAngle(currentRot.z, targetRot.z, Math.min(1, interpolationSpeed));
+
       // Update Avatar-Position für Konsistenz
       avatar.position = {
         x: currentPos.x,
@@ -313,7 +356,7 @@ export class AvatarManager {
           }
         }
       });
-      
+
       this.scene.remove(avatar.object);
       this.avatars.delete(userId);
     }
@@ -327,4 +370,3 @@ export class AvatarManager {
     return Array.from(this.avatars.values());
   }
 }
-

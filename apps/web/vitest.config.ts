@@ -7,6 +7,21 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    testTimeout: 60000, // 60 Sekunden Standard-Timeout
+    hookTimeout: 10000, // 10 Sekunden für Hooks
+    // Test-Dateien finden
+    include: [
+      'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      'src/__tests__/**/*.{ts,tsx}',
+    ],
+    // Progress-Reporting für lange Tests
+    reporters: ['verbose'],
+    // Output während Tests
+    silent: false,
+    // Log-Level für bessere Sichtbarkeit
+    logLevel: 'info',
+    // Watch-Mode deaktivieren für CI/Non-Interactive
+    watch: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -33,8 +48,6 @@ export default defineConfig({
       '@content': resolve(__dirname, '../../packages/content/src'),
       '@assets': resolve(__dirname, '../../packages/assets'),
     },
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
   },
 });
-
-
-

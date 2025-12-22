@@ -1,5 +1,5 @@
-import { Reconnector } from './ws/Reconnector.js';
 import { ToolApi } from './tools/ToolApi.js';
+import { Reconnector } from './ws/Reconnector.js';
 
 export interface AgentBridgeConfig {
   baseUrl: string;
@@ -153,7 +153,10 @@ export class AgentBridge {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
     }
-    this.eventHandlers.get(event)!.add(callback);
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      handlers.add(callback);
+    }
 
     return () => {
       this.eventHandlers.get(event)?.delete(callback);
@@ -188,4 +191,3 @@ export class AgentBridge {
     return bridge;
   }
 }
-

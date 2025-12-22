@@ -1,5 +1,5 @@
-import Peer from 'simple-peer';
 import type { NetClientForVoice } from '@metaverse/net';
+import Peer from 'simple-peer';
 
 export interface WebRTCAdapterConfig {
   userId: string;
@@ -39,28 +39,31 @@ export class WebRTCAdapter {
 
       // Empfange Signalisierungs-Daten vom Server
       const onWebRTCSignal = async (data: unknown) => {
-        const signalData = data as { 
-          from: string; 
-          to: string; 
+        const signalData = data as {
+          from: string;
+          to: string;
           signal: Peer.SignalData;
           type: 'offer' | 'answer' | 'candidate';
         };
-        
+
         // Nur Signale für diesen User verarbeiten
         if (signalData.to !== this.config.userId) return;
-        
+
         let peer = this.peers.get(signalData.from);
-        
+
         if (!peer && signalData.type === 'offer') {
           // Neuer Peer für eingehendes Offer - erstelle synchron
           try {
             peer = await this.createPeer(signalData.from, false);
           } catch (error) {
-            console.error(`Failed to create peer for incoming offer from ${signalData.from}:`, error);
+            console.error(
+              `Failed to create peer for incoming offer from ${signalData.from}:`,
+              error
+            );
             return;
           }
         }
-        
+
         if (peer) {
           peer.signal(signalData.signal);
         }
@@ -68,7 +71,7 @@ export class WebRTCAdapter {
 
       this.netClient.on('user-joined', onUserJoined);
       this.netClient.on('webrtc-signal', onWebRTCSignal);
-      
+
       // Cleanup-Funktionen speichern
       this.eventCleanups.push(
         () => this.netClient?.off?.('user-joined', onUserJoined),
@@ -136,18 +139,18 @@ export class WebRTCAdapter {
 
   disconnect(): void {
     // Cleanup event listeners
-    this.eventCleanups.forEach(cleanup => cleanup());
+    this.eventCleanups.forEach((cleanup) => cleanup());
     this.eventCleanups = [];
-    
+
     // Destroy all peers
     this.peers.forEach((peer) => {
       peer.destroy();
     });
     this.peers.clear();
-    
+
     // Stop local stream tracks
     if (this.localStream) {
-      this.localStream.getTracks().forEach(track => {
+      this.localStream.getTracks().forEach((track) => {
         track.stop();
       });
       this.localStream = null;
@@ -158,4 +161,3 @@ export class WebRTCAdapter {
     return this.peers;
   }
 }
-

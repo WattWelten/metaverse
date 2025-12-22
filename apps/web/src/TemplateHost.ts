@@ -1,18 +1,22 @@
-import { 
-  Scene, 
-  Object3D, 
-  Mesh, 
-  BoxGeometry, 
+import {
+  templateRegistry,
+  type TemplateInstance,
+  type TemplateManifest,
+  pmremCache,
+  createGLTFLoader,
+} from '@metaverse/core';
+import {
+  Scene,
+  Object3D,
+  Mesh,
+  BoxGeometry,
   MeshStandardMaterial,
   AmbientLight,
   DirectionalLight,
   Color,
-  PMREMGenerator,
   WebGLRenderer,
 } from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
-import { templateRegistry, type TemplateInstance, type TemplateManifest } from '@metaverse/core';
-import { useGLTFCache } from '@metaverse/core';
 
 export class TemplateHost {
   private scene: Scene;
@@ -20,6 +24,13 @@ export class TemplateHost {
   private renderer: WebGLRenderer | null = null;
   private lights: Object3D[] = [];
   private loadingAbortController: AbortController | null = null;
+  private lodObjects: Map<
+    Object3D,
+    { lod0: Object3D | null; lod1: Object3D | null; lod2: Object3D | null }
+  > = new Map();
+  private lastLodCheck = 0;
+  private readonly LOD_CHECK_INTERVAL = 250; // ms
+  private camera: { position: { x: number; y: number; z: number } } | null = null;
 
   constructor(scene: Scene, renderer?: WebGLRenderer) {
     this.scene = scene;
@@ -31,10 +42,10 @@ export class TemplateHost {
     if (this.loadingAbortController) {
       this.loadingAbortController.abort();
     }
-    
+
     this.loadingAbortController = new AbortController();
     const signal = this.loadingAbortController.signal;
-    
+
     try {
       // Register default template loader if not already registered
       if (!templateRegistry.getCurrentInstance()) {
@@ -47,14 +58,14 @@ export class TemplateHost {
       }
 
       const instance = await templateRegistry.load(templateId, this.scene);
-      
+
       // Check if aborted after loading
       if (signal.aborted) {
         // Cleanup the loaded instance
         instance.unmount();
         return;
       }
-      
+
       this.currentTemplate = instance;
       this.loadingAbortController = null;
     } catch (error) {
@@ -62,7 +73,7 @@ export class TemplateHost {
       if (signal.aborted) {
         return;
       }
-      
+
       console.error(`Failed to load template "${templateId}":`, error);
       // Fallback to default
       if (templateId !== 'watt-default') {
@@ -77,11 +88,17 @@ export class TemplateHost {
 
       // Try to load scene.glb, fallback to generated scene
       try {
-        sceneObject = await useGLTFCache(`/templates/${manifest.name}/scene.glb`);
+        // Use createGLTFLoader which handles cache, Draco, and KTX2 automatically
+        const loader = createGLTFLoader(this.renderer || undefined);
+        const gltf = await loader.loadAsync(`/templates/${manifest.name}/scene.glb`);
+        sceneObject = gltf.scene || gltf.scenes?.[0] || new Object3D();
       } catch {
         // Generate a simple default scene
         sceneObject = this.createDefaultScene();
       }
+
+      // Detect and organize LOD nodes
+      const lodMap = this.detectLODNodes(sceneObject);
 
       return {
         manifest,
@@ -89,6 +106,8 @@ export class TemplateHost {
         mount: async (scene: Scene) => {
           if (sceneObject) {
             scene.add(sceneObject);
+            // Initialize LOD visibility
+            this.initializeLOD(lodMap);
           }
           // Apply lighting from manifest
           await this.applyLighting(manifest);
@@ -96,6 +115,8 @@ export class TemplateHost {
         unmount: () => {
           if (sceneObject) {
             this.scene.remove(sceneObject);
+            // Cleanup LOD tracking
+            lodMap.forEach((_lod, obj) => this.lodObjects.delete(obj));
           }
           // Remove lighting
           this.removeLighting();
@@ -125,11 +146,7 @@ export class TemplateHost {
         color: Math.random() * 0xffffff,
       });
       const cube = new Mesh(geometry, material);
-      cube.position.set(
-        (Math.random() - 0.5) * 10,
-        0.5,
-        (Math.random() - 0.5) * 10
-      );
+      cube.position.set((Math.random() - 0.5) * 10, 0.5, (Math.random() - 0.5) * 10);
       cube.castShadow = true;
       group.add(cube);
     }
@@ -143,6 +160,12 @@ export class TemplateHost {
 
   update(_delta: number): void {
     // Update template animations, etc.
+    // LOD switching (throttled)
+    const now = Date.now();
+    if (now - this.lastLodCheck >= this.LOD_CHECK_INTERVAL && this.camera) {
+      this.updateLOD();
+      this.lastLodCheck = now;
+    }
   }
 
   private async applyLighting(manifest: TemplateManifest): Promise<void> {
@@ -155,22 +178,27 @@ export class TemplateHost {
     const hdriPath = manifest.lighting?.hdri;
     if (hdriPath && typeof hdriPath === 'string' && this.renderer) {
       try {
-        const pmremGenerator = new PMREMGenerator(this.renderer);
-        pmremGenerator.compileEquirectangularShader();
-        
-        const rgbeLoader = new RGBELoader();
-        const hdri = await new Promise<unknown>((resolve, reject) => {
-          rgbeLoader.load(hdriPath, resolve, undefined, reject);
-        });
-        
-        // Type assertion für HDRI-Texture (RGBELoader gibt DataTexture zurück)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const envMap = pmremGenerator.fromEquirectangular(hdri as any).texture;
+        // Prüfe Cache zuerst
+        let envMap = pmremCache.getCached(hdriPath);
+
+        if (!envMap) {
+          const pmremGenerator = pmremCache.getGenerator(this.renderer);
+
+          const rgbeLoader = new RGBELoader();
+          const hdri = await new Promise<unknown>((resolve, reject) => {
+            rgbeLoader.load(hdriPath, resolve, undefined, reject);
+          });
+
+          // Type assertion für HDRI-Texture (RGBELoader gibt DataTexture zurück)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          envMap = pmremGenerator.fromEquirectangular(hdri as any).texture;
+          pmremCache.setCached(hdriPath, envMap);
+        }
+
         this.scene.environment = envMap;
         this.scene.background = envMap;
-        pmremGenerator.dispose();
-      } catch (error) {
-        console.warn('Failed to load HDRI:', error);
+      } catch {
+        console.warn(`HDRI not found: ${hdriPath}, using default lighting`);
       }
     }
 
@@ -192,7 +220,7 @@ export class TemplateHost {
         dirColor,
         manifest.lighting.directional.intensity || 0.8
       );
-      
+
       const pos = manifest.lighting.directional.position || { x: 5, y: 10, z: 5 };
       dirLight.position.set(pos.x, pos.y, pos.z);
       dirLight.castShadow = true;
@@ -204,7 +232,7 @@ export class TemplateHost {
       dirLight.shadow.camera.right = 10;
       dirLight.shadow.camera.top = 10;
       dirLight.shadow.camera.bottom = -10;
-      
+
       this.scene.add(dirLight);
       this.lights.push(dirLight);
     }
@@ -212,14 +240,11 @@ export class TemplateHost {
     // Fill Light (optional)
     if (manifest.lighting.fill) {
       const fillColor = new Color(manifest.lighting.fill.color || '#ffffff');
-      const fillLight = new DirectionalLight(
-        fillColor,
-        manifest.lighting.fill.intensity || 0.3
-      );
-      
+      const fillLight = new DirectionalLight(fillColor, manifest.lighting.fill.intensity || 0.3);
+
       const pos = manifest.lighting.fill.position || { x: -5, y: 5, z: -5 };
       fillLight.position.set(pos.x, pos.y, pos.z);
-      
+
       this.scene.add(fillLight);
       this.lights.push(fillLight);
     }
@@ -227,14 +252,11 @@ export class TemplateHost {
     // Rim Light (optional)
     if (manifest.lighting.rim) {
       const rimColor = new Color(manifest.lighting.rim.color || '#ffffff');
-      const rimLight = new DirectionalLight(
-        rimColor,
-        manifest.lighting.rim.intensity || 0.2
-      );
-      
+      const rimLight = new DirectionalLight(rimColor, manifest.lighting.rim.intensity || 0.2);
+
       const pos = manifest.lighting.rim.position || { x: 0, y: 5, z: -10 };
       rimLight.position.set(pos.x, pos.y, pos.z);
-      
+
       this.scene.add(rimLight);
       this.lights.push(rimLight);
     }
@@ -254,13 +276,98 @@ export class TemplateHost {
     this.renderer = renderer;
   }
 
+  setCamera(camera: { position: { x: number; y: number; z: number } }): void {
+    this.camera = camera;
+  }
+
+  private detectLODNodes(
+    root: Object3D | null
+  ): Map<Object3D, { lod0: Object3D | null; lod1: Object3D | null; lod2: Object3D | null }> {
+    const lodMap = new Map<
+      Object3D,
+      { lod0: Object3D | null; lod1: Object3D | null; lod2: Object3D | null }
+    >();
+
+    if (!root) return lodMap;
+
+    root.traverse((obj) => {
+      const name = obj.name.toLowerCase();
+      if (name.includes('_lod0') || name.includes('_lod1') || name.includes('_lod2')) {
+        const parent = obj.parent || root;
+
+        if (!lodMap.has(parent)) {
+          lodMap.set(parent, { lod0: null, lod1: null, lod2: null });
+        }
+
+        const lod = lodMap.get(parent);
+        if (!lod) return;
+        if (name.includes('_lod0')) {
+          lod.lod0 = obj;
+        } else if (name.includes('_lod1')) {
+          lod.lod1 = obj;
+        } else if (name.includes('_lod2')) {
+          lod.lod2 = obj;
+        }
+      }
+    });
+
+    return lodMap;
+  }
+
+  private initializeLOD(
+    lodMap: Map<Object3D, { lod0: Object3D | null; lod1: Object3D | null; lod2: Object3D | null }>
+  ): void {
+    lodMap.forEach((lod, parent) => {
+      // Show LOD0 by default, hide others
+      if (lod.lod0) lod.lod0.visible = true;
+      if (lod.lod1) lod.lod1.visible = false;
+      if (lod.lod2) lod.lod2.visible = false;
+      this.lodObjects.set(parent, lod);
+    });
+  }
+
+  private updateLOD(): void {
+    if (!this.camera) return;
+
+    const cameraPos = this.camera.position;
+    const LOD1_DISTANCE = 40;
+    const LOD2_DISTANCE = 80;
+
+    this.lodObjects.forEach((lod, parent) => {
+      // Calculate distance from camera to parent object
+      const distance = Math.sqrt(
+        Math.pow(parent.position.x - cameraPos.x, 2) +
+          Math.pow(parent.position.y - cameraPos.y, 2) +
+          Math.pow(parent.position.z - cameraPos.z, 2)
+      );
+
+      // Switch LOD based on distance
+      if (distance > LOD2_DISTANCE && lod.lod2) {
+        // Use LOD2
+        if (lod.lod0) lod.lod0.visible = false;
+        if (lod.lod1) lod.lod1.visible = false;
+        lod.lod2.visible = true;
+      } else if (distance > LOD1_DISTANCE && lod.lod1) {
+        // Use LOD1
+        if (lod.lod0) lod.lod0.visible = false;
+        lod.lod1.visible = true;
+        if (lod.lod2) lod.lod2.visible = false;
+      } else if (lod.lod0) {
+        // Use LOD0
+        lod.lod0.visible = true;
+        if (lod.lod1) lod.lod1.visible = false;
+        if (lod.lod2) lod.lod2.visible = false;
+      }
+    });
+  }
+
   dispose(): void {
     // Abort any ongoing loads
     if (this.loadingAbortController) {
       this.loadingAbortController.abort();
       this.loadingAbortController = null;
     }
-    
+
     if (this.currentTemplate) {
       this.currentTemplate.unmount();
       this.currentTemplate = null;
@@ -268,4 +375,3 @@ export class TemplateHost {
     this.removeLighting();
   }
 }
-

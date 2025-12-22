@@ -4,6 +4,9 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    global: 'globalThis', // Fix für "global is not defined" Fehler
+  },
   resolve: {
     alias: {
       '@core': resolve(__dirname, '../../packages/core/src'),
@@ -25,11 +28,38 @@ export default defineConfig({
   build: {
     target: 'esnext',
     sourcemap: true,
+    minify: 'esbuild', // Schnell und effizient
+    // Chunk-Size-Warnung erhöhen (Three.js ist groß)
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
+      external: ['@pixiv/three-vrm'], // Optional dependency, not bundled
       output: {
-        manualChunks: {
-          'three': ['three'],
-          'react': ['react', 'react-dom'],
+        manualChunks: (id) => {
+          // Three.js in separaten Chunk
+          if (id.includes('three')) {
+            // Three.js Core
+            if (id.includes('three/examples/jsm') || id.includes('three/src')) {
+              return 'three-core';
+            }
+            // Three.js Examples (Controls, Loaders, etc.)
+            if (id.includes('three/examples')) {
+              return 'three-examples';
+            }
+            return 'three';
+          }
+          // React in separaten Chunk
+          if (id.includes('react') || id.includes('react-dom')) {
+            return 'react';
+          }
+          // Packages in separate Chunks für Lazy-Loading
+          if (id.includes('@metaverse/')) {
+            const packageName = id.split('@metaverse/')[1]?.split('/')[0];
+            if (packageName && ['ai', 'voice', 'xr'].includes(packageName)) {
+              // Feature-Packages können lazy geladen werden
+              return `metaverse-${packageName}`;
+            }
+            return 'metaverse-core';
+          }
         },
       },
     },
@@ -39,8 +69,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['three'],
+    exclude: ['@pixiv/three-vrm'], // Don't pre-bundle optional dependency
   },
 });
-
-
-
