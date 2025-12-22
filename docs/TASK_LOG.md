@@ -197,6 +197,20 @@
   - packages/xr/src/ThreeXRAdapter.ts (Ungenutzten Parameter behoben, Null-Checks hinzugefügt)
   - packages/xr/package.json (vitest und @types/three als devDependencies hinzugefügt)
   - packages/xr/tsconfig.json (Tests aus typecheck ausgeschlossen)
+
+## [2025-01-XX] - Full Audit & MVP Hardening
+
+- Was: Vollständiger Projekt-Audit gemäß Superprompt durchgeführt
+- Warum: Source of Truth etablieren, alle Komponenten validieren, Tests erweitern
+- Dateien:
+  - docs/PLAN_SOURCE_OF_TRUTH.md (aktualisiert mit Version 2.0)
+  - docs/change-review.md (aktualisiert mit Git-Status, Log, Diff-Stat)
+  - .env.example (neu erstellt mit allen Feature-Flags)
+  - apps/server/src/**tests**/server.integration.test.ts (neu: Server-Integration-Tests)
+  - apps/server/vitest.config.ts (neu: Vitest-Config für Server)
+  - apps/server/package.json (supertest, socket.io-client, vitest hinzugefügt)
+  - apps/web/e2e/multiplayer-two-tabs.spec.ts (neu: E2E-Test für zwei Browser-Tabs)
+  - apps/web/src/main.tsx (Test-Hooks window.\_\_test hinzugefügt)
   - packages/audio/package.json (vitest als devDependency hinzugefügt)
   - packages/audio/tsconfig.json (Tests aus typecheck ausgeschlossen)
   - apps/web/package.json (@metaverse/xr als Dependency hinzugefügt)

@@ -1,4 +1,3 @@
-
 export interface HUDProps {
   playerCount?: number;
   fps?: number;
@@ -33,15 +32,9 @@ export function HUD({ playerCount, fps, onMenuClick }: HUDProps) {
       >
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           {playerCount !== undefined && (
-            <div style={{ color: '#fff', fontSize: '14px' }}>
-              Players: {playerCount}
-            </div>
+            <div style={{ color: '#fff', fontSize: '14px' }}>Players: {playerCount}</div>
           )}
-          {fps !== undefined && (
-            <div style={{ color: '#fff', fontSize: '14px' }}>
-              FPS: {fps}
-            </div>
-          )}
+          {fps !== undefined && <div style={{ color: '#fff', fontSize: '14px' }}>FPS: {fps}</div>}
         </div>
         {onMenuClick && (
           <button
@@ -60,7 +53,54 @@ export function HUD({ playerCount, fps, onMenuClick }: HUDProps) {
           </button>
         )}
       </div>
+
+      {/* Footer Links */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '20px',
+          right: '20px',
+          display: 'flex',
+          gap: '20px',
+          justifyContent: 'flex-start',
+          pointerEvents: 'auto',
+        }}
+      >
+        <a
+          href="/privacy.html"
+          target="_blank"
+          style={{
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '12px',
+            textDecoration: 'none',
+          }}
+        >
+          Datenschutz
+        </a>
+        <a
+          href="/imprint.html"
+          target="_blank"
+          style={{
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '12px',
+            textDecoration: 'none',
+          }}
+        >
+          Impressum
+        </a>
+        <a
+          href="/ATTRIBUTION.md"
+          target="_blank"
+          style={{
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '12px',
+            textDecoration: 'none',
+          }}
+        >
+          Assets & Lizenzen
+        </a>
+      </div>
     </div>
   );
 }
-

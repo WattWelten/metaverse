@@ -28,6 +28,7 @@
     "import-template": "node scripts/import-template.js",
     "assets:import": "tsx scripts/import-assets.ts",
     "assets:attr": "tsx scripts/generate-attribution.ts",
+    "assets:budget": "tsx scripts/check-asset-budget.ts",
     "setup:decoders": "tsx scripts/setup-decoders.ts",
     "analyze:bundle": "tsx scripts/analyze-bundle.ts",
     "prepare": "husky"

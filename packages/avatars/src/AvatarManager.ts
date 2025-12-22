@@ -291,8 +291,8 @@ export class AvatarManager {
     avatar.lastUpdateTime = Date.now();
   }
 
-  updateInterpolation(delta: number): void {
-    const interpolationSpeed = 10; // Lerp-Faktor
+  updateInterpolation(_delta: number): void {
+    const interpolationSpeed = 0.2; // Lerp-Faktor (0.1-0.3 für smooth movement)
 
     this.avatars.forEach((avatar) => {
       if (!avatar.targetPosition || !avatar.targetRotation) return;
@@ -303,28 +303,16 @@ export class AvatarManager {
 
       currentPos.lerp(
         new Vector3(targetPos.x, targetPos.y, targetPos.z),
-        Math.min(1, delta * interpolationSpeed)
+        Math.min(1, interpolationSpeed)
       );
 
       // Interpoliere Rotation
       const currentRot = avatar.object.rotation;
       const targetRot = avatar.targetRotation;
 
-      currentRot.x = this.lerpAngle(
-        currentRot.x,
-        targetRot.x,
-        Math.min(1, delta * interpolationSpeed)
-      );
-      currentRot.y = this.lerpAngle(
-        currentRot.y,
-        targetRot.y,
-        Math.min(1, delta * interpolationSpeed)
-      );
-      currentRot.z = this.lerpAngle(
-        currentRot.z,
-        targetRot.z,
-        Math.min(1, delta * interpolationSpeed)
-      );
+      currentRot.x = this.lerpAngle(currentRot.x, targetRot.x, Math.min(1, interpolationSpeed));
+      currentRot.y = this.lerpAngle(currentRot.y, targetRot.y, Math.min(1, interpolationSpeed));
+      currentRot.z = this.lerpAngle(currentRot.z, targetRot.z, Math.min(1, interpolationSpeed));
 
       // Update Avatar-Position für Konsistenz
       avatar.position = {

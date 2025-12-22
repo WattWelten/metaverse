@@ -1,6 +1,6 @@
 # Health Report
 
-Generated: 2025-12-22T09:45:36.157Z
+Generated: 2025-12-22T13:30:58.939Z
 
 ## Runtimes
 
@@ -50,13 +50,13 @@ Generated: 2025-12-22T09:45:36.157Z
 ## CI/CD
 
 - Status: ✅
-- Workflows: ci.yml, pages.yml, release.yml
+- Workflows: ci.yml, deploy.yml, pages.yml, release.yml
 
 ## Documentation
 
-- Files: 31
-- Coverage: 443%
-- Files: ai-integration.md, architecture.md, assets-shopping.md, audio-voice.md, avatars.md, change-review.md, content-provider.md, deployment-validation-report.md, e2e-test-results.md, e2e-tests-final-summary.md, final-status.md, health-report.md, integration-status.md, integration-validation-checklist.md, next-steps-final.md, next-steps-progress.md, next-steps-summary.md, performance.md, PLAN_SOURCE_OF_TRUTH.md, production-build-report.md, production-e2e-status.md, PR_DESCRIPTION.md, README.md, run-report.md, status-report.md, TASK_LOG.md, template-watt-eco.md, templates.md, test-fixes-summary.md, test-report.md, troubleshooting.md
+- Files: 36
+- Coverage: 514%
+- Files: ai-integration.md, architecture.md, assets-shopping.md, audio-voice.md, avatars.md, change-review.md, content-provider.md, deployment-validation-report.md, deployment.md, e2e-comprehensive-analysis.md, e2e-comprehensive-report.md, e2e-final-report.md, e2e-improvements-summary.md, e2e-test-results.md, e2e-tests-final-summary.md, final-status.md, health-report.md, integration-status.md, integration-validation-checklist.md, next-steps-final.md, next-steps-progress.md, next-steps-summary.md, performance.md, PLAN_SOURCE_OF_TRUTH.md, production-build-report.md, production-e2e-status.md, PR_DESCRIPTION.md, README.md, run-report.md, status-report.md, TASK_LOG.md, template-watt-eco.md, templates.md, test-fixes-summary.md, test-report.md, troubleshooting.md
 
 ## Environment
 

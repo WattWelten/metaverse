@@ -2,6 +2,9 @@ import { createServer } from 'http';
 
 import cors from 'cors';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import morgan from 'morgan';
 import { Server } from 'socket.io';
 
 import { PresenceService } from './presence/PresenceService.js';
@@ -11,7 +14,66 @@ import { StateSyncService } from './sync/StateSyncService.js';
 const app = express();
 const httpServer = createServer(app);
 
-app.use(cors());
+// Security Headers
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // Vite Dev needs unsafe-inline
+        connectSrc: ["'self'", 'ws:', 'wss:'], // WebSocket connections
+        mediaSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'", 'data:'],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Required for Three.js
+  })
+);
+
+// CORS Configuration - Whitelist from ENV
+const clientUrls = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim())
+  : ['http://localhost:5173'];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (clientUrls.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+// Rate Limiting - 300 requests per 10 seconds
+const limiter = rateLimit({
+  windowMs: 10 * 1000, // 10 seconds
+  max: 300, // limit each IP to 300 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter);
+
+// Request Logging (only in development or if LOG_LEVEL is set)
+const logLevel =
+  process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'combined' : 'dev');
+if (logLevel !== 'silent') {
+  app.use(morgan(logLevel));
+}
+
 app.use(express.json());
 
 // Health check endpoint
@@ -24,9 +86,29 @@ app.get('/', (_req, res) => {
   });
 });
 
+// Detailed health check endpoint
+app.get('/health', (_req, res) => {
+  const activeConnections = io.sockets.sockets.size;
+  const memoryUsage = process.memoryUsage();
+
+  res.json({
+    status: 'ok',
+    service: 'WattWelten Metaverse Server',
+    version: '0.1.0',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    activeConnections,
+    memory: {
+      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+      rss: Math.round(memoryUsage.rss / 1024 / 1024),
+    },
+  });
+});
+
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: clientUrls,
     methods: ['GET', 'POST'],
     credentials: true,
   },

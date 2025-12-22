@@ -1,4 +1,4 @@
-import { ConsentModal, HUD, OverlayHost } from '@metaverse/ui';
+import { ConsentModal, HUD, OverlayHost, RoomUI } from '@metaverse/ui';
 import { useEffect, useRef, useState } from 'react';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -13,6 +13,11 @@ export function App() {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [fps, setFps] = useState(0);
   const [playerCount, setPlayerCount] = useState(1);
+  const [roomId, setRoomId] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('room') || 'default-room';
+  });
+  const [isMuted, setIsMuted] = useState(false);
 
   // Debug overlay visibility - enabled in dev mode or if flag is set
   const [showDebug, setShowDebug] = useState(
@@ -46,6 +51,7 @@ export function App() {
       if (worldRef.current) {
         setFps(worldRef.current.getFPS());
         setPlayerCount(worldRef.current.getPlayerCount());
+        setRoomId(worldRef.current.getRoomId());
       }
       requestAnimationFrame(updateStats);
     };
@@ -128,11 +134,48 @@ export function App() {
     }
   };
 
+  const handleLeaveRoom = () => {
+    const world = worldRef.current;
+    if (world) {
+      const netClient = world.getNetClient();
+      if (netClient) {
+        netClient.leaveRoom(roomId);
+      }
+    }
+    // Redirect to home without room parameter
+    window.location.href = window.location.pathname;
+  };
+
+  const handleMuteToggle = (muted: boolean) => {
+    setIsMuted(muted);
+    const world = worldRef.current;
+    if (world) {
+      const voiceClient = world.getVoiceClient();
+      if (voiceClient) {
+        if (muted) {
+          voiceClient.mute();
+        } else {
+          voiceClient.unmute();
+        }
+      }
+    }
+  };
+
   return (
     <ErrorBoundary>
       <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
         <FeatureFlags />
         <HUD playerCount={playerCount} fps={fps} />
+        {getFeatureFlags().MULTIPLAYER_ENABLED && (
+          <RoomUI
+            roomId={roomId}
+            playerCount={playerCount}
+            onLeave={handleLeaveRoom}
+            onMuteToggle={getFeatureFlags().VOICE_ENABLED ? handleMuteToggle : undefined}
+            isVoiceEnabled={getFeatureFlags().VOICE_ENABLED}
+            isMuted={isMuted}
+          />
+        )}
         <OverlayHost templateId={templateId} onAction={handleOverlayAction} />
         <ConsentModal
           visible={showConsentModal}

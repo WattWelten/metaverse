@@ -41,7 +41,7 @@ export class World {
   private voiceClient: VoiceClient | null = null;
   private userId: string;
   private lastAvatarUpdate = 0;
-  private readonly AVATAR_UPDATE_THROTTLE = 100; // ms
+  private readonly AVATAR_UPDATE_THROTTLE = 33; // ms (30 Hz)
   private soloMode = false;
 
   // Performance monitoring
@@ -121,6 +121,12 @@ export class World {
     return `user-${Math.random().toString(36).substr(2, 9)}-${Date.now()}`;
   }
 
+  private getRoomIdFromURL(): string {
+    const params = new URLSearchParams(window.location.search);
+    const roomId = params.get('room');
+    return roomId || 'default-room';
+  }
+
   private initMultiplayer(flags: FeatureFlags): void {
     if (!flags.MULTIPLAYER_ENABLED) {
       console.log('Multiplayer disabled via feature flag');
@@ -128,11 +134,12 @@ export class World {
     }
 
     const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+    const roomId = this.getRoomIdFromURL();
 
     this.netClient = new NetClient({
       serverUrl,
       userId: this.userId,
-      roomId: 'default-room',
+      roomId,
       autoConnect: false, // Manuell verbinden nach Template-Load
     });
 
@@ -171,9 +178,10 @@ export class World {
 
     // Voice Client
     if (flags.VOICE_ENABLED && this.netClient) {
+      const roomId = this.getRoomIdFromURL();
       this.voiceClient = new VoiceClient({
         userId: this.userId,
-        roomId: 'default-room',
+        roomId,
         enableSpatialAudio: true,
         netClient: this.netClient.asVoiceClient(),
       });
@@ -281,7 +289,8 @@ export class World {
         });
 
         if (this.netClient.isConnected() && !this.soloMode) {
-          this.netClient.joinRoom('default-room');
+          const roomId = this.getRoomIdFromURL();
+          this.netClient.joinRoom(roomId);
           // Lokalen Avatar erstellen
           await this.createLocalAvatar();
         } else {
@@ -367,10 +376,28 @@ export class World {
       const cameraPos = this.camera.position;
       const cameraRot = this.camera.rotation;
 
+      // Berechne Geschwindigkeit für Animation-State
+      const avatar = this.avatarManager.getAvatar(this.userId);
+      let animation: string | undefined = 'idle';
+      if (avatar) {
+        const lastPos = avatar.position;
+        const distance = Math.sqrt(
+          Math.pow(cameraPos.x - lastPos.x, 2) +
+            Math.pow(cameraPos.y - lastPos.y, 2) +
+            Math.pow(cameraPos.z - lastPos.z, 2)
+        );
+        const timeDelta = (now - this.lastAvatarUpdate) / 1000; // seconds
+        const velocity = timeDelta > 0 ? distance / timeDelta : 0;
+
+        // Animation-State basierend auf Geschwindigkeit
+        animation = velocity > 0.01 ? 'walk' : 'idle';
+      }
+
       this.avatarManager.updateAvatar(
         this.userId,
         { x: cameraPos.x, y: cameraPos.y, z: cameraPos.z },
-        { x: cameraRot.x, y: cameraRot.y, z: cameraRot.z }
+        { x: cameraRot.x, y: cameraRot.y, z: cameraRot.z },
+        animation
       );
 
       this.lastAvatarUpdate = now;
@@ -549,6 +576,14 @@ export class World {
 
   getAvatarManager(): AvatarManager | null {
     return this.avatarManager;
+  }
+
+  getRoomId(): string {
+    return this.getRoomIdFromURL();
+  }
+
+  getVoiceClient(): VoiceClient | null {
+    return this.voiceClient;
   }
 
   isSoloMode(): boolean {
