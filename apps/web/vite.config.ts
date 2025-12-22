@@ -28,6 +28,7 @@ export default defineConfig({
   build: {
     target: 'esnext',
     sourcemap: true,
+    minify: 'esbuild', // Schnell und effizient
     // Chunk-Size-Warnung erhöhen (Three.js ist groß)
     chunkSizeWarningLimit: 600,
     rollupOptions: {

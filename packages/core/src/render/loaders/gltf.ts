@@ -29,7 +29,11 @@ export function createGLTFCacher(loader: GLTFLoader): void {
         })
       );
     }
-    return cache.get(url)!;
+    const cached = cache.get(url);
+    if (!cached) {
+      throw new Error(`Cache miss for URL: ${url}`);
+    }
+    return cached;
   };
 }
 
@@ -77,7 +81,11 @@ export function createGLTFLoader(renderer?: WebGLRenderer): GLTFLoader {
         })
       );
     }
-    return cache.get(url)!;
+    const cached = cache.get(url);
+    if (!cached) {
+      throw new Error(`Cache miss for URL: ${url}`);
+    }
+    return cached;
   };
 
   return loader;
@@ -85,7 +93,11 @@ export function createGLTFLoader(renderer?: WebGLRenderer): GLTFLoader {
 
 export function useGLTFCache(url: string): Promise<Object3D> {
   if (cache.has(url)) {
-    return cache.get(url)!;
+    const cached = cache.get(url);
+    if (!cached) {
+      throw new Error(`Cache miss for URL: ${url}`);
+    }
+    return cached;
   }
 
   const loader = new GLTFLoader();

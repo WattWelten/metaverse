@@ -45,3 +45,5 @@ echo "[$(date +%H:%M:%S)] ✅ Tests beendet nach ${MINUTES}m ${SECONDS}s (Exit C
 exit $EXIT_CODE
 
 
+
+

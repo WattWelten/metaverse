@@ -10,7 +10,7 @@ export async function loadVRM(url: string, loader = new GLTFLoader()): Promise<O
     // Dynamic import to avoid errors if package not installed
     // Use eval to prevent Vite from analyzing the import at build time
     // This is safe because we catch errors and the package is optional
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-assignment
+
     const vrmModule = await eval('import("@pixiv/three-vrm")').catch(() => null);
     if (!vrmModule) {
       throw new Error(

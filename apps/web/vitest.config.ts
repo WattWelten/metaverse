@@ -9,8 +9,13 @@ export default defineConfig({
     globals: true,
     testTimeout: 60000, // 60 Sekunden Standard-Timeout
     hookTimeout: 10000, // 10 Sekunden für Hooks
-    // Progress-Reporting für lange Tests - verbose zeigt jeden Test an
-    reporters: ['verbose', 'json'],
+    // Test-Dateien finden
+    include: [
+      'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      'src/__tests__/**/*.{ts,tsx}',
+    ],
+    // Progress-Reporting für lange Tests
+    reporters: ['verbose'],
     // Output während Tests
     silent: false,
     // Log-Level für bessere Sichtbarkeit
@@ -43,5 +48,6 @@ export default defineConfig({
       '@content': resolve(__dirname, '../../packages/content/src'),
       '@assets': resolve(__dirname, '../../packages/assets'),
     },
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
   },
 });

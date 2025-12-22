@@ -195,7 +195,10 @@ export class AvatarManager {
 
   private createNameTag(name: string): Sprite {
     const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Failed to get 2D context from canvas');
+    }
     canvas.width = 512;
     canvas.height = 128;
 

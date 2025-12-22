@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { World } from '../World.js';
+import { World } from '../World';
 
 // Mock Three.js modules
 vi.mock('three', () => {
