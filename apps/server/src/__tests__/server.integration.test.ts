@@ -254,37 +254,62 @@ describe('Server Integration Tests', () => {
 
         let client1Connected = false;
         let client2Connected = false;
+        let client2Joined = false;
+        let testCompleted = false;
 
         const cleanup = () => {
-          client1.disconnect();
-          client2.disconnect();
+          if (!testCompleted) {
+            testCompleted = true;
+            client1.disconnect();
+            client2.disconnect();
+          }
         };
 
+        // Client2 must join first, then client1 joins so client2 receives user-joined
         client1.on('connect', () => {
           client1Connected = true;
-          if (client2Connected) {
-            client1.emit('join-room', {
-              roomId: 'test-room-2',
-              userId: 'test-user-1',
-              avatar: { type: 'capsule' },
-            });
+          // Wait for client2 to join first
+          if (client2Connected && client2Joined && !testCompleted) {
+            setTimeout(() => {
+              client1.emit('join-room', {
+                roomId: 'test-room-2',
+                userId: 'test-user-1',
+                avatar: { type: 'capsule' },
+              });
+            }, 100);
           }
         });
 
         client2.on('connect', () => {
           client2Connected = true;
-          if (client1Connected) {
-            client1.emit('join-room', {
+          // Client2 joins first
+          if (!testCompleted) {
+            client2.emit('join-room', {
               roomId: 'test-room-2',
-              userId: 'test-user-1',
+              userId: 'test-user-2',
               avatar: { type: 'capsule' },
             });
+          }
+        });
+
+        client2.on('room-state', () => {
+          client2Joined = true;
+          // Now client1 can join
+          if (client1Connected && !testCompleted) {
+            setTimeout(() => {
+              client1.emit('join-room', {
+                roomId: 'test-room-2',
+                userId: 'test-user-1',
+                avatar: { type: 'capsule' },
+              });
+            }, 100);
           }
         });
 
         client2.on('user-joined', (data) => {
           expect(data).toHaveProperty('userId');
           expect(data).toHaveProperty('socketId');
+          expect(data.userId).toBe('test-user-1');
           cleanup();
           resolve();
         });
@@ -298,6 +323,14 @@ describe('Server Integration Tests', () => {
           cleanup();
           reject(error);
         });
+
+        // Timeout fallback
+        setTimeout(() => {
+          if (!testCompleted) {
+            cleanup();
+            reject(new Error('Test timeout: user-joined event not received'));
+          }
+        }, 10000);
       });
     });
 
