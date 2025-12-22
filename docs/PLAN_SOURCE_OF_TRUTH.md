@@ -144,20 +144,20 @@ Alle Features sind flag-gesteuert über `.env.local`:
 
 **Status**: ✅ Abgeschlossen
 
-#### QW2: Health-Report Property-basiert ⏳
+#### QW2: Health-Report Property-basiert ✅
 
 **Zweck**: Präzise Rendering-Checks statt Regex-basierter Textsuche
 
 **Eingriffe**:
 
-- `scripts/health.ts` → `checkRendering()` auf TypeScript AST-Analyse umstellen
+- `scripts/health.ts` → `checkRendering()` auf TypeScript AST-Analyse umgestellt
 - Property-Checks: `outputColorSpace === 'srgb'`, `toneMapping === ACESFilmicToneMapping`, `toneMappingExposure === 1.0`, `setPhysicallyCorrectLights()` Aufruf
 
 **Dateien**:
 
-- `scripts/health.ts` (in Arbeit)
+- `scripts/health.ts` ✅
 
-**Status**: ⏳ In Arbeit
+**Status**: ✅ Abgeschlossen
 
 #### QW3: Debug-Overlay ✅
 
