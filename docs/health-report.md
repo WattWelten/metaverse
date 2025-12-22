@@ -1,6 +1,6 @@
 # Health Report
 
-Generated: 2025-12-21T12:53:46.093Z
+Generated: 2025-12-22T09:45:36.157Z
 
 ## Runtimes
 
@@ -20,9 +20,12 @@ Generated: 2025-12-21T12:53:46.093Z
 
 ## Rendering
 
-- Tone Mapping: ACESFilmic
-- Color Space: srgb
+- Tone Mapping: ACESFilmic ✅
+- Color Space: srgb ✅
+- Tone Mapping Exposure: 1.0 ✅
 - Physically Correct Lights: ✅
+
+**Note:** Rendering checks use TypeScript Compiler API for property-based analysis instead of regex.
 
 ## Feature Flags
 
@@ -51,9 +54,9 @@ Generated: 2025-12-21T12:53:46.093Z
 
 ## Documentation
 
-- Files: 14
-- Coverage: 200%
-- Files: ai-integration.md, architecture.md, assets-shopping.md, audio-voice.md, avatars.md, change-review.md, content-provider.md, health-report.md, PR_DESCRIPTION.md, README.md, run-report.md, TASK_LOG.md, template-watt-eco.md, templates.md
+- Files: 31
+- Coverage: 443%
+- Files: ai-integration.md, architecture.md, assets-shopping.md, audio-voice.md, avatars.md, change-review.md, content-provider.md, deployment-validation-report.md, e2e-test-results.md, e2e-tests-final-summary.md, final-status.md, health-report.md, integration-status.md, integration-validation-checklist.md, next-steps-final.md, next-steps-progress.md, next-steps-summary.md, performance.md, PLAN_SOURCE_OF_TRUTH.md, production-build-report.md, production-e2e-status.md, PR_DESCRIPTION.md, README.md, run-report.md, status-report.md, TASK_LOG.md, template-watt-eco.md, templates.md, test-fixes-summary.md, test-report.md, troubleshooting.md
 
 ## Environment
 
@@ -68,5 +71,7 @@ Generated: 2025-12-21T12:53:46.093Z
 
 - LOD Support: ✅
 - Uses createGLTFLoader: ✅
-- Decoder Directories: ✅
-- XR Adapter: ✅
+- Decoder Directories:
+  - Draco: ✅
+  - KTX2: ✅
+- XR Adapter: ✅ (three)

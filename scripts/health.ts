@@ -11,13 +11,27 @@ interface HealthReport {
   runtimes: { node: string; pnpm: string; three: string };
   packages: { total: number; warnings: string[] };
   structure: { valid: boolean; missing: string[] };
-  rendering: { toneMapping: string; colorSpace: string; physicallyCorrect: boolean };
+  rendering: {
+    toneMapping: string;
+    colorSpace: string;
+    physicallyCorrect: boolean;
+    exposure: boolean;
+  };
   flags: Record<string, boolean | string>;
   ci: { workflows: string[]; status: 'ok' | 'missing' };
   docs: { files: string[]; coverage: number };
   env?: { exampleExists: boolean };
   scripts?: { importAssets: boolean; generateAttribution: boolean };
-  features?: { lodSupport: boolean };
+  features?: {
+    lodSupport: boolean;
+    usesCreateGLTFLoader: boolean;
+    decoders: { draco: boolean; ktx2: boolean };
+    xrAdapter: { exists: boolean; type: 'three' | 'verse' | 'none' };
+    lodSupport: boolean;
+    usesCreateGLTFLoader: boolean;
+    decoders: { draco: boolean; ktx2: boolean };
+    xrAdapter: { exists: boolean; type: 'three' | 'verse' | 'none' };
+  };
 }
 
 function getPackageVersion(packageJson: Record<string, unknown>, name: string): string {
@@ -48,36 +62,116 @@ function checkStructure(): { valid: boolean; missing: string[] } {
   return { valid: missing.length === 0, missing };
 }
 
-function checkRendering(): { toneMapping: string; colorSpace: string; physicallyCorrect: boolean } {
-  // Check World.ts for rendering config
+async function checkRendering(): Promise<{
+  toneMapping: string;
+  colorSpace: string;
+  physicallyCorrect: boolean;
+  exposure: boolean;
+}> {
+  // Check World.ts for rendering config using TypeScript Compiler API for property-based checks
   const worldPath = join(rootDir, 'apps/web/src/World.ts');
   if (!existsSync(worldPath)) {
-    return { toneMapping: 'unknown', colorSpace: 'unknown', physicallyCorrect: false };
+    return {
+      toneMapping: 'unknown',
+      colorSpace: 'unknown',
+      physicallyCorrect: false,
+      exposure: false,
+    };
   }
 
-  const worldContent = readFileSync(worldPath, 'utf-8');
+  try {
+    // Use TypeScript Compiler API for property-based analysis
+    // Dynamic import for ES modules
+    const ts = await import('typescript').then((m) => m.default || m);
+    const worldContent = readFileSync(worldPath, 'utf-8');
+    const sourceFile = ts.createSourceFile(worldPath, worldContent, ts.ScriptTarget.Latest, true);
 
-  // Check for ACES tone mapping
-  const hasACES = /toneMapping\s*=\s*ACESFilmicToneMapping/.test(worldContent);
+    let hasACES = false;
+    let hasSRGB = false;
+    let hasPhysicallyCorrect = false;
+    let hasExposure = false;
 
-  // Check for sRGB color space (supports both 'srgb' string and SRGBColorSpace enum)
-  const hasSRGB = /outputColorSpace\s*=\s*(SRGBColorSpace|'srgb'|"srgb")/.test(worldContent);
+    // Traverse AST to find property assignments
+    function visit(node: any): void {
+      // Check for property assignments: this.renderer.toneMapping = ACESFilmicToneMapping
+      // or renderer.toneMapping = ACESFilmicToneMapping
+      if (
+        ts.isBinaryExpression(node) &&
+        node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isPropertyAccessExpression(node.left)
+      ) {
+        const propName = node.left.name?.text;
+        const rightText = sourceFile.text.substring(node.right.pos, node.right.end);
 
-  // Check for physically correct lights
-  // Look for setPhysicallyCorrectLights call or explicit useLegacyLights = false
-  const hasPhysicallyCorrect =
-    /setPhysicallyCorrectLights\s*\(/.test(worldContent) ||
-    /useLegacyLights\s*=\s*false/.test(worldContent) ||
-    /physicallyCorrectLights\s*=\s*true/.test(worldContent);
+        // Check if left side is this.renderer.property or renderer.property
+        const leftText = sourceFile.text.substring(node.left.pos, node.left.end);
+        const isRendererProperty =
+          leftText.includes('renderer.') || leftText.includes('this.renderer.');
 
-  // Also check exposure
-  const hasExposure = /toneMappingExposure\s*=\s*1(\.0)?/.test(worldContent);
+        if (isRendererProperty) {
+          if (propName === 'toneMapping') {
+            if (rightText.includes('ACESFilmicToneMapping')) {
+              hasACES = true;
+            }
+          } else if (propName === 'outputColorSpace') {
+            if (
+              rightText.includes("'srgb'") ||
+              rightText.includes('"srgb"') ||
+              rightText.includes('SRGBColorSpace')
+            ) {
+              hasSRGB = true;
+            }
+          } else if (propName === 'toneMappingExposure') {
+            // Check for exposure = 1.0 or exposure = 1
+            // rightText contains the right-hand side expression (e.g., "1.0" or "1")
+            const trimmed = rightText.trim();
+            const value = parseFloat(trimmed);
+            if (!isNaN(value) && (value === 1.0 || value === 1)) {
+              hasExposure = true;
+            }
+          }
+        }
+      }
 
-  return {
-    toneMapping: hasACES ? 'ACESFilmic' : 'unknown',
-    colorSpace: hasSRGB ? 'srgb' : 'unknown',
-    physicallyCorrect: hasPhysicallyCorrect,
-  };
+      // Check for function calls: setPhysicallyCorrectLights(renderer)
+      if (ts.isCallExpression(node)) {
+        const callText = sourceFile.text.substring(node.pos, node.end);
+        if (callText.includes('setPhysicallyCorrectLights')) {
+          hasPhysicallyCorrect = true;
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    }
+
+    visit(sourceFile);
+
+    return {
+      toneMapping: hasACES ? 'ACESFilmic' : 'unknown',
+      colorSpace: hasSRGB ? 'srgb' : 'unknown',
+      physicallyCorrect: hasPhysicallyCorrect,
+      exposure: hasExposure,
+    };
+  } catch (error) {
+    // Fallback to regex-based checks if TypeScript API fails
+    console.warn('TypeScript API check failed, falling back to regex:', error);
+    const worldContent = readFileSync(worldPath, 'utf-8');
+
+    const hasACES = /toneMapping\s*=\s*ACESFilmicToneMapping/.test(worldContent);
+    const hasSRGB = /outputColorSpace\s*=\s*(SRGBColorSpace|'srgb'|"srgb")/.test(worldContent);
+    const hasPhysicallyCorrect =
+      /setPhysicallyCorrectLights\s*\(/.test(worldContent) ||
+      /useLegacyLights\s*=\s*false/.test(worldContent) ||
+      /physicallyCorrectLights\s*=\s*true/.test(worldContent);
+    const hasExposure = /toneMappingExposure\s*=\s*1(\.0)?/.test(worldContent);
+
+    return {
+      toneMapping: hasACES ? 'ACESFilmic' : 'unknown',
+      colorSpace: hasSRGB ? 'srgb' : 'unknown',
+      physicallyCorrect: hasPhysicallyCorrect,
+      exposure: hasExposure,
+    };
+  }
 }
 
 function checkFlags(): Record<string, boolean | string> {
@@ -135,9 +229,11 @@ function checkDocs(): { files: string[]; coverage: number } {
   return { files, coverage: Math.round(coverage) };
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const rootPackageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
   const webPackageJson = JSON.parse(readFileSync(join(rootDir, 'apps/web/package.json'), 'utf-8'));
+
+  const renderingCheck = await checkRendering();
 
   const report: HealthReport = {
     runtimes: {
@@ -151,7 +247,7 @@ function main(): void {
       warnings: [],
     },
     structure: checkStructure(),
-    rendering: checkRendering(),
+    rendering: renderingCheck,
     flags: checkFlags(),
     ci: checkCI(),
     docs: checkDocs(),
@@ -179,9 +275,12 @@ Generated: ${new Date().toISOString()}
 - Missing: ${report.structure.missing.length > 0 ? report.structure.missing.join(', ') : 'none'}
 
 ## Rendering
-- Tone Mapping: ${report.rendering.toneMapping}
-- Color Space: ${report.rendering.colorSpace}
+- Tone Mapping: ${report.rendering.toneMapping} ${report.rendering.toneMapping === 'ACESFilmic' ? '✅' : '❌'}
+- Color Space: ${report.rendering.colorSpace} ${report.rendering.colorSpace === 'srgb' ? '✅' : '❌'}
+- Tone Mapping Exposure: ${report.rendering.exposure ? '1.0 ✅' : 'unknown ❌'}
 - Physically Correct Lights: ${report.rendering.physicallyCorrect ? '✅' : '❌'}
+
+**Note:** Rendering checks use TypeScript Compiler API for property-based analysis instead of regex.
 
 ## Feature Flags
 ${
@@ -221,16 +320,39 @@ ${
     lodSupport = templateHostContent.includes('LOD') || templateHostContent.includes('lod');
     usesCreateGLTFLoader = templateHostContent.includes('createGLTFLoader');
   }
-  report.features = { lodSupport };
 
   // Check for decoder directories
   const dracoDir = join(rootDir, 'apps', 'web', 'public', 'draco');
   const ktx2Dir = join(rootDir, 'apps', 'web', 'public', 'ktx2');
-  const decoderDirsExist = existsSync(dracoDir) && existsSync(ktx2Dir);
+  const dracoExists = existsSync(dracoDir);
+  const ktx2Exists = existsSync(ktx2Dir);
 
-  // Check for XR adapter
+  // Check for XR adapter and determine type
   const xrAdapterPath = join(rootDir, 'packages', 'xr', 'src', 'createXR.ts');
   const xrAdapterExists = existsSync(xrAdapterPath);
+  let xrAdapterType: 'three' | 'verse' | 'none' = 'none';
+  if (xrAdapterExists) {
+    const threeXRPath = join(rootDir, 'packages', 'xr', 'src', 'ThreeXRAdapter.ts');
+    const verseXRPath = join(rootDir, 'packages', 'xr', 'src', 'VerseXRAdapter.ts');
+    if (existsSync(threeXRPath) && existsSync(verseXRPath)) {
+      xrAdapterType = 'three'; // Default, Verse is stub
+    } else if (existsSync(threeXRPath)) {
+      xrAdapterType = 'three';
+    }
+  }
+
+  report.features = {
+    lodSupport,
+    usesCreateGLTFLoader,
+    decoders: {
+      draco: dracoExists,
+      ktx2: ktx2Exists,
+    },
+    xrAdapter: {
+      exists: xrAdapterExists,
+      type: xrAdapterType,
+    },
+  };
 
   // Update report content with new sections
   const updatedReportContent =
@@ -245,10 +367,12 @@ ${
 - generate-attribution.ts: ${generateAttrExists ? '✅' : '❌'}
 
 ## Features
-- LOD Support: ${lodSupport ? '✅' : '❌'}
-- Uses createGLTFLoader: ${usesCreateGLTFLoader ? '✅' : '❌'}
-- Decoder Directories: ${decoderDirsExist ? '✅' : '❌'}
-- XR Adapter: ${xrAdapterExists ? '✅' : '❌'}
+- LOD Support: ${report.features?.lodSupport ? '✅' : '❌'}
+- Uses createGLTFLoader: ${report.features?.usesCreateGLTFLoader ? '✅' : '❌'}
+- Decoder Directories:
+  - Draco: ${report.features?.decoders.draco ? '✅' : '❌'}
+  - KTX2: ${report.features?.decoders.ktx2 ? '✅' : '❌'}
+- XR Adapter: ${report.features?.xrAdapter.exists ? `✅ (${report.features.xrAdapter.type})` : '❌'}
 `;
 
   writeFileSync(reportPath, updatedReportContent, 'utf-8');
@@ -256,4 +380,7 @@ ${
   console.log(JSON.stringify(report, null, 2));
 }
 
-main();
+main().catch((error) => {
+  console.error('Health check failed:', error);
+  process.exit(1);
+});

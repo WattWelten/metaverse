@@ -4,6 +4,10 @@
 
 Siehe [README.md](../README.md) für die Installation und den Quickstart.
 
+## Source of Truth
+
+Für den MVP Completion Plan siehe [PLAN_SOURCE_OF_TRUTH.md](./PLAN_SOURCE_OF_TRUTH.md) - dies ist die verbindliche Plan-Dokumentation.
+
 ## Decoder-Setup
 
 Das Metaverse verwendet Draco (Geometrie-Kompression) und KTX2 (Textur-Kompression) für optimierte Asset-Größen.

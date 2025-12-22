@@ -1,9 +1,9 @@
-# Change Review - MVP Hardening
+# Change Review - MVP Completion
 
-**Branch:** `feat/mvp-hardening`  
-**Base:** `origin/feat/mvp`  
-**Commits:** 6 commits ahead  
-**Date:** 2025-01-XX
+**Branch:** `feat/mvp-completion`  
+**Base:** `origin/feat/mvp-completion`  
+**Date:** 2025-12-21  
+**Last Updated:** 2025-12-21
 
 ## Was hat sich geändert?
 
@@ -105,36 +105,84 @@
 6. **Build-Warnung**: Three.js-Chunk ist >500KB. Sollte mit `manualChunks` optimiert werden (bereits in `vite.config.ts` teilweise vorhanden).
 7. **ENV-Defaults**: `.env.local` wurde aus `.env.example` erstellt, aber Standard-Flags sollten noch geprüft werden.
 
+## Aktuelle Git-Status
+
+**Branch:** `feat/mvp-completion`  
+**Last Updated:** 2025-12-21
+
+### Letzte Commits
+
+```
+0a694b7 feat: deployment validation und production-ready optimierungen
+3e49c4b fix(e2e): alle Tests erfolgreich - von 8.3% auf 100%
+ccc2fc3 fix: lint und typecheck fehler behoben
+f38c4b3 feat: asset-import tools, lod support und windrad-rotation
+0b6029a docs: task log aktualisiert mit integration-tests
+f48bd7a feat: umfassende integration-tests für multiplayer, avatar, voice und template-load
+c950a5c feat: player count support vollständig implementiert
+a155315 feat: strategische Integrationen - VoiceClient, HUD, Performance-Monitoring
+91da5f7 feat: implement automated testing, memory leak fixes, and type safety improvements
+3a6a8ff fix: add health check endpoint to server
+```
+
+### Uncommitted Changes (Stand: 2025-12-21)
+
+```
+ M docs/README.md
+ M docs/TASK_LOG.md
+ M docs/change-review.md
+ M docs/health-report.md
+ M scripts/health.ts
+?? docs/PLAN_SOURCE_OF_TRUTH.md
+```
+
+**Diff-Statistik:**
+
+```
+ docs/README.md        |   4 ++
+ docs/TASK_LOG.md      |  11 +++
+ docs/change-review.md |  68 ++++++++++--------
+ docs/health-report.md |  44 +++++-------
+ scripts/health.ts     | 189 +++++++++++++++++++++++++++++++++++++++-----------
+ 5 files changed, 222 insertions(+), 94 deletions(-)
+```
+
+### Änderungen in dieser Session
+
+**Neu erstellt:**
+
+- `docs/PLAN_SOURCE_OF_TRUTH.md` - Source of Truth Dokumentation für MVP Completion Plan
+
+**Aktualisiert:**
+
+- `scripts/health.ts` - Property-basierte Rendering-Checks mit TypeScript Compiler API statt Regex
+- `docs/health-report.md` - Erweiterte Checks (exposure, decoders, gltfLoader, xrAdapter)
+- `docs/change-review.md` - Aktuelle Git-Status und Diff-Statistik
+- `docs/TASK_LOG.md` - Eintrag für SOT & Health-Report Verbesserung
+- `docs/README.md` - Verweis auf PLAN_SOURCE_OF_TRUTH.md
+
 ## Follow-ups (Issues, die ich erstellen würde)
 
-1. **Issue: Decoder-Dateien hinzufügen**
-   - Draco-Decoder-Dateien in `apps/web/public/draco/` kopieren
-   - KTX2-Basis-Transcoder in `apps/web/public/ktx2/` kopieren
-   - Oder CDN-Links verwenden
+1. **Issue: Health-Report Property-Checks vervollständigen**
+   - TypeScript AST/Compiler API für präzise Property-Analyse
+   - Statt Regex-basierter Textsuche
 
-2. **Issue: GLTF-Loader-Integration vervollständigen**
-   - `createDraco()` und `createKTX2()` in `TemplateHost.createDefaultTemplateLoader()` aufrufen
-   - GLTFLoader-Instanz erstellen und konfigurieren
+2. **Issue: Performance-Benchmarks**
+   - Desktop/Mobile FPS-Messungen
+   - Load-Tests für Multiplayer
 
-3. **Issue: Audio-Context-Resume für Ambient-Audio**
-   - Click-to-Start-Overlay für Ambient-Audio hinzufügen
-   - `AudioContext.resume()` nach User-Interaction aufrufen
+3. **Issue: VerseEngine-Integration**
+   - Vollständige Integration statt Stub
+   - VerseEngine-Adapter implementieren
 
-4. **Issue: Health-Report aktualisieren**
-   - `physicallyCorrectLights`-Check korrigieren (prüft Property statt tatsächlichen Wert)
+4. **Issue: Avatar-Animationen**
+   - Walk, Idle, Emotes implementieren
+   - VRM-UI für Avatar-Auswahl
 
-5. **Issue: Build-Optimierung**
-   - Three.js-Chunk weiter aufteilen (z.B. Loader, Controls, Post-Processing)
-   - Code-Splitting für Templates (dynamische Imports)
+5. **Issue: Template-Editor**
+   - Gizmos für Template-Bearbeitung
+   - Save to ContentProvider
 
-6. **Issue: Debug-Overlay in App integrieren**
-   - Optionales Debug-Overlay in `App.tsx` rendern (Feature-Flag: `VITE_DEBUG_ENABLED`)
-
-7. **Issue: Template-Asset-Validierung**
-   - Asset-Existenz-Check beim Template-Load
-   - Bessere Fehlermeldungen wenn Assets fehlen
-
-8. **Issue: E2E-Tests erweitern**
-   - LOD-Switching testen
-   - Windrad-Rotation testen
-   - Asset-Import-Script testen
+6. **Issue: Analytics/Event-Schema**
+   - Tracking und Metriken
+   - Event-Schema definieren

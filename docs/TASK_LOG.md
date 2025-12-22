@@ -204,3 +204,19 @@
   - Build erfolgreich: Alle Packages kompilieren, Web-App baut ohne Fehler
   - TypeScript-Check erfolgreich: Alle Packages typechecken ohne Fehler
   - Linting erfolgreich: Nur Warnungen (non-null assertions, erlaubt)
+
+## [2025-12-21] - MVP Completion SOT & Health-Report Verbesserung
+
+- Was: PLAN_SOURCE_OF_TRUTH.md erstellt, Health-Report auf Property-basierte Checks umgestellt, change-review.md aktualisiert
+- Warum: Source of Truth etablieren, präzisere Health-Checks durch TypeScript AST-Analyse statt Regex
+- Dateien:
+  - docs/PLAN_SOURCE_OF_TRUTH.md (neu - umfassende Plan-Dokumentation als SOT)
+  - docs/change-review.md (aktualisiert - Git-Status, Commits, Diff-Statistik)
+  - scripts/health.ts (verbessert - Property-basierte Rendering-Checks mit TypeScript Compiler API, erweiterte Features-Checks: decoders, gltfLoader, xrAdapter)
+  - docs/README.md (aktualisiert - Verweis auf PLAN_SOURCE_OF_TRUTH.md)
+  - docs/TASK_LOG.md (dieser Eintrag)
+- Details:
+  - TypeScript Compiler API für AST-Analyse statt Regex-basierter Textsuche
+  - Property-Checks erkennen `this.renderer.property` und `renderer.property` Zuweisungen
+  - HealthReport Interface erweitert um `decoders`, `gltfLoader`, `xrAdapter`
+  - Fallback auf Regex-Checks wenn TypeScript API fehlschlägt
