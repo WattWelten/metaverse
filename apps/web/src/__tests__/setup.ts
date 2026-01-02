@@ -16,5 +16,14 @@ global.ResizeObserver = vi.fn(() => ({
 }));
 
 // Mock IntersectionObserver
-global.IntersectionObserver = IntersectionObserver as typeof global.IntersectionObserver;
-
+if (typeof global.IntersectionObserver === 'undefined') {
+  global.IntersectionObserver = class IntersectionObserver {
+    constructor() {}
+    disconnect() {}
+    observe() {}
+    takeRecords() {
+      return [];
+    }
+    unobserve() {}
+  } as typeof global.IntersectionObserver;
+}
