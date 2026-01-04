@@ -14,6 +14,8 @@ export default defineConfig({
       'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
       'src/__tests__/**/*.{ts,tsx}',
     ],
+    // Helper-Dateien ausschließen
+    exclude: ['node_modules', 'dist', '**/setup.ts', '**/helpers/heartbeat.ts'],
     // Progress-Reporting für lange Tests
     reporters: ['verbose'],
     // Output während Tests
