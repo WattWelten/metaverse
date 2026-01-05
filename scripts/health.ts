@@ -27,10 +27,14 @@ interface HealthReport {
     usesCreateGLTFLoader: boolean;
     decoders: { draco: boolean; ktx2: boolean };
     xrAdapter: { exists: boolean; type: 'three' | 'verse' | 'none' };
-    lodSupport: boolean;
-    usesCreateGLTFLoader: boolean;
-    decoders: { draco: boolean; ktx2: boolean };
-    xrAdapter: { exists: boolean; type: 'three' | 'verse' | 'none' };
+  };
+  collaboration?: {
+    voiceProvider: boolean;
+    liveKitProvider: boolean;
+    whiteboardClient: boolean;
+    pinboard: boolean;
+    roomUtils: boolean;
+    serverTokenEndpoint: boolean;
   };
 }
 
@@ -229,6 +233,37 @@ function checkDocs(): { files: string[]; coverage: number } {
   return { files, coverage: Math.round(coverage) };
 }
 
+function checkCollaboration(): {
+  voiceProvider: boolean;
+  liveKitProvider: boolean;
+  whiteboardClient: boolean;
+  pinboard: boolean;
+  roomUtils: boolean;
+  serverTokenEndpoint: boolean;
+} {
+  const voiceProviderPath = join(rootDir, 'packages/voice/src/providers/IVoiceProvider.ts');
+  const liveKitProviderPath = join(rootDir, 'packages/voice/src/providers/LiveKitProvider.ts');
+  const whiteboardClientPath = join(rootDir, 'packages/whiteboard/src/WhiteboardClient.ts');
+  const pinboardPath = join(rootDir, 'apps/web/src/ui/Pinboard.tsx');
+  const roomUtilsPath = join(rootDir, 'apps/web/src/rooms.ts');
+  const serverPath = join(rootDir, 'apps/server/src/server.ts');
+
+  let serverTokenEndpoint = false;
+  if (existsSync(serverPath)) {
+    const serverContent = readFileSync(serverPath, 'utf-8');
+    serverTokenEndpoint = /\/voice\/token/.test(serverContent);
+  }
+
+  return {
+    voiceProvider: existsSync(voiceProviderPath),
+    liveKitProvider: existsSync(liveKitProviderPath),
+    whiteboardClient: existsSync(whiteboardClientPath),
+    pinboard: existsSync(pinboardPath),
+    roomUtils: existsSync(roomUtilsPath),
+    serverTokenEndpoint,
+  };
+}
+
 async function main(): Promise<void> {
   const rootPackageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
   const webPackageJson = JSON.parse(readFileSync(join(rootDir, 'apps/web/package.json'), 'utf-8'));
@@ -354,6 +389,9 @@ ${
     },
   };
 
+  // Check collaboration components
+  report.collaboration = checkCollaboration();
+
   // Update report content with new sections
   const updatedReportContent =
     reportContent +
@@ -373,6 +411,14 @@ ${
   - Draco: ${report.features?.decoders.draco ? '✅' : '❌'}
   - KTX2: ${report.features?.decoders.ktx2 ? '✅' : '❌'}
 - XR Adapter: ${report.features?.xrAdapter.exists ? `✅ (${report.features.xrAdapter.type})` : '❌'}
+
+## Collaboration
+- Voice Provider Interface: ${report.collaboration?.voiceProvider ? '✅' : '❌'}
+- LiveKit Provider: ${report.collaboration?.liveKitProvider ? '✅' : '❌'}
+- Whiteboard Client: ${report.collaboration?.whiteboardClient ? '✅' : '❌'}
+- Pinboard: ${report.collaboration?.pinboard ? '✅' : '❌'}
+- Room Utils: ${report.collaboration?.roomUtils ? '✅' : '❌'}
+- Server Token Endpoint: ${report.collaboration?.serverTokenEndpoint ? '✅' : '❌'}
 `;
 
   writeFileSync(reportPath, updatedReportContent, 'utf-8');

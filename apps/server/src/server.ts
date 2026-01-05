@@ -106,6 +106,22 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// Voice Token Endpoint (Stub für DEV)
+app.get('/voice/token', (req, res) => {
+  const room = req.query.room as string;
+  const devToken = process.env.DEV_TOKEN || 'dev-token-stub';
+
+  // In Production würde hier ein echter LiveKit-Token generiert werden
+  // Für DEV: einfacher Stub mit 'guest' Role
+  const token = {
+    token: devToken,
+    role: 'guest',
+    room: room || 'default',
+  };
+
+  res.json(token);
+});
+
 const io = new Server(httpServer, {
   cors: {
     origin: clientUrls,

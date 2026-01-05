@@ -12,6 +12,10 @@ import { useEffect, useRef, useState } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DebugOverlay } from './DebugOverlay';
 import { FeatureFlags, getFeatureFlags } from './FeatureFlags';
+import { getRoomFromURL, copyRoomLink } from './rooms';
+import { Pinboard } from './ui/Pinboard';
+import { VoicePanel } from './ui/VoicePanel';
+import { WhiteboardPanel } from './ui/WhiteboardPanel';
 import { World } from './World';
 
 export function App() {
@@ -21,10 +25,7 @@ export function App() {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [fps, setFps] = useState(0);
   const [playerCount, setPlayerCount] = useState(1);
-  const [roomId, setRoomId] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('room') || 'default-room';
-  });
+  const [roomId, setRoomId] = useState(() => getRoomFromURL());
   const [isMuted, setIsMuted] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [voiceMuted, setVoiceMuted] = useState(false);
@@ -34,11 +35,19 @@ export function App() {
   const [showChat, setShowChat] = useState(false);
   const [showMediaUpload, setShowMediaUpload] = useState(false);
   const [showEmotes, setShowEmotes] = useState(false);
+  const [showWhiteboard, setShowWhiteboard] = useState(false);
+  const [showPinboard, setShowPinboard] = useState(false);
+  const [showVoicePanel, setShowVoicePanel] = useState(false);
 
   // Debug overlay visibility - enabled in dev mode or if flag is set
   const [showDebug, setShowDebug] = useState(
     import.meta.env.DEV || import.meta.env.VITE_DEBUG_ENABLED === 'true'
   );
+
+  // Expose feature flags to window for HUD component
+  useEffect(() => {
+    (window as any).__featureFlags = getFeatureFlags();
+  }, []);
 
   // F12 toggle for debug overlay
   useEffect(() => {
@@ -149,29 +158,7 @@ export function App() {
     }
   };
 
-  const handleVoiceToggle = async () => {
-    const world = worldRef.current;
-    if (!world) return;
-
-    if (voiceEnabled) {
-      // Disable voice
-      world.disableVoice();
-      setVoiceEnabled(false);
-      setVoiceMuted(false);
-    } else {
-      // Enable voice
-      try {
-        await world.enableVoice();
-        setVoiceEnabled(true);
-        const voiceClient = world.getVoiceClient();
-        if (voiceClient) {
-          setVoiceMuted(voiceClient.isMuted());
-        }
-      } catch (error) {
-        console.error('Failed to enable voice:', error);
-      }
-    }
-  };
+  // handleVoiceToggle removed - using handleVoicePanelToggle instead
 
   const handleVoiceMuteToggle = () => {
     const world = worldRef.current;
@@ -273,6 +260,27 @@ export function App() {
     }
   };
 
+  const handleWhiteboardToggle = () => {
+    setShowWhiteboard(!showWhiteboard);
+  };
+
+  const handlePinboardToggle = () => {
+    setShowPinboard(!showPinboard);
+  };
+
+  const handleVoicePanelToggle = () => {
+    setShowVoicePanel(!showVoicePanel);
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await copyRoomLink(roomId);
+      console.log('Room link copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy room link:', error);
+    }
+  };
+
   return (
     <ErrorBoundary>
       <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -282,8 +290,14 @@ export function App() {
           fps={fps}
           voiceEnabled={voiceEnabled}
           voiceMuted={voiceMuted}
-          onVoiceToggle={getFeatureFlags().VOICE_ENABLED ? handleVoiceToggle : undefined}
+          onVoiceToggle={getFeatureFlags().VOICE_ENABLED ? handleVoicePanelToggle : undefined}
           onVoiceMuteToggle={getFeatureFlags().VOICE_ENABLED ? handleVoiceMuteToggle : undefined}
+          onWhiteboardToggle={
+            getFeatureFlags().WHITEBOARD_ENABLED ? handleWhiteboardToggle : undefined
+          }
+          onPinboardToggle={handlePinboardToggle}
+          roomId={roomId}
+          onCopyLink={getFeatureFlags().MULTIPLAYER_ENABLED ? handleCopyLink : undefined}
         />
         {getFeatureFlags().MULTIPLAYER_ENABLED && (
           <RoomUI
@@ -323,6 +337,22 @@ export function App() {
           onDecline={() => handleVoiceConsent(false)}
         />
         {showDebug && <DebugOverlay world={worldRef.current} />}
+        {getFeatureFlags().VOICE_ENABLED && (
+          <VoicePanel
+            roomId={roomId}
+            userId={worldRef.current?.getUserId() || ''}
+            visible={showVoicePanel}
+            onClose={() => setShowVoicePanel(false)}
+          />
+        )}
+        {getFeatureFlags().WHITEBOARD_ENABLED && (
+          <WhiteboardPanel
+            roomId={roomId}
+            visible={showWhiteboard}
+            onClose={() => setShowWhiteboard(false)}
+          />
+        )}
+        <Pinboard visible={showPinboard} onClose={() => setShowPinboard(false)} />
       </div>
     </ErrorBoundary>
   );

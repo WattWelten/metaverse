@@ -1,5 +1,5 @@
 {
-  "name": "@metaverse/voice",
+  "name": "@metaverse/whiteboard",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,14 +20,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "livekit-client": "^2.5.0",
-    "@metaverse/net": "workspace:*",
-    "simple-peer": "^9.11.1"
+    "yjs": "^13.6.0",
+    "y-websocket": "^2.0.0"
   },
   "devDependencies": {
     "@metaverse/eslint-config": "workspace:*",
     "@metaverse/tsconfig": "workspace:*",
-    "@types/simple-peer": "^9.11.8",
     "typescript": "^5.9.3"
   }
 }

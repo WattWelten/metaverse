@@ -5,6 +5,5 @@ export * from './adapters/janus.js';
 export * from './positional/AudioGraph.js';
 export * from './spatial/SpatialAudioManager.js';
 export * from './effects/AudioEffects.js';
-
-
-
+export * from './providers/IVoiceProvider.js';
+export * from './providers/LiveKitProvider.js';

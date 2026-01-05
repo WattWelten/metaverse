@@ -6,6 +6,10 @@ export interface HUDProps {
   voiceMuted?: boolean;
   onVoiceToggle?: () => void;
   onVoiceMuteToggle?: () => void;
+  onWhiteboardToggle?: () => void;
+  onPinboardToggle?: () => void;
+  roomId?: string;
+  onCopyLink?: () => void;
 }
 
 export function HUD({
@@ -16,7 +20,18 @@ export function HUD({
   voiceMuted = false,
   onVoiceToggle,
   onVoiceMuteToggle,
+  onWhiteboardToggle,
+  onPinboardToggle,
+  roomId,
+  onCopyLink,
 }: HUDProps) {
+  // Dynamically check feature flags (will be passed from App.tsx)
+  const whiteboardEnabled =
+    typeof window !== 'undefined' && (window as any).__featureFlags?.WHITEBOARD_ENABLED;
+  const voiceEnabledFlag =
+    typeof window !== 'undefined' && (window as any).__featureFlags?.VOICE_ENABLED;
+  const multiplayerEnabled =
+    typeof window !== 'undefined' && (window as any).__featureFlags?.MULTIPLAYER_ENABLED;
   return (
     <div
       style={{
@@ -87,6 +102,94 @@ export function HUD({
             >
               <span>{voiceMuted ? '🔇' : '🔊'}</span>
               {voiceMuted ? 'Muted' : 'Unmuted'}
+            </button>
+          )}
+          {whiteboardEnabled && onWhiteboardToggle && (
+            <button
+              onClick={onWhiteboardToggle}
+              data-testid="whiteboard-toggle"
+              style={{
+                background: 'rgba(0, 150, 255, 0.7)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              title="Whiteboard"
+            >
+              <span>📝</span>
+              Whiteboard
+            </button>
+          )}
+          {onPinboardToggle && (
+            <button
+              onClick={onPinboardToggle}
+              data-testid="pinboard-toggle"
+              style={{
+                background: 'rgba(150, 100, 200, 0.7)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              title="Pinboard"
+            >
+              <span>📌</span>
+              Pinboard
+            </button>
+          )}
+          {voiceEnabledFlag && onVoiceToggle && (
+            <button
+              onClick={onVoiceToggle}
+              data-testid="voice-toggle"
+              style={{
+                background: voiceEnabled ? 'rgba(0, 200, 0, 0.7)' : 'rgba(200, 0, 0, 0.7)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              title={voiceEnabled ? 'Voice aktiviert' : 'Voice deaktiviert'}
+            >
+              <span>🎤</span>
+              Voice
+            </button>
+          )}
+          {multiplayerEnabled && roomId && onCopyLink && (
+            <button
+              onClick={onCopyLink}
+              data-testid="copy-link"
+              style={{
+                background: 'rgba(100, 100, 100, 0.7)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              title="Copy Room Link"
+            >
+              <span>🔗</span>
+              Copy Link
             </button>
           )}
         </div>

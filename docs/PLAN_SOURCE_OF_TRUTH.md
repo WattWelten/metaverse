@@ -422,6 +422,49 @@ Alle Features sind flag-gesteuert über `.env.local`:
 
 **Status**: ✅ Abgeschlossen (28/28 E2E-Tests erfolgreich, Build erfolgreich)
 
+### Phase 6: Collaboration Core (OSS-Provider-Skelette) 🚧
+
+**Zweck**: Integration von OSS-Komponenten für Voice, Whiteboard und Media-Sharing
+
+**Komponenten**:
+
+- LiveKit Provider für Voice (VITE_LIVEKIT_URL, Token via wattos_plattform)
+- Excalidraw + Yjs für Whiteboard (VITE_WHITEBOARD_ENABLED, VITE_YWS_URL)
+- Pinboard für PDF/Media-Sharing (Drag&Drop, iframe sandbox)
+
+**Feature-Flags**:
+
+- VITE_VOICE_ENABLED (bestehend, erweitert für LiveKit)
+- VITE_WHITEBOARD_ENABLED (neu)
+- VITE_LIVEKIT_URL (neu)
+- VITE_YWS_URL (neu)
+- VITE_WATTOS_BASE_URL (bestehend, für Voice-Token)
+
+**Eingriffe**:
+
+- `packages/voice/src/providers/IVoiceProvider.ts` - Interface für Voice-Provider
+- `packages/voice/src/providers/LiveKitProvider.ts` - LiveKit-Implementierung (Skelett)
+- `packages/whiteboard/` - Neues Package für Whiteboard-Client (Yjs)
+- `apps/web/src/ui/VoicePanel.tsx` - Voice-UI mit Join/Mute/Devices
+- `apps/web/src/ui/WhiteboardPanel.tsx` - Whiteboard-UI mit Excalidraw
+- `apps/web/src/ui/Pinboard.tsx` - Pinboard für PDF/Media-Sharing
+- `apps/web/src/rooms.ts` - Room-Utils (getRoomFromURL, copyRoomLink)
+- `apps/server/src/server.ts` - /voice/token Endpoint (DEV-Stub)
+- `.env.example` - Neue Feature-Flags dokumentieren
+
+**Definition of Done**:
+
+- [ ] LiveKit Provider-Skelett implementiert (IVoiceProvider Interface)
+- [ ] Whiteboard-Client mit Yjs-Sync (connect/disconnect, awareness)
+- [ ] Pinboard mit PDF.js + Drag&Drop + Link-Add
+- [ ] Topbar-Buttons (Whiteboard, Pinboard, Voice) flag-gesteuert
+- [ ] Room-Utils (getRoomFromURL, copyRoomLink)
+- [ ] Server-Stub: /voice/token Endpoint (DEV-Token für 'guest' Role)
+- [ ] E2E-Tests (two-tabs, whiteboard, voice)
+- [ ] CI erweitert (lint → typecheck → unit → e2e → build)
+
+**Status**: 🚧 In Progress
+
 ## Testplan
 
 ### Unit Tests (Vitest)
@@ -577,3 +620,10 @@ Alle Features sind flag-gesteuert über `.env.local`:
   - E2E-Smoke-Tests für lokalen Start (App-Load, Canvas-Render, Template-Load, Debug-Overlay, Audio-Context)
   - Dokumentation erweitert (Quickstart für lokalen Start)
   - Feature-Flags validiert (Solo-Modus ohne Server funktioniert)
+- **2026-01-XX**: Collaboration Core Skeleton (Version 2.2)
+  - Phase 6: OSS-Provider-Skelette (LiveKit Voice, Excalidraw+Yjs Whiteboard, Pinboard)
+  - LiveKit Provider-Interface und Skelett-Implementierung
+  - Whiteboard-Client mit Yjs-Sync
+  - Pinboard für PDF/Media-Sharing
+  - Room-Utils und Copy-Link-Funktionalität
+  - E2E-Tests für Collaboration-Features

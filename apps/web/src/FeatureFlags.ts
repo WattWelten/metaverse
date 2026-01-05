@@ -6,6 +6,7 @@ export interface FeatureFlags {
   TEMPLATE_ID: string;
   MULTIPLAYER_ENABLED: boolean;
   AMBIENT_AUDIO_ENABLED: boolean;
+  WHITEBOARD_ENABLED: boolean;
   READY_PLAYER_ME_API_KEY?: string;
 }
 
@@ -17,10 +18,26 @@ const defaultFlags: FeatureFlags = {
   TEMPLATE_ID: import.meta.env.VITE_TEMPLATE_ID || 'watt-default',
   MULTIPLAYER_ENABLED: import.meta.env.VITE_MULTIPLAYER_ENABLED === 'true', // Explizit 'true' erforderlich
   AMBIENT_AUDIO_ENABLED: import.meta.env.VITE_AMBIENT_AUDIO_ENABLED === 'true',
+  WHITEBOARD_ENABLED: import.meta.env.VITE_WHITEBOARD_ENABLED === 'true',
   READY_PLAYER_ME_API_KEY: import.meta.env.VITE_READY_PLAYER_ME_API_KEY,
 };
 
-let flags: FeatureFlags = { ...defaultFlags };
+// Check if flags are already set in window (for E2E tests)
+// This allows E2E tests to set flags via page.addInitScript before the module loads
+const getWindowFlags = (): Partial<FeatureFlags> | null => {
+  if (typeof window !== 'undefined' && (window as any).__featureFlags) {
+    const windowFlags = (window as any).__featureFlags;
+    // Only use window flags if they are a valid FeatureFlags object
+    if (typeof windowFlags === 'object' && windowFlags !== null) {
+      return windowFlags;
+    }
+  }
+  return null;
+};
+
+// Merge window flags (from E2E tests) with default flags
+const windowFlags = getWindowFlags();
+let flags: FeatureFlags = windowFlags ? { ...defaultFlags, ...windowFlags } : { ...defaultFlags };
 
 export function getFeatureFlags(): FeatureFlags {
   return { ...flags };

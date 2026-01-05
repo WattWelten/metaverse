@@ -1,5 +1,36 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-XX] - Collaboration Core Skeleton
+
+- Was: OSS-Provider-Skelette für Voice (LiveKit), Whiteboard (Excalidraw+Yjs), Pinboard
+- Warum: Skalierbare Voice-Kommunikation, kollaboratives Whiteboard, Media-Sharing
+- Dateien:
+  - `packages/voice/src/providers/IVoiceProvider.ts` (neu) - Interface für Voice-Provider
+  - `packages/voice/src/providers/LiveKitProvider.ts` (neu) - LiveKit-Implementierung (Skelett)
+  - `packages/whiteboard/` (neu - Package) - Whiteboard-Client mit Yjs-Sync
+  - `apps/web/src/ui/VoicePanel.tsx` (neu) - Voice-UI mit Join/Mute/Devices
+  - `apps/web/src/ui/WhiteboardPanel.tsx` (neu) - Whiteboard-UI mit Excalidraw
+  - `apps/web/src/ui/Pinboard.tsx` (neu) - Pinboard für PDF/Media-Sharing
+  - `apps/web/src/rooms.ts` (neu) - Room-Utils (getRoomFromURL, copyRoomLink)
+  - `apps/server/src/server.ts` (erweitert) - /voice/token Endpoint (DEV-Stub)
+  - `.env.example` (erweitert) - Neue Feature-Flags (VITE_WHITEBOARD_ENABLED, VITE_LIVEKIT_URL, VITE_YWS_URL)
+  - `docs/PLAN_SOURCE_OF_TRUTH.md` (erweitert) - Phase 6 dokumentiert
+  - `scripts/health.ts` (erweitert) - Collaboration-Checks hinzugefügt
+  - `packages/ui/src/HUD.tsx` (erweitert) - Whiteboard, Pinboard, Voice Buttons + Copy-Link
+  - `apps/web/src/App.tsx` (erweitert) - Integration aller Collaboration-Komponenten
+  - `apps/web/e2e/voice.spec.ts` (neu) - E2E-Test für Voice-Panel
+  - `apps/web/e2e/whiteboard.spec.ts` (neu) - E2E-Test für Whiteboard-Panel
+- Details:
+  - LiveKit Provider: Interface + Skelett-Implementierung mit livekit-client SDK
+  - Whiteboard: Excalidraw + Yjs für kollaboratives Zeichnen (y-websocket für Sync)
+  - Pinboard: PDF.js Viewer + Drag&Drop + Link-Embed (iframe sandbox)
+  - Room-Utils: URL-Parameter-Parsing, Copy-Link-Funktionalität
+  - Server-Stub: /voice/token Endpoint für DEV-Token (guest Role)
+  - E2E-Tests: voice, whiteboard (stub/real per ENV)
+  - Feature-Flags: VOICE*ENABLED, WHITEBOARD_ENABLED über VITE*\*-Variablen
+  - HUD-Integration: Buttons für Voice/Whiteboard/Pinboard nur wenn Flags aktiv
+- Status: ✅ Completed
+
 ## [2026-01-04] - Option A Auto-Setup (Photoreal Eco Template)
 
 - Was: Vollautomatisches Setup für `watt-eco` Template implementiert
