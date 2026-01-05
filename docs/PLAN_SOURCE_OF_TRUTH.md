@@ -454,16 +454,16 @@ Alle Features sind flag-gesteuert über `.env.local`:
 
 **Definition of Done**:
 
-- [ ] LiveKit Provider-Skelett implementiert (IVoiceProvider Interface)
-- [ ] Whiteboard-Client mit Yjs-Sync (connect/disconnect, awareness)
-- [ ] Pinboard mit PDF.js + Drag&Drop + Link-Add
-- [ ] Topbar-Buttons (Whiteboard, Pinboard, Voice) flag-gesteuert
-- [ ] Room-Utils (getRoomFromURL, copyRoomLink)
-- [ ] Server-Stub: /voice/token Endpoint (DEV-Token für 'guest' Role)
-- [ ] E2E-Tests (two-tabs, whiteboard, voice)
-- [ ] CI erweitert (lint → typecheck → unit → e2e → build)
+- [x] LiveKit Provider-Skelett implementiert (IVoiceProvider Interface)
+- [x] Whiteboard-Client mit Yjs-Sync (connect/disconnect, awareness)
+- [x] Pinboard mit PDF.js + Drag&Drop + Link-Add
+- [x] Topbar-Buttons (Whiteboard, Pinboard, Voice) flag-gesteuert
+- [x] Room-Utils (getRoomFromURL, copyRoomLink)
+- [x] Server-Stub: /voice/token Endpoint (DEV-Token für 'guest' Role)
+- [x] E2E-Tests (whiteboard, voice mit Feature-Flag-Support)
+- [x] CI erweitert (lint → typecheck → unit → e2e → build)
 
-**Status**: 🚧 In Progress
+**Status**: ✅ Abgeschlossen
 
 ## Testplan
 
