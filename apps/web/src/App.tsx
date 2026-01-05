@@ -13,6 +13,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { DebugOverlay } from './DebugOverlay';
 import { FeatureFlags, getFeatureFlags } from './FeatureFlags';
 import { getRoomFromURL, copyRoomLink } from './rooms';
+import { EnterOverlay } from './ui/EnterOverlay';
 import { Pinboard } from './ui/Pinboard';
 import { VoicePanel } from './ui/VoicePanel';
 import { WhiteboardPanel } from './ui/WhiteboardPanel';
@@ -38,6 +39,7 @@ export function App() {
   const [showWhiteboard, setShowWhiteboard] = useState(false);
   const [showPinboard, setShowPinboard] = useState(false);
   const [showVoicePanel, setShowVoicePanel] = useState(false);
+  const [showEnterOverlay, setShowEnterOverlay] = useState(true);
 
   // Debug overlay visibility - enabled in dev mode or if flag is set
   const [showDebug, setShowDebug] = useState(
@@ -342,6 +344,14 @@ export function App() {
           <WhiteboardPanel room={roomId} />
         )}
         <Pinboard visible={showPinboard} onClose={() => setShowPinboard(false)} />
+        {showEnterOverlay && worldRef.current?.hasPlayerController() && (
+          <EnterOverlay
+            onEnter={() => {
+              worldRef.current?.lockPointer();
+              setShowEnterOverlay(false);
+            }}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

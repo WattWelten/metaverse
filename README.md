@@ -33,6 +33,29 @@ Die Anwendung läuft dann auf:
 - Client: http://localhost:5173
 - Server: http://localhost:3001
 
+### Lokaler Start in 60s (Auto-Setup)
+
+Vollautomatisiertes Setup mit HDRI-Download und Demo-GLB-Generierung:
+
+```bash
+# 1. Install & Setup
+pnpm install
+pnpm run setup:decoders
+pnpm run auto:setup:option-a  # Lädt HDRI von PolyHaven, generiert Demo-GLB
+
+# 2. Dev Start
+pnpm -w dev
+
+# 3. Erwartung
+# - Szene rendert (watt-eco Template)
+# - "Enter Metaverse" Overlay sichtbar
+# - Click aktiviert Audio + PointerLock
+# - WASD+Maus funktioniert (Shift=Sprint, Space=Jump)
+# - Keine unhandled errors
+```
+
+**Hinweis:** Erste Interaktion aktiviert AudioContext (Autoplay-Policy).
+
 ### Lokaler Start (Solo-Modus)
 
 Für lokalen Start ohne Server:

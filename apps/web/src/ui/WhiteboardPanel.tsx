@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Excalidraw, convertToExcalidrawElements } from '@excalidraw/excalidraw';
-import * as Y from 'yjs';
 import { WhiteboardClient } from '@metaverse/whiteboard';
 
 const ENABLED = import.meta.env.VITE_WHITEBOARD_ENABLED === 'true';
@@ -30,10 +29,12 @@ export function WhiteboardPanel({ room }: WhiteboardPanelProps) {
       <Excalidraw
         onChange={(els) => {
           store.delete(0, store.length);
-          store.push([els]);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          store.push(els as any);
         }}
         initialData={{
-          elements: convertToExcalidrawElements((store.toArray().flat() || []) as unknown[]),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          elements: convertToExcalidrawElements((store.toArray().flat() || []) as any),
         }}
       />
     </div>

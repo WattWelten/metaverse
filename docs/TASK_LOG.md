@@ -1,5 +1,44 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-05] - Full Auto Setup MVP: PointerLock+WASD, EnterOverlay, Auto-Assets
+
+- Was: Vollautomatisiertes MVP-Setup mit PointerLock+WASD Controller, EnterOverlay, Auto-Assets (HDRI+GLB), Health-Checks
+- Warum: Lokales, betretbares MVP mit automatisiertem Asset-Setup und First-Person-Steuerung
+- Dateien:
+  - `apps/web/src/controllers/PlayerController.ts` (neu) - PointerLock+WASD Controller mit Physik (Gravity, Jump, Sprint)
+  - `apps/web/src/ui/EnterOverlay.tsx` (neu) - "Enter Metaverse" Overlay mit Audio-Aktivierung
+  - `apps/web/src/World.ts` (erweitert) - PlayerController optional integriert, Rotor-Animation vorhanden
+  - `apps/web/src/App.tsx` (erweitert) - EnterOverlay eingebunden, nur sichtbar wenn PlayerController aktiv
+  - `docs/PLAN_SOURCE_OF_TRUTH.md` (aktualisiert) - MVP-Zielbild mit PointerLock+WASD, EnterOverlay, Auto-Assets
+  - `scripts/health.ts` (verifiziert) - Bereits erweitert mit allen Checks
+  - `docs/TASK_LOG.md` (aktualisiert) - Eintrag hinzugefügt
+  - `README.md` (aktualisiert) - "Lokaler Start in 60s" Abschnitt ergänzt
+  - `docs/ATTRIBUTION.md` (neu) - PolyHaven HDRI, Three.js Credits dokumentiert
+- Details:
+  - **PlayerController**: PointerLockControls, WASD-Bewegung, Shift=Sprint (10 units/s), Space=Jump (4.5 m/s), Gravity (9.81 m/s²), Ground-Check
+  - **EnterOverlay**: "Enter Metaverse" Button, aktiviert AudioContext (resumeContext) und PointerLock
+  - **World.ts**: PlayerController wird nach Template-Load initialisiert (mit Spawn-Position aus Manifest), optional neben OrbitControls
+  - **App.tsx**: EnterOverlay nur sichtbar wenn PlayerController vorhanden, verschwindet nach Click
+  - **Auto-Assets**: Bereits vorhanden (auto-setup-option-a.ts), verifiziert
+  - **Health-Checks**: Bereits vorhanden, verifiziert
+  - **Tests**: Unit-Tests und E2E-Smoke-Tests bereits vorhanden, verifiziert
+  - **CI**: Bereits vorhanden, verifiziert
+- Verifiziert:
+  - GLTF Loader: ✅ Vorhanden mit Cache, DRACO, KTX2
+  - TemplateHost: ✅ Nutzt createGLTFLoader
+  - setup-decoders.ts: ✅ Vorhanden und funktioniert
+  - watt-default Fallback: ✅ Manifest vorhanden
+  - Renderer-Defaults: ✅ sRGB, ACES, Exposure 1.0, physicallyCorrect in World.ts
+  - auto-setup-option-a.ts: ✅ Vorhanden mit PolyHaven HDRI Download und GLB Generation
+  - Collab-Skeletons: ✅ Whiteboard/Voice bereits vorhanden, ENV Flags vorhanden
+- Lokaler Test:
+  - `pnpm install` ✅ - Dependencies installiert
+  - `pnpm run setup:decoders` ✅ - Decoder-Dateien vorhanden (alle Dateien bereits vorhanden)
+  - `pnpm run auto:setup:option-a` ✅ - HDRI geladen (venice_sunset_2k.hdr), GLB generiert (Placeholder), Template watt-eco erstellt, .env.local aktualisiert
+  - `pnpm -w dev` ✅ - Dev-Server gestartet (im Hintergrund)
+  - URLs: Client http://localhost:5173, Server http://localhost:3001
+- Status: ✅ Completed
+
 ## [2026-01-05] - Collab-Core: LiveKit Voice + Excalidraw/Yjs Integration
 
 - Was: LiveKit Voice Provider (Skelett) und Whiteboard (Excalidraw + Yjs) hinter Flags integrieren, Rooms/Links, E2E-Smokes

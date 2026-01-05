@@ -13,9 +13,12 @@ Das MVP umfasst eine production-ready Three.js WebXR Multiplayer Metaverse Platf
 
 - **Rendering**: Physically Correct Lights, ACES Tone Mapping, sRGB Color Space, Exposure Control
 - **Template-System**: Manifest-gesteuert, Hot-Swap-fähig, robuster Fallback (kein schwarzer Screen)
+- **Auto-Assets**: PolyHaven HDRI Download, prozedurale GLB-Generierung (watt-eco Template)
+- **Enter & Walk**: PointerLock+WASD Controller, EnterOverlay mit Audio-Aktivierung, Jump/Sprint
 - **Multiplayer**: Socket.io-basiert, flag-gesteuert, Solo-Modus ohne Fehler
 - **Avatare**: Ready Player Me Integration, VRM Loader, Basis-Synchronisation
 - **Voice**: WebRTC Spatial Audio, Consent-Modal, flag-gesteuert
+- **Whiteboard**: Excalidraw+Yjs kollaboratives Whiteboard, flag-gesteuert
 - **Ambient Audio**: Template-basiert, Autoplay-Policy-konform (User-Interaction erforderlich)
 - **XR**: Three.js WebXR Adapter, VerseEngine Stub (kein Vendor Lock-in)
 - **Content Provider**: LocalProvider (MVP), StrapiProvider (Stub)

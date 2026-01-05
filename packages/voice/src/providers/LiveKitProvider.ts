@@ -28,10 +28,10 @@ export class LiveKitProvider implements IVoiceProvider {
         }
       });
       this.room.on(RoomEvent.ParticipantConnected, () => {
-        this.partCb?.(this.room?.participants.size ?? 0);
+        this.partCb?.(this.room?.numParticipants ?? 0);
       });
       this.room.on(RoomEvent.ParticipantDisconnected, () => {
-        this.partCb?.(this.room?.participants.size ?? 0);
+        this.partCb?.(this.room?.numParticipants ?? 0);
       });
       await this.room.connect(opts.url, opts.token);
       const track = await createLocalAudioTrack();
@@ -50,8 +50,19 @@ export class LiveKitProvider implements IVoiceProvider {
   }
 
   async mute(muted: boolean): Promise<void> {
-    const mic = this.room?.localParticipant?.getTrackPublication('microphone');
-    await mic?.mute(muted);
+    if (!this.room?.localParticipant) return;
+    // Get first audio track publication
+    const audioPublications = Array.from(
+      this.room.localParticipant.audioTrackPublications.values()
+    );
+    const mic = audioPublications[0];
+    if (mic) {
+      if (muted) {
+        await mic.mute();
+      } else {
+        await mic.unmute();
+      }
+    }
   }
 
   async listDevices(): Promise<DeviceInfo[]> {

@@ -17,6 +17,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+import { PlayerController } from './controllers/PlayerController';
 import { getFeatureFlags, type FeatureFlags } from './FeatureFlags';
 import { InteractionManager } from './interactions/InteractionManager';
 import { PostProcessing } from './render/Post';
@@ -27,6 +28,7 @@ export class World {
   private camera: PerspectiveCamera;
   private renderer: WebGLRenderer;
   private controls: OrbitControls;
+  private playerController: PlayerController | null = null;
   private templateHost: TemplateHost;
   private xrAdapter: IXRAdapter | null = null;
   private postProcessing: PostProcessing;
@@ -383,14 +385,8 @@ export class World {
   async init(): Promise<void> {
     const flags = getFeatureFlags();
 
-    // Load default template
-    await this.templateHost.loadTemplate(flags.TEMPLATE_ID);
-
-    // Apply lighting from template manifest
-    const template = this.templateHost.getCurrentTemplate();
-    if (template) {
-      await this.applyTemplateLighting(template);
-    }
+    // Load default template (this will also initialize PlayerController if spawn is defined)
+    await this.loadTemplate(flags.TEMPLATE_ID);
 
     // Ambient Audio aus Template laden
     if (this.ambientManager && template) {
@@ -557,11 +553,15 @@ export class World {
 
     const delta = this.clock.getDelta();
 
-    // Update avatar movement (WASD controls)
-    this.updateAvatarMovement(delta);
-
-    // Update controls (for camera rotation)
-    this.controls.update();
+    // Update PlayerController if active (PointerLock mode)
+    if (this.playerController && this.playerController.controls.isLocked) {
+      this.playerController.update(delta);
+    } else {
+      // Update avatar movement (WASD controls) - fallback to OrbitControls
+      this.updateAvatarMovement(delta);
+      // Update controls (for camera rotation)
+      this.controls.update();
+    }
 
     // Update template host
     this.templateHost.update(delta);
@@ -692,6 +692,22 @@ export class World {
     return this.templateHost.getCurrentTemplate();
   }
 
+  lockPointer(): void {
+    if (this.playerController) {
+      this.playerController.lock();
+    }
+  }
+
+  unlockPointer(): void {
+    if (this.playerController) {
+      this.playerController.unlock();
+    }
+  }
+
+  hasPlayerController(): boolean {
+    return this.playerController !== null;
+  }
+
   setExposure(exposure: number): void {
     this.renderer.toneMappingExposure = Math.max(0.1, Math.min(3.0, exposure));
   }
@@ -703,6 +719,38 @@ export class World {
     const template = this.templateHost.getCurrentTemplate();
     if (template) {
       await this.applyTemplateLighting(template);
+
+      // Initialize PlayerController with spawn position from manifest
+      if (!this.playerController && template.manifest?.spawn) {
+        const spawn = template.manifest.spawn;
+        let spawnPos: [number, number, number];
+        let spawnRotY = 0;
+
+        // Handle different spawn formats
+        if (Array.isArray(spawn)) {
+          // Format: [x, y, z]
+          spawnPos = spawn as [number, number, number];
+        } else if ('position' in spawn && Array.isArray(spawn.position)) {
+          // Format: { position: [x, y, z], rotationY?: number }
+          spawnPos = spawn.position as [number, number, number];
+          spawnRotY = spawn.rotationY || 0;
+        } else if ('x' in spawn || 'y' in spawn || 'z' in spawn) {
+          // Format: { x: number, y: number, z: number }
+          spawnPos = [
+            (spawn as { x?: number }).x || 0,
+            (spawn as { y?: number }).y || 1.6,
+            (spawn as { z?: number }).z || 6,
+          ];
+        } else {
+          // Fallback
+          spawnPos = [0, 1.6, 6];
+        }
+
+        this.playerController = new PlayerController(this.camera, this.renderer.domElement, {
+          position: spawnPos,
+          rotationY: spawnRotY,
+        });
+      }
     }
 
     // Load ambient audio from new template
