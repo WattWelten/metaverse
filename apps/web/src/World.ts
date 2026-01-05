@@ -67,6 +67,16 @@ export class World {
   private interactionManager: InteractionManager | null = null;
   private isSitting = false;
 
+  // Avatar Movement Controls
+  private keysPressed = new Set<string>();
+  private avatarPosition = { x: 0, y: 1.6, z: 0 }; // Start position (eye height)
+  private avatarRotation = { x: 0, y: 0, z: 0 };
+  private moveSpeed = 5; // units per second
+  private cameraDistance = 8; // Third-person camera distance
+  private cameraHeight = 3; // Camera height above avatar
+  private boundHandleKeyDown: (e: KeyboardEvent) => void;
+  private boundHandleKeyUp: (e: KeyboardEvent) => void;
+
   constructor(container: HTMLElement) {
     this.container = container;
     this.userId = this.generateUserId();
@@ -97,6 +107,22 @@ export class World {
     this.renderer.shadowMap.enabled = true;
     setPhysicallyCorrectLights(this.renderer);
     container.appendChild(this.renderer.domElement);
+
+    // WebGL Context Lost Handler
+    this.renderer.domElement.addEventListener('webglcontextlost', (event) => {
+      event.preventDefault();
+      console.warn('WebGL context lost - attempting to restore...');
+    });
+
+    this.renderer.domElement.addEventListener('webglcontextrestored', () => {
+      console.log('WebGL context restored');
+      // Re-initialize renderer settings
+      this.renderer.outputColorSpace = 'srgb';
+      this.renderer.toneMapping = ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1.0;
+      this.renderer.shadowMap.enabled = true;
+      setPhysicallyCorrectLights(this.renderer);
+    });
 
     // Controls
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -135,6 +161,103 @@ export class World {
 
     // Setup click handler for interactions
     this.setupInteractionHandlers();
+
+    // Setup keyboard controls for avatar movement
+    this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+    this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+    window.addEventListener('keydown', this.boundHandleKeyDown);
+    window.addEventListener('keyup', this.boundHandleKeyUp);
+  }
+
+  private handleKeyDown(e: KeyboardEvent): void {
+    // Ignore if typing in input fields
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+      return;
+    }
+
+    const key = e.key.toLowerCase();
+    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
+      this.keysPressed.add(key);
+      e.preventDefault();
+    }
+  }
+
+  private handleKeyUp(e: KeyboardEvent): void {
+    const key = e.key.toLowerCase();
+    this.keysPressed.delete(key);
+  }
+
+  private updateAvatarMovement(delta: number): void {
+    if (!this.avatarManager) return;
+
+    // Calculate movement direction based on pressed keys
+    let moveX = 0;
+    let moveZ = 0;
+
+    if (this.keysPressed.has('w') || this.keysPressed.has('arrowup')) {
+      moveZ -= 1; // Forward
+    }
+    if (this.keysPressed.has('s') || this.keysPressed.has('arrowdown')) {
+      moveZ += 1; // Backward
+    }
+    if (this.keysPressed.has('a') || this.keysPressed.has('arrowleft')) {
+      moveX -= 1; // Left
+    }
+    if (this.keysPressed.has('d') || this.keysPressed.has('arrowright')) {
+      moveX += 1; // Right
+    }
+
+    // Normalize diagonal movement
+    if (moveX !== 0 && moveZ !== 0) {
+      moveX *= 0.707; // 1/sqrt(2)
+      moveZ *= 0.707;
+    }
+
+    // Calculate movement based on camera rotation (relative to camera view)
+    const cameraYaw = this.camera.rotation.y;
+    const cosYaw = Math.cos(cameraYaw);
+    const sinYaw = Math.sin(cameraYaw);
+
+    // Transform movement to world space
+    const worldMoveX = moveX * cosYaw - moveZ * sinYaw;
+    const worldMoveZ = moveX * sinYaw + moveZ * cosYaw;
+
+    // Update avatar position
+    const speed = this.moveSpeed * delta;
+    this.avatarPosition.x += worldMoveX * speed;
+    this.avatarPosition.z += worldMoveZ * speed;
+
+    // Keep avatar on ground (simple ground plane at y=0)
+    this.avatarPosition.y = 1.6; // Eye height
+
+    // Update avatar rotation to face movement direction
+    if (moveX !== 0 || moveZ !== 0) {
+      this.avatarRotation.y = Math.atan2(worldMoveX, worldMoveZ);
+    }
+
+    // Update avatar in AvatarManager
+    const animation = moveX !== 0 || moveZ !== 0 ? 'walk' : 'idle';
+    this.avatarManager.updateAvatar(
+      this.userId,
+      this.avatarPosition,
+      this.avatarRotation,
+      animation
+    );
+
+    // Update camera to follow avatar (third-person view)
+    const cameraOffsetX = Math.sin(cameraYaw) * this.cameraDistance;
+    const cameraOffsetZ = Math.cos(cameraYaw) * this.cameraDistance;
+
+    this.camera.position.set(
+      this.avatarPosition.x - cameraOffsetX,
+      this.avatarPosition.y + this.cameraHeight,
+      this.avatarPosition.z - cameraOffsetZ
+    );
+
+    // Camera looks at avatar
+    this.camera.lookAt(this.avatarPosition.x, this.avatarPosition.y, this.avatarPosition.z);
+    this.controls.target.set(this.avatarPosition.x, this.avatarPosition.y, this.avatarPosition.z);
   }
 
   private generateUserId(): string {
@@ -163,6 +286,14 @@ export class World {
       autoConnect: false, // Manuell verbinden nach Template-Load
     });
 
+    // Stoppe Reconnection-Versuche nach Timeout
+    let connectionTimeout: NodeJS.Timeout | null = null;
+    const stopReconnection = () => {
+      if (this.netClient && this.soloMode) {
+        this.netClient.disconnect();
+      }
+    };
+
     // Avatar Manager initialisieren
     this.avatarManager = new AvatarManager(this.scene);
     if (this.netClient) {
@@ -170,9 +301,20 @@ export class World {
     }
 
     // Fallback: Solo-Modus wenn Server nicht erreichbar
+    let connectionErrorCount = 0;
     const onConnectError = () => {
-      console.warn('Server nicht erreichbar - Fallback zu Solo-Modus');
+      connectionErrorCount++;
+      if (connectionErrorCount === 1) {
+        // Nur einmal loggen, nicht bei jedem Reconnection-Versuch
+        console.warn('Server nicht erreichbar - Fallback zu Solo-Modus');
+      }
       this.soloMode = true;
+
+      // Stoppe Reconnection nach 3 Fehlern (entspricht reconnectionAttempts: 3)
+      if (connectionErrorCount >= 3 && this.netClient) {
+        console.log('Stopping reconnection attempts after multiple failures');
+        this.netClient.disconnect();
+      }
     };
 
     const onConnect = () => {
@@ -209,6 +351,11 @@ export class World {
   }
 
   private async initXR(): Promise<void> {
+    // Verhindere Mehrfach-Initialisierung
+    if (this.xrAdapter) {
+      return;
+    }
+
     try {
       const adapter = await createXRAdapter();
       if (!adapter) {
@@ -259,6 +406,19 @@ export class World {
       });
     }
 
+    // Create local avatar for WASD controls
+    if (this.avatarManager) {
+      // Create capsule avatar as fallback if no Ready Player Me avatar is loaded
+      const existingAvatar = this.avatarManager.getAvatar(this.userId);
+      if (!existingAvatar) {
+        this.avatarManager.createCapsuleAvatar(this.userId, this.avatarPosition);
+      } else {
+        // Update position to match current avatar position
+        this.avatarPosition = { ...existingAvatar.position };
+        this.avatarRotation = { ...existingAvatar.rotation };
+      }
+    }
+
     // Multiplayer verbinden (nach Template-Load)
     if (this.netClient && flags.MULTIPLAYER_ENABLED) {
       try {
@@ -291,6 +451,10 @@ export class World {
           timeout = setTimeout(() => {
             console.warn('Connection timeout - continuing in solo mode');
             this.soloMode = true;
+            // Stoppe Reconnection-Versuche nach Timeout
+            if (this.netClient) {
+              this.netClient.disconnect();
+            }
             safeResolve();
           }, 3000);
 
@@ -317,10 +481,32 @@ export class World {
           this.setupChat();
         } else {
           console.log('Running in solo mode');
+          // Create avatar even in solo mode for WASD controls
+          if (this.avatarManager) {
+            const existingAvatar = this.avatarManager.getAvatar(this.userId);
+            if (!existingAvatar) {
+              this.avatarManager.createCapsuleAvatar(this.userId, this.avatarPosition);
+            }
+          }
         }
       } catch (error) {
         console.warn('Multiplayer-Verbindung fehlgeschlagen:', error);
         this.soloMode = true;
+        // Create avatar even if multiplayer fails
+        if (this.avatarManager) {
+          const existingAvatar = this.avatarManager.getAvatar(this.userId);
+          if (!existingAvatar) {
+            this.avatarManager.createCapsuleAvatar(this.userId, this.avatarPosition);
+          }
+        }
+      }
+    } else {
+      // Solo mode - create avatar for WASD controls
+      if (this.avatarManager) {
+        const existingAvatar = this.avatarManager.getAvatar(this.userId);
+        if (!existingAvatar) {
+          this.avatarManager.createCapsuleAvatar(this.userId, this.avatarPosition);
+        }
       }
     }
 
@@ -376,7 +562,10 @@ export class World {
 
     const delta = this.clock.getDelta();
 
-    // Update controls
+    // Update avatar movement (WASD controls)
+    this.updateAvatarMovement(delta);
+
+    // Update controls (for camera rotation)
     this.controls.update();
 
     // Update template host
@@ -389,7 +578,8 @@ export class World {
       this.avatarManager.updateAnimations(delta);
     }
 
-    // Avatar-Position synchronisieren (throttled)
+    // Avatar-Position synchronisieren (throttled) - nur wenn nicht WASD-Steuerung aktiv
+    // WASD-Steuerung aktualisiert Avatar direkt, hier nur für Multiplayer-Sync
     const now = Date.now();
     if (
       this.netClient &&
@@ -397,41 +587,11 @@ export class World {
       !this.soloMode &&
       now - this.lastAvatarUpdate > this.AVATAR_UPDATE_THROTTLE
     ) {
-      const cameraPos = this.camera.position;
-      const cameraRot = this.camera.rotation;
-
-      // Berechne Geschwindigkeit für Animation-State
+      // Sync current avatar position to network
       const avatar = this.avatarManager.getAvatar(this.userId);
-      let animation: string | undefined = 'idle';
       if (avatar) {
-        // Wenn Avatar bereits eine Animation hat (z.B. emote), diese beibehalten
-        if (
-          avatar.animation &&
-          ['sitting', 'wave', 'dance', 'jump', 'clap', 'thumbsup'].includes(avatar.animation)
-        ) {
-          animation = avatar.animation;
-        } else {
-          const lastPos = avatar.position;
-          const distance = Math.sqrt(
-            Math.pow(cameraPos.x - lastPos.x, 2) +
-              Math.pow(cameraPos.y - lastPos.y, 2) +
-              Math.pow(cameraPos.z - lastPos.z, 2)
-          );
-          const timeDelta = (now - this.lastAvatarUpdate) / 1000; // seconds
-          const velocity = timeDelta > 0 ? distance / timeDelta : 0;
-
-          // Animation-State basierend auf Geschwindigkeit
-          animation = velocity > 0.01 ? 'walk' : 'idle';
-        }
+        this.netClient.updateAvatar(avatar.position, avatar.rotation, avatar.animation);
       }
-
-      this.avatarManager.updateAvatar(
-        this.userId,
-        { x: cameraPos.x, y: cameraPos.y, z: cameraPos.z },
-        { x: cameraRot.x, y: cameraRot.y, z: cameraRot.z },
-        animation
-      );
-
       this.lastAvatarUpdate = now;
     }
 
@@ -470,13 +630,13 @@ export class World {
       });
     }
 
-    // Rotate rotor if found (90°/s = Math.PI/2 per second)
+    // Rotate rotor if found (90°/s = Math.PI/2 per second, horizontal rotation around z-axis)
     if (this.rotorNode) {
       const rotationSpeed = Math.PI / 2; // radians per second
       // Optional: Slow down rotation at distance (temporal aliasing prevention)
       const distance = this.rotorNode.position.distanceTo(this.camera.position);
       const distanceFactor = distance > 50 ? 0.5 : 1.0; // Slow down at >50 units
-      this.rotorNode.rotation.y += rotationSpeed * delta * distanceFactor;
+      this.rotorNode.rotation.z += rotationSpeed * delta * distanceFactor;
     }
   }
 
@@ -511,6 +671,14 @@ export class World {
       console.error('Failed to enable voice:', error);
       throw error;
     }
+  }
+
+  disableVoice(): void {
+    if (!this.voiceClient) {
+      return;
+    }
+
+    this.voiceClient.disable();
   }
 
   getScene(): Scene {

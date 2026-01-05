@@ -11,12 +11,12 @@ export interface FeatureFlags {
 
 const defaultFlags: FeatureFlags = {
   AI_ENABLED: import.meta.env.VITE_AI_ENABLED === 'true',
-  VOICE_ENABLED: import.meta.env.VITE_VOICE_ENABLED !== 'false',
-  XR_ENABLED: import.meta.env.VITE_XR_ENABLED !== 'false',
+  VOICE_ENABLED: import.meta.env.VITE_VOICE_ENABLED === 'true',
+  XR_ENABLED: import.meta.env.VITE_XR_ENABLED === 'true',
   CMS_PROVIDER: (import.meta.env.VITE_CMS_PROVIDER as 'local' | 'strapi') || 'local',
   TEMPLATE_ID: import.meta.env.VITE_TEMPLATE_ID || 'watt-default',
-  MULTIPLAYER_ENABLED: import.meta.env.VITE_MULTIPLAYER_ENABLED !== 'false',
-  AMBIENT_AUDIO_ENABLED: import.meta.env.VITE_AMBIENT_AUDIO_ENABLED !== 'false',
+  MULTIPLAYER_ENABLED: import.meta.env.VITE_MULTIPLAYER_ENABLED === 'true', // Explizit 'true' erforderlich
+  AMBIENT_AUDIO_ENABLED: import.meta.env.VITE_AMBIENT_AUDIO_ENABLED === 'true',
   READY_PLAYER_ME_API_KEY: import.meta.env.VITE_READY_PLAYER_ME_API_KEY,
 };
 
@@ -34,6 +34,3 @@ export function FeatureFlags(): null {
   // Component for React integration, flags are accessed via getFeatureFlags()
   return null;
 }
-
-
-

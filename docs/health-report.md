@@ -1,6 +1,6 @@
 # Health Report
 
-Generated: 2025-12-22T13:30:58.939Z
+Generated: 2026-01-04T20:54:37.686Z
 
 ## Runtimes
 
@@ -54,9 +54,9 @@ Generated: 2025-12-22T13:30:58.939Z
 
 ## Documentation
 
-- Files: 36
-- Coverage: 514%
-- Files: ai-integration.md, architecture.md, assets-shopping.md, audio-voice.md, avatars.md, change-review.md, content-provider.md, deployment-validation-report.md, deployment.md, e2e-comprehensive-analysis.md, e2e-comprehensive-report.md, e2e-final-report.md, e2e-improvements-summary.md, e2e-test-results.md, e2e-tests-final-summary.md, final-status.md, health-report.md, integration-status.md, integration-validation-checklist.md, next-steps-final.md, next-steps-progress.md, next-steps-summary.md, performance.md, PLAN_SOURCE_OF_TRUTH.md, production-build-report.md, production-e2e-status.md, PR_DESCRIPTION.md, README.md, run-report.md, status-report.md, TASK_LOG.md, template-watt-eco.md, templates.md, test-fixes-summary.md, test-report.md, troubleshooting.md
+- Files: 45
+- Coverage: 643%
+- Files: ai-integration.md, architecture.md, assets-shopping.md, audio-voice.md, AUTOMATED_MANUAL_TEST_PLAN.md, AUTOMATED_TEST_RESULTS.md, avatars.md, change-review.md, content-provider.md, deployment-validation-report.md, deployment.md, DEPLOYMENT_QUICKSTART.md, DEPLOYMENT_STATUS.md, e2e-comprehensive-analysis.md, e2e-comprehensive-report.md, e2e-final-report.md, e2e-improvements-summary.md, e2e-test-results.md, e2e-tests-final-summary.md, final-status.md, health-report.md, integration-status.md, integration-validation-checklist.md, MANUAL_TEST_CHECKLIST.md, MVP_LOCAL_HARDENING_VALIDATION.md, next-steps-final.md, next-steps-progress.md, next-steps-summary.md, NEXT_STEPS_ACTION_PLAN.md, performance.md, PLAN_SOURCE_OF_TRUTH.md, production-build-report.md, production-e2e-status.md, PRODUCTION_ENV.md, PR_DESCRIPTION.md, PR_FULL_AUDIT.md, README.md, run-report.md, status-report.md, TASK_LOG.md, template-watt-eco.md, templates.md, test-fixes-summary.md, test-report.md, troubleshooting.md
 
 ## Environment
 

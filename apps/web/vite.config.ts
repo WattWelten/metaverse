@@ -18,6 +18,8 @@ export default defineConfig({
       '@ai': resolve(__dirname, '../../packages/ai/src'),
       '@content': resolve(__dirname, '../../packages/content/src'),
       '@assets': resolve(__dirname, '../../packages/assets'),
+      // Polyfills für Node.js-Module (Socket.io benötigt diese, aber Warnungen sind harmlos)
+      // events und util werden von Vite automatisch externalized, das ist OK
     },
   },
   server: {

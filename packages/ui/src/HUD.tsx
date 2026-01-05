@@ -2,9 +2,21 @@ export interface HUDProps {
   playerCount?: number;
   fps?: number;
   onMenuClick?: () => void;
+  voiceEnabled?: boolean;
+  voiceMuted?: boolean;
+  onVoiceToggle?: () => void;
+  onVoiceMuteToggle?: () => void;
 }
 
-export function HUD({ playerCount, fps, onMenuClick }: HUDProps) {
+export function HUD({
+  playerCount,
+  fps,
+  onMenuClick,
+  voiceEnabled = false,
+  voiceMuted = false,
+  onVoiceToggle,
+  onVoiceMuteToggle,
+}: HUDProps) {
   return (
     <div
       style={{
@@ -35,6 +47,48 @@ export function HUD({ playerCount, fps, onMenuClick }: HUDProps) {
             <div style={{ color: '#fff', fontSize: '14px' }}>Players: {playerCount}</div>
           )}
           {fps !== undefined && <div style={{ color: '#fff', fontSize: '14px' }}>FPS: {fps}</div>}
+          {onVoiceToggle && (
+            <button
+              onClick={onVoiceToggle}
+              style={{
+                background: voiceEnabled ? 'rgba(0, 200, 0, 0.7)' : 'rgba(200, 0, 0, 0.7)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              title={voiceEnabled ? 'Voice aktiviert' : 'Voice deaktiviert'}
+            >
+              <span>🎤</span>
+              {voiceEnabled ? 'Voice ON' : 'Voice OFF'}
+            </button>
+          )}
+          {onVoiceMuteToggle && voiceEnabled && (
+            <button
+              onClick={onVoiceMuteToggle}
+              style={{
+                background: voiceMuted ? 'rgba(200, 0, 0, 0.7)' : 'rgba(0, 200, 0, 0.7)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              title={voiceMuted ? 'Stumm' : 'Nicht stumm'}
+            >
+              <span>{voiceMuted ? '🔇' : '🔊'}</span>
+              {voiceMuted ? 'Muted' : 'Unmuted'}
+            </button>
+          )}
         </div>
         {onMenuClick && (
           <button

@@ -26,6 +26,8 @@ export function App() {
     return params.get('room') || 'default-room';
   });
   const [isMuted, setIsMuted] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceMuted, setVoiceMuted] = useState(false);
   const [chatMessages, setChatMessages] = useState<
     Array<{ userId: string; message: string; timestamp: number }>
   >([]);
@@ -129,13 +131,61 @@ export function App() {
     setShowConsentModal(false);
     if (accepted) {
       localStorage.setItem('voice-consent', 'true');
-      try {
-        await worldRef.current?.enableVoice();
-      } catch (error) {
-        console.error('Failed to enable voice after consent:', error);
+      // Automatisch Voice aktivieren nach Consent
+      const world = worldRef.current;
+      if (world) {
+        try {
+          await world.enableVoice();
+          setVoiceEnabled(true);
+          // Update mute state
+          const voiceClient = world.getVoiceClient();
+          if (voiceClient) {
+            setVoiceMuted(voiceClient.isMuted());
+          }
+        } catch (error) {
+          console.error('Failed to enable voice:', error);
+        }
       }
+    }
+  };
+
+  const handleVoiceToggle = async () => {
+    const world = worldRef.current;
+    if (!world) return;
+
+    if (voiceEnabled) {
+      // Disable voice
+      world.disableVoice();
+      setVoiceEnabled(false);
+      setVoiceMuted(false);
     } else {
-      localStorage.setItem('voice-consent', 'declined');
+      // Enable voice
+      try {
+        await world.enableVoice();
+        setVoiceEnabled(true);
+        const voiceClient = world.getVoiceClient();
+        if (voiceClient) {
+          setVoiceMuted(voiceClient.isMuted());
+        }
+      } catch (error) {
+        console.error('Failed to enable voice:', error);
+      }
+    }
+  };
+
+  const handleVoiceMuteToggle = () => {
+    const world = worldRef.current;
+    if (!world || !voiceEnabled) return;
+
+    const voiceClient = world.getVoiceClient();
+    if (voiceClient) {
+      if (voiceMuted) {
+        voiceClient.unmute();
+        setVoiceMuted(false);
+      } else {
+        voiceClient.mute();
+        setVoiceMuted(true);
+      }
     }
   };
 
@@ -227,7 +277,14 @@ export function App() {
     <ErrorBoundary>
       <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
         <FeatureFlags />
-        <HUD playerCount={playerCount} fps={fps} />
+        <HUD
+          playerCount={playerCount}
+          fps={fps}
+          voiceEnabled={voiceEnabled}
+          voiceMuted={voiceMuted}
+          onVoiceToggle={getFeatureFlags().VOICE_ENABLED ? handleVoiceToggle : undefined}
+          onVoiceMuteToggle={getFeatureFlags().VOICE_ENABLED ? handleVoiceMuteToggle : undefined}
+        />
         {getFeatureFlags().MULTIPLAYER_ENABLED && (
           <RoomUI
             roomId={roomId}

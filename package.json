@@ -30,6 +30,8 @@
     "assets:attr": "tsx scripts/generate-attribution.ts",
     "assets:budget": "tsx scripts/check-asset-budget.ts",
     "setup:decoders": "tsx scripts/setup-decoders.ts",
+    "setup:env": "tsx scripts/setup-env.ts",
+    "auto:setup:option-a": "tsx scripts/auto-setup-option-a.ts",
     "analyze:bundle": "tsx scripts/analyze-bundle.ts",
     "prepare": "husky"
   },

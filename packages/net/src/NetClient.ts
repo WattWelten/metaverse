@@ -43,7 +43,9 @@ export class NetClient {
       transports: ['websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 2, // Reduziert auf 2 Retries (insgesamt 3 Versuche: initial + 2 retries)
+      reconnectionDelayMax: 3000, // Max 3 Sekunden zwischen Versuchen
+      timeout: 3000, // Connection timeout (3 Sekunden)
     });
 
     this.setupEventHandlers();
@@ -115,7 +117,10 @@ export class NetClient {
 
   disconnect(): void {
     if (this.socket) {
+      // Stoppe Reconnection explizit
+      this.socket.io.reconnect(false);
       this.socket.disconnect();
+      this.socket.removeAllListeners();
       this.socket = null;
     }
     this.connected = false;

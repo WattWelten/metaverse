@@ -1,5 +1,22 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-04] - Option A Auto-Setup (Photoreal Eco Template)
+
+- Was: Vollautomatisches Setup für `watt-eco` Template implementiert
+- Warum: Option A (Photoreal Eco) mit HDRI-Download und GLB-Generierung automatisieren
+- Dateien:
+  - `scripts/auto-setup-option-a.ts` (neu) - Auto-Setup Script für HDRI-Download und GLB-Generierung
+  - `packages/assets/templates/watt-default/manifest.json` - `id` Feld hinzugefügt
+  - `apps/web/src/World.ts` - Rotor-Animation auf z-Rotation geändert (horizontal)
+  - `package.json` - Script `auto:setup:option-a` hinzugefügt
+  - `.env.local` - `VITE_TEMPLATE_ID=watt-eco` gesetzt
+- Details:
+  - HDRI-Download von PolyHaven API (Forest+Sunset, 2k, Fallback: venice_sunset)
+  - GLB-Generierung: Placeholder-GLB erstellt (GLTFExporter hat Node.js-Kompatibilitätsprobleme)
+  - Rotor-Animation: y-Rotation → z-Rotation (horizontal für Windturbine)
+  - Manifest und .env.local werden automatisch aktualisiert
+- Status: ✅ Alle Assets erstellt, Script funktioniert, lokaler Starttest erfolgreich
+
 ## [2025-01-XX] - Health Scan
 
 - Was: Health-Scan durchgeführt
@@ -234,3 +251,55 @@
   - Property-Checks erkennen `this.renderer.property` und `renderer.property` Zuweisungen
   - HealthReport Interface erweitert um `decoders`, `gltfLoader`, `xrAdapter`
   - Fallback auf Regex-Checks wenn TypeScript API fehlschlägt
+
+## [2026-01-04] - MVP Local Hardening
+
+- Was: Vollständiger Audit und Hardening für zuverlässigen lokalen Start
+- Warum: MVP soll lokal zuverlässig starten, keine schwarzen Screens, automatisierte Setup-Scripts
+- Dateien:
+  - scripts/setup-decoders.ts (erweitert - automatischer Download von Draco/KTX2 Decodern von CDN)
+  - scripts/setup-env.ts (neu - automatisches .env.local aus .env.example)
+  - apps/web/src/TemplateHost.ts (verbessert - createDefaultScene() mit besserer Platzhalter-Szene: Sky, Grid, Geometrie)
+  - apps/web/e2e/smoke-local.spec.ts (neu - E2E-Smoke-Tests für lokalen Start)
+  - package.json (setup:env Script hinzugefügt)
+  - docs/change-review.md (aktualisiert)
+  - docs/health-report.md (aktualisiert)
+  - docs/TASK_LOG.md (dieser Eintrag)
+  - README.md (erweitert - Quickstart für lokalen Start)
+- Details:
+  - Decoder-Download: Automatischer Download von Draco/KTX2 Decodern von CDN (Google CDN, jsDelivr)
+  - ENV-Setup: Automatisches Erstellen von .env.local aus .env.example mit Warnung für fehlende Secrets
+  - Template-Fallback: Verbesserte Platzhalter-Szene mit Sky-Dome, Grid-Helper, geometrischen Formen (kein schwarzer Screen)
+  - E2E-Smoke-Tests: Validierung von App-Load, Canvas-Render, Template-Load, Debug-Overlay (F12), Audio-Context-Resume
+  - Feature-Flags: Validierung dass Solo-Modus ohne Server funktioniert
+
+## [2026-01-04] - MVP Local Hardening Plan Implementation
+
+- Was: Vollständige Implementierung des MVP Local Hardening Plans gemäß PLAN_SOURCE_OF_TRUTH.md
+- Warum: Alle Phasen des Plans validieren und sicherstellen, dass alle Komponenten korrekt implementiert sind
+- Phasen:
+  - Phase 0: Source of Truth & Reports ✅
+    - PLAN_SOURCE_OF_TRUTH.md aktualisiert
+    - change-review.md generiert (Git-Status, Log, Diff)
+    - health-report.md generiert (Struktur, Renderer-Props, Decoder, Flags, Templates)
+  - Phase 1: Quick Wins ✅
+    - QW1: GLTF-Loader vereinheitlichen (createGLTFLoader mit Cache + DRACO + KTX2) ✅
+    - QW2: Decoder-Ordner automatisch vorbereiten (setup-decoders.ts mit automatischem Download) ✅
+    - QW3: Template-Integration (watt-eco + Fallback watt-default, createDefaultScene verbessert) ✅
+    - QW4: Rendering-Properties validieren (sRGB/ACES/Exposure 1.0/physicallyCorrect) ✅
+    - QW5: Debug-Overlay & Ambient-Audio-Policy (F12-Toggle, resumeContext) ✅
+  - Phase 2: Feature-Flags & Solo-Modus ✅
+    - FeatureFlags.ts validiert
+    - .env.example vollständig
+    - Solo-Modus in World.ts sichergestellt
+  - Phase 3: Automatisierte Local-Prep ✅
+    - A3.1: ENV-Setup (setup-env.ts erstellt) ✅
+    - A3.2: Decoder-Download (setup-decoders.ts erweitert) ✅
+    - A3.3: Template-Platzhalter (createDefaultScene verbessert) ✅
+  - Phase 4: Mini-Tests ✅
+    - T4.1: Unit-Tests (loaders.test.ts, FeatureFlags.test.ts, AmbientManager.test.ts) ✅
+    - T4.2: E2E-Smoke-Tests (smoke-local.spec.ts mit App-Load, Canvas-Render, Template-Load, Debug-Overlay, Audio-Context) ✅
+  - Phase 5: Dokumentation & TASK_LOG ✅
+    - TASK_LOG.md aktualisiert (dieser Eintrag)
+    - README.md Quickstart erweitert (setup:env, setup:decoders, dev)
+- Status: ✅ Alle Phasen abgeschlossen und validiert

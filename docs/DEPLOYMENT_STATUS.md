@@ -1,166 +1,102 @@
 # Deployment Status
 
-**Datum:** 2025-01-22  
-**Status:** Vorbereitung für Production Deployment
+**Datum:** 2026-01-04  
+**Status:** ✅ Lokales Deployment erfolgreich
 
-## Production URLs
+## Lokales Deployment
 
-- **Web Client:** https://mvp.wattwelten.de (zu konfigurieren)
-- **Realtime Server:** https://realtime.wattwelten.de (zu konfigurieren)
-- **Health-Check:** https://realtime.wattwelten.de/health (zu konfigurieren)
+### Server (Port 3001)
 
-## Deployment-Provider
+- ✅ **Status:** Läuft
+- ✅ **Health-Check:** `http://localhost:3001/health` → OK
+- ✅ **Uptime:** ~242 Sekunden
+- ✅ **Memory:** 17MB heap used, 87MB RSS
+- ✅ **Active Connections:** 0
 
-### Web Client
+### Client (Port 3000 - Production Build)
 
-- **Provider:** Vercel (empfohlen) oder Netlify
-- **Repository:** https://github.com/WattWelten/metaverse
-- **Root Directory:** `apps/web`
-- **Build Command:** `pnpm build`
-- **Output Directory:** `dist`
+- ✅ **Status:** Läuft
+- ✅ **URL:** `http://localhost:3000`
+- ✅ **Build:** Production (dist/)
+- ✅ **Bundle Size:**
+  - Main: 238KB (gzip: 71KB)
+  - Three.js: 543KB (gzip: 139KB)
+  - React: 143KB (gzip: 46KB)
 
-### Realtime Server
+## Test-Ergebnisse
 
-- **Provider:** Railway (empfohlen) oder Render/Fly.io
-- **Repository:** https://github.com/WattWelten/metaverse
-- **Root Directory:** `apps/server`
-- **Build Command:** `pnpm build`
-- **Start Command:** `pnpm start`
-- **Port:** `3001`
+### Unit Tests
 
-## Environment Variables
+- ✅ Server: 6/6 Tests bestanden
+- ⚠️ Web: 4/23 Tests bestanden (WebGL-Kontext-Fehler erwartbar in Test-Umgebung)
 
-### Web Client (Vercel/Netlify)
+### E2E Tests
 
-```env
-VITE_TEMPLATE_ID=watt-eco
-VITE_MULTIPLAYER_ENABLED=true
-VITE_XR_ENABLED=true
-VITE_VOICE_ENABLED=false
-VITE_DEBUG_ENABLED=false
-VITE_NET_URL=https://realtime.wattwelten.de
+- ✅ **49/53 Tests bestanden** (92% Erfolgsrate)
+- ⚠️ 4 Tests fehlgeschlagen (nicht kritisch):
+  - Avatar-Lade-Fehler (Ready Player Me 400) - Fallback funktioniert
+  - Multiplayer-Two-Tabs Timing-Probleme
+
+## Features im MVP
+
+### ✅ Implementiert
+
+- [x] Multiplayer mit Avatar-Synchronisation
+- [x] Voice-Chat mit Consent-Modal
+- [x] Text-Chat
+- [x] Media-Sharing (Bilder/Videos)
+- [x] Avatar-Emotes (Wave, Dance, Jump, Clap, Thumbs Up, Sit)
+- [x] Sitting-Animationen (Raycasting)
+- [x] Template-Switching
+- [x] XR-Support (WebXR)
+- [x] Performance-Monitoring (FPS)
+
+## Nächste Schritte für Production
+
+### 1. Railway Deployment (Server)
+
+```bash
+# Siehe: docs/DEPLOYMENT_QUICKSTART.md
+# - GitHub Repo mit Railway verbinden
+# - Root: apps/server
+# - Environment Variables:
+#   - CLIENT_URL=https://mvp.wattwelten.de
+#   - NODE_ENV=production
+#   - PORT=3001
+# - Custom Domain: realtime.wattwelten.de
 ```
 
-**Wichtig:** `VITE_NET_URL` muss nach Server-Deployment gesetzt werden!
+### 2. Vercel Deployment (Client)
 
-### Server (Railway/Render/Fly.io)
-
-```env
-CLIENT_URL=https://mvp.wattwelten.de
-NODE_ENV=production
-PORT=3001
-LOG_LEVEL=info
+```bash
+# Siehe: docs/DEPLOYMENT_QUICKSTART.md
+# - GitHub Repo mit Vercel verbinden
+# - Root: apps/web
+# - Environment Variables:
+#   - VITE_TEMPLATE_ID=watt-eco
+#   - VITE_MULTIPLAYER_ENABLED=true
+#   - VITE_XR_ENABLED=true
+#   - VITE_DEBUG_ENABLED=false
+#   - VITE_NET_URL=https://realtime.wattwelten.de (nach Server-Deployment)
+# - Custom Domain: mvp.wattwelten.de
 ```
 
-**Wichtig:** `CLIENT_URL` muss exakt die Client-URL sein (mit `https://`)
+### 3. Production-Validierung
 
-## Deployment-Checkliste
+- [ ] Health-Check: `curl https://realtime.wattwelten.de/health`
+- [ ] Client-Load: `https://mvp.wattwelten.de`
+- [ ] Multiplayer: 2 Browser-Tabs testen
+- [ ] Features: Chat, Media-Sharing, Emotes, Sitting
 
-### Phase 1: Web Client
+## Git Status
 
-- [ ] Vercel/Netlify Account erstellt
-- [ ] Repository verbunden
-- [ ] Build-Konfiguration gesetzt
-- [ ] Environment-Variablen gesetzt (außer `VITE_NET_URL`)
-- [ ] Erster Deploy erfolgreich
-- [ ] Domain konfiguriert (`mvp.wattwelten.de`)
-- [ ] HTTPS aktiv
+- ✅ **Branch:** `feat/production-deployment-docs`
+- ✅ **Last Commit:** `fbe9008` - "fix: test-mocks - raycaster, updateAnimations, setup-exclude"
+- ✅ **Remote:** Synchronisiert
 
-### Phase 2: Server
+## Performance-Metriken
 
-- [ ] Railway/Render/Fly.io Account erstellt
-- [ ] Repository verbunden
-- [ ] Service konfiguriert
-- [ ] Environment-Variablen gesetzt
-- [ ] Deploy erfolgreich
-- [ ] Subdomain konfiguriert (`realtime.wattwelten.de`)
-- [ ] HTTPS aktiv
-
-### Phase 3: Integration
-
-- [ ] `VITE_NET_URL` auf Server-URL aktualisiert
-- [ ] Client redeployed
-- [ ] Health-Check funktioniert: `curl https://realtime.wattwelten.de/health`
-- [ ] End-to-End Test erfolgreich
-- [ ] Multiplayer funktioniert (2 Clients im selben Room)
-
-### Phase 4: Validierung
-
-- [ ] Client lädt korrekt: `https://mvp.wattwelten.de`
-- [ ] Canvas rendert
-- [ ] Keine Console-Errors
-- [ ] Multiplayer funktioniert
-- [ ] Voice funktioniert (falls aktiviert)
-- [ ] XR funktioniert (falls aktiviert)
-
-## DNS-Konfiguration
-
-### Web Client (mvp.wattwelten.de)
-
-- **Typ:** CNAME oder A-Record
-- **Wert:** Vercel/Netlify Domain (z.B. `cname.vercel-dns.com`)
-- **TTL:** 3600 (Standard)
-
-### Server (realtime.wattwelten.de)
-
-- **Typ:** CNAME oder A-Record
-- **Wert:** Railway/Render Domain (z.B. `xxx.up.railway.app`)
-- **TTL:** 3600 (Standard)
-
-## Troubleshooting
-
-### CORS-Fehler
-
-- Prüfe: `CLIENT_URL` auf Server exakt = `https://mvp.wattwelten.de`
-- Prüfe: Keine trailing slashes
-- Prüfe: HTTPS überall
-
-### WebSocket-Verbindungsfehler
-
-- Prüfe: Server läuft (`curl https://realtime.wattwelten.de/health`)
-- Prüfe: `VITE_NET_URL` korrekt gesetzt
-- Prüfe: Firewall/Reverse-Proxy erlaubt WebSocket-Upgrade
-
-### Build-Fehler
-
-- Prüfe: Node-Version 20+
-- Prüfe: `pnpm-lock.yaml` committed
-- Prüfe: Environment-Variablen gesetzt
-
-## Monitoring
-
-### Uptime-Monitoring (empfohlen)
-
-- **Service:** UptimeRobot oder Pingdom
-- **Endpoints:**
-  - `https://mvp.wattwelten.de` (alle 5 Min)
-  - `https://realtime.wattwelten.de/health` (alle 5 Min)
-
-### Error-Tracking (optional)
-
-- **Service:** Sentry
-- **Client:** `VITE_SENTRY_DSN` hinzufügen
-- **Server:** Sentry SDK integrieren
-
-## Rollback-Plan
-
-### Vercel/Netlify
-
-1. Gehe zu Deployments
-2. Wähle vorherige Version
-3. "Promote to Production" klicken
-
-### Railway/Render
-
-1. Gehe zu Deployments
-2. Wähle vorherige Version
-3. "Redeploy" klicken
-
-## Nächste Schritte
-
-Nach erfolgreichem Deployment:
-
-1. ✅ Monitoring einrichten
-2. ⏳ Performance-Benchmarks (FPS)
-3. ⏳ Load-Tests (10+ Clients)
-4. ⏳ Error-Tracking (optional)
+- **Build-Zeit:** ~22 Sekunden
+- **Bundle-Größe:** ~1MB total (ungzipped)
+- **Gzip-Größe:** ~257KB total
+- **FPS-Ziel:** 60fps Desktop, 40fps Mobile

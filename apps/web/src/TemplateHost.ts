@@ -10,11 +10,16 @@ import {
   Object3D,
   Mesh,
   BoxGeometry,
+  SphereGeometry,
+  CylinderGeometry,
   MeshStandardMaterial,
+  MeshBasicMaterial,
   AmbientLight,
   DirectionalLight,
   Color,
   WebGLRenderer,
+  BackSide,
+  GridHelper,
 } from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
@@ -131,25 +136,63 @@ export class TemplateHost {
   private createDefaultScene(): Object3D {
     const group = new Object3D();
 
-    // Ground plane
-    const groundGeometry = new BoxGeometry(20, 0.1, 20);
-    const groundMaterial = new MeshStandardMaterial({ color: 0x333333 });
+    // Ground plane (larger, more visible)
+    const groundGeometry = new BoxGeometry(50, 0.2, 50);
+    const groundMaterial = new MeshStandardMaterial({
+      color: 0x4a5568,
+      roughness: 0.8,
+      metalness: 0.1,
+    });
     const ground = new Mesh(groundGeometry, groundMaterial);
-    ground.position.y = -0.05;
+    ground.position.y = -0.1;
     ground.receiveShadow = true;
     group.add(ground);
 
-    // Some cubes for visual interest
-    for (let i = 0; i < 5; i++) {
-      const geometry = new BoxGeometry(1, 1, 1);
+    // Sky dome (simple hemisphere for ambient feel)
+    const skyGeometry = new SphereGeometry(100, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    const skyMaterial = new MeshBasicMaterial({
+      color: 0x87ceeb,
+      side: BackSide,
+    });
+    const sky = new Mesh(skyGeometry, skyMaterial);
+    group.add(sky);
+
+    // Grid helper for orientation
+    const gridHelper = new GridHelper(50, 50, 0x444444, 0x222222);
+    gridHelper.position.y = 0.01;
+    group.add(gridHelper);
+
+    // Some geometric shapes for visual interest (better than random cubes)
+    const shapes: Array<{
+      type: 'box' | 'sphere' | 'cylinder';
+      pos: [number, number, number];
+      color: number;
+    }> = [
+      { type: 'box', pos: [5, 1, 5], color: 0xff6b6b },
+      { type: 'sphere', pos: [-5, 1, 5], color: 0x4ecdc4 },
+      { type: 'cylinder', pos: [0, 1, -5], color: 0x95e1d3 },
+    ];
+
+    shapes.forEach((shape) => {
+      let geometry;
+      if (shape.type === 'box') {
+        geometry = new BoxGeometry(2, 2, 2);
+      } else if (shape.type === 'sphere') {
+        geometry = new SphereGeometry(1, 16, 16);
+      } else {
+        geometry = new CylinderGeometry(1, 1, 2, 16);
+      }
+
       const material = new MeshStandardMaterial({
-        color: Math.random() * 0xffffff,
+        color: shape.color,
+        roughness: 0.5,
+        metalness: 0.3,
       });
-      const cube = new Mesh(geometry, material);
-      cube.position.set((Math.random() - 0.5) * 10, 0.5, (Math.random() - 0.5) * 10);
-      cube.castShadow = true;
-      group.add(cube);
-    }
+      const mesh = new Mesh(geometry, material);
+      mesh.position.set(shape.pos[0], shape.pos[1], shape.pos[2]);
+      mesh.castShadow = true;
+      group.add(mesh);
+    });
 
     return group;
   }

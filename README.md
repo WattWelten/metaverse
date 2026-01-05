@@ -12,13 +12,19 @@ Three.js WebXR Multiplayer Metaverse Platform mit Ready Player Me Integration, S
 - Node.js 20.11.1 (siehe `.nvmrc`)
 - pnpm 8.15.0+
 
-### Installation
+### Installation & Setup
 
 ```bash
-# Dependencies installieren
+# 1. Dependencies installieren
 pnpm install
 
-# Development Server starten (Client + Server)
+# 2. Environment-Variablen einrichten (erstellt .env.local aus .env.example)
+pnpm setup:env
+
+# 3. Decoder-Dateien herunterladen (Draco/KTX2)
+pnpm setup:decoders
+
+# 4. Development Server starten (Client + Server)
 pnpm dev
 ```
 
@@ -26,6 +32,20 @@ Die Anwendung läuft dann auf:
 
 - Client: http://localhost:5173
 - Server: http://localhost:3001
+
+### Lokaler Start (Solo-Modus)
+
+Für lokalen Start ohne Server:
+
+```bash
+# .env.local anpassen:
+VITE_MULTIPLAYER_ENABLED=false
+
+# Nur Client starten:
+pnpm dev:client
+```
+
+Die App funktioniert auch ohne Server (Solo-Modus, keine Fehler).
 
 ## Umgebungsvariablen
 
@@ -90,12 +110,29 @@ metaverse/
 
 ## Scripts
 
+### Setup
+
+- `pnpm setup:env` - Erstellt `.env.local` aus `.env.example`
+- `pnpm setup:decoders` - Lädt Draco/KTX2 Decoder-Dateien herunter
+
+### Development
+
 - `pnpm dev` - Startet alle Development-Server
+- `pnpm dev:client` - Startet nur Client (Port 5173)
+- `pnpm dev:server` - Startet nur Server (Port 3001)
+
+### Build & Test
+
 - `pnpm build` - Baut alle Packages
 - `pnpm lint` - Lintet alle Packages
 - `pnpm typecheck` - TypeScript Type-Check
 - `pnpm test` - Führt Tests aus
 - `pnpm e2e` - E2E Tests (Playwright)
+
+### Assets
+
+- `pnpm assets:import` - Importiert Assets (HDRI/GLB/Audio)
+- `pnpm assets:attr` - Generiert Attribution aus Manifesten
 
 ## Lizenz
 

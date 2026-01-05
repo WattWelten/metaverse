@@ -1,4 +1,5 @@
 {
+  "id": "watt-default",
   "name": "watt-default",
   "version": "1.0.0",
   "spawn": {
@@ -44,6 +45,3 @@
   },
   "interactions": []
 }
-
-
-
