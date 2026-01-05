@@ -1,4 +1,13 @@
-# Attribution & Credits
+# Attribution
+
+## Navigation
+
+- **three-pathfinding** (MIT License)
+  - Copyright (c) 2018 Don McCurdy
+  - https://github.com/donmccurdy/three-pathfinding
+  - Used for Navmesh-based pathfinding and movement clamping
+
+## Assets & Environments & Credits
 
 ## Third-Party Assets & Libraries
 

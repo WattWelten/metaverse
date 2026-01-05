@@ -1,0 +1,47 @@
+{
+  "id": "watt-default",
+  "name": "watt-default",
+  "version": "1.0.0",
+  "spawn": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "lighting": {
+    "ambient": {
+      "color": "#ffffff",
+      "intensity": 0.4
+    },
+    "directional": {
+      "color": "#ffffff",
+      "intensity": 0.8,
+      "position": {
+        "x": 5,
+        "y": 10,
+        "z": 5
+      }
+    }
+  },
+  "ambient": {
+    "sources": [
+      {
+        "id": "birds",
+        "file": "ambient/birds.mp3",
+        "volume": 0.3,
+        "loop": true
+      },
+      {
+        "id": "water",
+        "file": "ambient/water.mp3",
+        "volume": 0.2,
+        "loop": true,
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": -10
+        }
+      }
+    ]
+  },
+  "interactions": []
+}

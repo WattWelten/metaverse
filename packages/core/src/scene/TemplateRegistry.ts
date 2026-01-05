@@ -28,6 +28,7 @@ export interface TemplateManifest {
   assets?: {
     scene?: string;
     hdri?: string;
+    navmesh?: string;
   };
   portals?: Array<{
     id: string;

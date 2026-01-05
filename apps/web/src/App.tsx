@@ -17,6 +17,7 @@ import { EnterOverlay } from './ui/EnterOverlay';
 import { Pinboard } from './ui/Pinboard';
 import { VoicePanel } from './ui/VoicePanel';
 import { WhiteboardPanel } from './ui/WhiteboardPanel';
+import { AvatarPanel } from './ui/AvatarPanel';
 import { World } from './World';
 
 export function App() {
@@ -342,6 +343,15 @@ export function App() {
         {getFeatureFlags().VOICE_ENABLED && showVoicePanel && <VoicePanel room={roomId} />}
         {getFeatureFlags().WHITEBOARD_ENABLED && showWhiteboard && (
           <WhiteboardPanel room={roomId} />
+        )}
+        {getFeatureFlags().MULTIPLAYER_ENABLED && (
+          <AvatarPanel
+            onSetUrl={(url) => {
+              worldRef.current?.loadAvatarFromUrl(url).catch((error) => {
+                console.error('Failed to load avatar:', error);
+              });
+            }}
+          />
         )}
         <Pinboard visible={showPinboard} onClose={() => setShowPinboard(false)} />
         {showEnterOverlay && worldRef.current?.hasPlayerController() && (

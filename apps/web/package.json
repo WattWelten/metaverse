@@ -22,6 +22,7 @@
     "@metaverse/avatars": "workspace:*",
     "@metaverse/content": "workspace:*",
     "@metaverse/core": "workspace:*",
+    "@metaverse/navigation": "workspace:*",
     "@metaverse/net": "workspace:*",
     "@metaverse/ui": "workspace:*",
     "@metaverse/voice": "workspace:*",

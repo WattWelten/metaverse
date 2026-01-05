@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      three-pathfinding:
+        specifier: ^1.3.0
+        version: 1.3.0(three@0.170.0)
     devDependencies:
       '@changesets/cli':
         specifier: ^2.29.8
@@ -135,6 +139,9 @@ importers:
       '@metaverse/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@metaverse/navigation':
+        specifier: workspace:*
+        version: link:../../packages/navigation
       '@metaverse/net':
         specifier: workspace:*
         version: link:../../packages/net
@@ -333,6 +340,25 @@ importers:
       typescript-eslint:
         specifier: ^8.18.2
         version: 8.50.0(eslint@9.39.2)(typescript@5.9.3)
+
+  packages/navigation:
+    dependencies:
+      three:
+        specifier: ^0.170.0
+        version: 0.170.0
+      three-pathfinding:
+        specifier: ^1.3.0
+        version: 1.3.0(three@0.170.0)
+    devDependencies:
+      '@metaverse/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/three':
+        specifier: ^0.170.0
+        version: 0.170.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   packages/net:
     dependencies:
@@ -8729,6 +8755,14 @@ packages:
     resolution: {integrity: sha512-rCjsnxEqR9r1/C/lCqzGLS67NDty/S/eT6rAJfDvsanrIctTWdNoR4ZOGWewCB13h1QkVo2BpmC0wakj1+0m8A==}
     peerDependencies:
       three: '>= 0.151.0'
+    dependencies:
+      three: 0.170.0
+    dev: false
+
+  /three-pathfinding@1.3.0(three@0.170.0):
+    resolution: {integrity: sha512-LKxMI3/YqdMYvt6AdE2vB6s5ueDFczt/DWoxhtPNgRsH6E0D8LMYQxz+eIrmKo0MQpDvMVzXYUMBk+b86+k97w==}
+    peerDependencies:
+      three: 0.x.x
     dependencies:
       three: 0.170.0
     dev: false

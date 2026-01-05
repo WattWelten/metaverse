@@ -1,5 +1,11 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-05] - Run + Avatars + Voice + Eco Environment + Navmesh
+
+- Was: Vollständig betretbare Metaverse-Erfahrung mit Avatar-Auswahl, Eco-Umgebung (Sky+Water+Trees), Navmesh-Navigation und Character-Kollisionen
+- Warum: Erweiterung des MVP um immersive Umgebung, Avatar-System und realistische Bewegung mit Kollisionserkennung
+- Status: 🚧 In Progress
+
 ## [2026-01-05] - Full Auto Setup MVP: PointerLock+WASD, EnterOverlay, Auto-Assets
 
 - Was: Vollautomatisiertes MVP-Setup mit PointerLock+WASD Controller, EnterOverlay, Auto-Assets (HDRI+GLB), Health-Checks

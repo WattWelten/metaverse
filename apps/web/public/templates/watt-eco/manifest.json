@@ -1,0 +1,47 @@
+{
+  "id": "watt-eco",
+  "name": "Watt Eco – Forest Sunset",
+  "version": "1.0.0",
+  "assets": {
+    "scene": "scene.glb",
+    "hdri": "hdri.hdr"
+  },
+  "lighting": {
+    "exposure": 1,
+    "hdri": "hdri.hdr",
+    "ambient": {
+      "color": "#ffaa66",
+      "intensity": 0.3
+    },
+    "directional": {
+      "color": "#ffaa66",
+      "intensity": 0.6,
+      "position": {
+        "x": -5,
+        "y": 10,
+        "z": 5
+      }
+    }
+  },
+  "spawn": {
+    "position": [0, 1.1, 6],
+    "rotationY": 3.14
+  },
+  "portals": [],
+  "ambient": {
+    "sources": [
+      {
+        "id": "birds",
+        "file": "ambient/birds.mp3",
+        "volume": 0.3,
+        "loop": true
+      },
+      {
+        "id": "wind",
+        "file": "ambient/wind.mp3",
+        "volume": 0.2,
+        "loop": true
+      }
+    ]
+  }
+}

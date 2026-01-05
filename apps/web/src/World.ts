@@ -11,10 +11,17 @@ import {
   PerspectiveCamera,
   WebGLRenderer,
   ACESFilmicToneMapping,
+  SRGBColorSpace,
   Color,
   Clock,
   Object3D,
+  HemisphereLight,
+  DirectionalLight,
+  Texture,
+  Vector3,
 } from 'three';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { PMREMGenerator } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { PlayerController } from './controllers/PlayerController';
@@ -22,6 +29,10 @@ import { getFeatureFlags, type FeatureFlags } from './FeatureFlags';
 import { InteractionManager } from './interactions/InteractionManager';
 import { PostProcessing } from './render/Post';
 import { TemplateHost } from './TemplateHost';
+import { buildEco } from './environment/Eco';
+import { NavMeshSystem } from '@metaverse/navigation';
+import { extractHolesFromScene } from '@metaverse/navigation';
+import { NavController } from './navigation/NavController';
 
 export class World {
   private scene: Scene;
@@ -36,6 +47,10 @@ export class World {
   private animationFrameId: number | null = null;
   private container: HTMLElement;
   private boundHandleResize: () => void; // Speichere bound function für cleanup
+  private pmremGenerator: PMREMGenerator | null = null;
+  private defaultLights: { hemi: HemisphereLight; sun: DirectionalLight } | null = null;
+  private navMeshSystem: NavMeshSystem | null = null;
+  private navController: NavController | null = null;
 
   // Multiplayer & Networking
   private netClient: NetClient | null = null;
@@ -103,12 +118,25 @@ export class World {
     });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.outputColorSpace = 'srgb';
+    this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
     setPhysicallyCorrectLights(this.renderer);
     container.appendChild(this.renderer.domElement);
+
+    // PMREM Generator für HDRI
+    this.pmremGenerator = new PMREMGenerator(this.renderer);
+    this.pmremGenerator.compileEquirectangularShader();
+
+    // Default Lights (Fallback, falls kein HDRI geladen wird)
+    const hemi = new HemisphereLight(0xffffff, 0x223344, 0.6);
+    this.scene.add(hemi);
+    const sun = new DirectionalLight(0xffffff, 1.4);
+    sun.position.set(5, 10, 2);
+    sun.castShadow = true;
+    this.scene.add(sun);
+    this.defaultLights = { hemi, sun };
 
     // WebGL Context Lost Handler
     this.renderer.domElement.addEventListener('webglcontextlost', (event) => {
@@ -119,11 +147,17 @@ export class World {
     this.renderer.domElement.addEventListener('webglcontextrestored', () => {
       console.log('WebGL context restored');
       // Re-initialize renderer settings
-      this.renderer.outputColorSpace = 'srgb';
+      this.renderer.outputColorSpace = SRGBColorSpace;
       this.renderer.toneMapping = ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.0;
       this.renderer.shadowMap.enabled = true;
       setPhysicallyCorrectLights(this.renderer);
+      // Recreate PMREM Generator
+      if (this.pmremGenerator) {
+        this.pmremGenerator.dispose();
+      }
+      this.pmremGenerator = new PMREMGenerator(this.renderer);
+      this.pmremGenerator.compileEquirectangularShader();
     });
 
     // Controls
@@ -388,7 +422,16 @@ export class World {
     // Load default template (this will also initialize PlayerController if spawn is defined)
     await this.loadTemplate(flags.TEMPLATE_ID);
 
+    // Build Eco environment if template is watt-eco
+    if (flags.TEMPLATE_ID === 'watt-eco' || import.meta.env.VITE_ECO_ENABLED === 'true') {
+      buildEco(this.scene);
+    }
+
+    // Initialize Navigation (Navmesh)
+    await this.initNavigation();
+
     // Ambient Audio aus Template laden
+    const template = this.templateHost.getCurrentTemplate();
     if (this.ambientManager && template) {
       this.ambientManager.loadFromTemplate(template.manifest);
       // playAll() is async and handles context resume automatically
@@ -505,9 +548,115 @@ export class World {
     this.animate();
   }
 
-  private async applyTemplateLighting(_template: TemplateInstance): Promise<void> {
-    // Lighting wird von TemplateHost.applyLighting() behandelt
-    // Diese Methode wird beim mount() aufgerufen
+  async initNavigation(): Promise<void> {
+    const template = this.templateHost.getCurrentTemplate();
+    const manifest = template?.manifest;
+
+    this.navMeshSystem = new NavMeshSystem();
+
+    // 1) Wenn Template ein navmesh.glb definiert: laden
+    const navUrl = manifest?.assets?.navmesh
+      ? `/templates/${manifest.id}/${manifest.assets.navmesh}`
+      : null;
+
+    if (navUrl) {
+      try {
+        await this.navMeshSystem.loadFromGLB(navUrl, this.scene);
+        console.log('✅ Navmesh loaded from GLB:', navUrl);
+      } catch (error) {
+        console.warn('⚠️ Failed to load navmesh GLB, using procedural:', error);
+        // Fallback auf prozedural
+        const { holes, radius } = extractHolesFromScene(this.scene);
+        this.navMeshSystem.buildProcedural(this.scene, { radius, holes, y: 0 });
+      }
+    } else {
+      // 2) Prozedural aus Szene
+      const { holes, radius } = extractHolesFromScene(this.scene);
+      this.navMeshSystem.buildProcedural(this.scene, { radius, holes, y: 0 });
+      console.log('✅ Procedural navmesh built with', holes.length, 'holes');
+    }
+
+    // Startknoten bestimmen
+    const startPos = this.camera.position.clone();
+    startPos.y = 0; // Navmesh ist bei y=0
+    this.navMeshSystem.initAt(startPos);
+
+    // NavController erstellen und an PlayerController anhängen
+    if (this.playerController) {
+      this.navController = new NavController(this.navMeshSystem, this.camera);
+      this.playerController.attachNavController(this.navController);
+    }
+
+    // Set visibility based on VITE_NAV_DEBUG
+    if (this.navMeshSystem.overlay) {
+      this.navMeshSystem.setVisible(import.meta.env.VITE_NAV_DEBUG === 'true');
+    }
+
+    // Debug-Toggle (Taste H)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'h' && this.navMeshSystem?.overlay) {
+        this.navMeshSystem.toggleVisible();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    // Cleanup wird in dispose() gemacht
+  }
+
+  private async applyTemplateLighting(template: TemplateInstance): Promise<void> {
+    const manifest = template.manifest;
+    if (!manifest) return;
+
+    // Load HDRI if available
+    if (manifest.assets?.hdri && this.pmremGenerator) {
+      // Use same path pattern as TemplateHost (templates/{id}/...)
+      const hdriPath = `/templates/${manifest.id}/${manifest.assets.hdri}`;
+      try {
+        const texture = await new Promise<Texture>((resolve, reject) => {
+          new RGBELoader().load(
+            hdriPath,
+            (tex) => resolve(tex),
+            undefined,
+            (err) => reject(err)
+          );
+        });
+
+        const envMap = this.pmremGenerator.fromEquirectangular(texture).texture;
+        this.scene.environment = envMap;
+        this.scene.background = envMap;
+
+        // Hide default lights when HDRI is loaded
+        if (this.defaultLights) {
+          this.scene.remove(this.defaultLights.hemi);
+          this.scene.remove(this.defaultLights.sun);
+          this.defaultLights.hemi.dispose();
+          this.defaultLights.sun.dispose();
+          this.defaultLights = null;
+        }
+
+        texture.dispose();
+        console.log('✅ HDRI loaded:', hdriPath);
+      } catch (error) {
+        console.warn('⚠️ Failed to load HDRI, using default lights:', error);
+        // Keep default lights if HDRI fails
+      }
+    } else {
+      // No HDRI in manifest, ensure default lights are active
+      if (!this.defaultLights) {
+        const hemi = new HemisphereLight(0xffffff, 0x223344, 0.6);
+        this.scene.add(hemi);
+        const sun = new DirectionalLight(0xffffff, 1.4);
+        sun.position.set(5, 10, 2);
+        sun.castShadow = true;
+        this.scene.add(sun);
+        this.defaultLights = { hemi, sun };
+      }
+      console.log('ℹ️ No HDRI in manifest, using default lights');
+    }
+
+    // Apply exposure from manifest if specified
+    if (manifest.lighting?.exposure !== undefined) {
+      this.renderer.toneMappingExposure = manifest.lighting.exposure;
+    }
   }
 
   private async createLocalAvatar(): Promise<void> {
@@ -555,6 +704,20 @@ export class World {
 
     // Update PlayerController if active (PointerLock mode)
     if (this.playerController && this.playerController.controls.isLocked) {
+      // Collect remote avatar positions for collision detection
+      const remotePeers: Vector3[] = [];
+      if (this.avatarManager) {
+        const allAvatars = this.avatarManager.getAllAvatars();
+        allAvatars.forEach((avatar) => {
+          if (avatar.userId !== this.userId) {
+            remotePeers.push(new Vector3(avatar.position.x, avatar.position.y, avatar.position.z));
+          }
+        });
+      }
+
+      // Update PlayerController with remote peers for collision detection
+      this.playerController.setRemotePeers(remotePeers);
+
       this.playerController.update(delta);
     } else {
       // Update avatar movement (WASD controls) - fallback to OrbitControls
@@ -750,6 +913,11 @@ export class World {
           position: spawnPos,
           rotationY: spawnRotY,
         });
+
+        // Attach NavController if already initialized
+        if (this.navController) {
+          this.playerController.attachNavController(this.navController);
+        }
       }
     }
 
@@ -765,6 +933,28 @@ export class World {
   }
 
   dispose(): void {
+    // Cleanup Navigation
+    if (this.navMeshSystem) {
+      this.navMeshSystem.dispose();
+      this.navMeshSystem = null;
+    }
+    this.navController = null;
+
+    // Cleanup PMREM Generator
+    if (this.pmremGenerator) {
+      this.pmremGenerator.dispose();
+      this.pmremGenerator = null;
+    }
+
+    // Cleanup default lights
+    if (this.defaultLights) {
+      this.scene.remove(this.defaultLights.hemi);
+      this.scene.remove(this.defaultLights.sun);
+      this.defaultLights.hemi.dispose();
+      this.defaultLights.sun.dispose();
+      this.defaultLights = null;
+    }
+
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
@@ -826,6 +1016,30 @@ export class World {
 
   getAvatarManager(): AvatarManager | null {
     return this.avatarManager;
+  }
+
+  async loadAvatarFromUrl(url: string): Promise<void> {
+    if (!this.avatarManager) {
+      console.warn('AvatarManager not initialized');
+      return;
+    }
+
+    // Position aus aktueller Kamera-Position oder Spawn-Position
+    const spawnPos = this.camera.position;
+    const position = {
+      x: spawnPos.x,
+      y: spawnPos.y - 1.6, // Avatar steht auf dem Boden
+      z: spawnPos.z,
+    };
+
+    try {
+      await this.avatarManager.loadAvatar(this.userId, url, position);
+      console.log('✅ Avatar loaded from URL:', url);
+    } catch (error) {
+      console.error('Failed to load avatar from URL:', error);
+      // Fallback: Capsule Avatar
+      this.avatarManager.createCapsuleAvatar(this.userId, position);
+    }
   }
 
   getRoomId(): string {

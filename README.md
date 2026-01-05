@@ -33,7 +33,26 @@ Die Anwendung läuft dann auf:
 - Client: http://localhost:5173
 - Server: http://localhost:3001
 
-### Lokaler Start in 60s (Auto-Setup)
+### Navigation & Kollisionen
+
+### Navmesh-System
+
+Das Metaverse nutzt ein Navmesh-System für realistische Bewegung:
+
+- **Hotkey H**: Toggelt das Navmesh-Debug-Overlay (nur sichtbar wenn `VITE_NAV_DEBUG=true`)
+- **Template-Navmesh**: Templates können ein `navmesh.glb` definieren (Mesh-Name: **NavMesh**)
+  - Im Manifest: `assets.navmesh = "navmesh.glb"`
+- **Prozedurale Generierung**: Falls kein Navmesh-GLB vorhanden, wird es aus der Szene generiert
+  - Eco-Szene taggt Objekte: `Lake` (`userData.isLake`) und `Tree_*` (`userData.isTree`)
+  - Holes werden automatisch erkannt und aus der Navmesh ausgeschnitten
+
+### Character-Kollisionen
+
+- **Mindestabstand**: 0.8 Einheiten (2x Kapselradius)
+- **Push-Apart**: Avatare schieben sich sanft auseinander bei zu nahem Kontakt
+- **Remote-Avatare**: Multiplayer-Avatare werden als Kollisions-Peers berücksichtigt
+
+## Lokaler Start in 60s (Auto-Setup)
 
 Vollautomatisiertes Setup mit HDRI-Download und Demo-GLB-Generierung:
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
+import { NavController } from '../navigation/NavController';
 
 type Keys = {
   w: boolean;
@@ -16,6 +17,8 @@ interface SpawnConfig {
 }
 
 export class PlayerController {
+  private navController: NavController | null = null;
+  private remotePeers: THREE.Vector3[] = [];
   public controls: PointerLockControls;
   private keys: Keys = {
     w: false,
@@ -57,6 +60,14 @@ export class PlayerController {
 
   unlock(): void {
     this.controls.unlock();
+  }
+
+  attachNavController(navCtrl: NavController): void {
+    this.navController = navCtrl;
+  }
+
+  setRemotePeers(peers: THREE.Vector3[]): void {
+    this.remotePeers = peers;
   }
 
   private onKey(e: KeyboardEvent, down: boolean): void {
@@ -108,8 +119,35 @@ export class PlayerController {
       this.onGround = false;
     }
 
-    this.controls.moveForward(this.velocity.z * dt);
-    this.controls.moveRight(this.velocity.x * dt);
+    // Calculate intended movement direction
+    const forward = new THREE.Vector3();
+    this.controls.getDirection(forward);
+    forward.y = 0;
+    forward.normalize();
+    const right = new THREE.Vector3()
+      .crossVectors(forward, new THREE.Vector3(0, 1, 0))
+      .multiplyScalar(-1);
+
+    // Calculate intended position delta
+    const delta = new THREE.Vector3()
+      .addScaledVector(forward, this.velocity.z * dt)
+      .addScaledVector(right, this.velocity.x * dt);
+    const from = this.camera.position.clone();
+    let to = from.clone().add(delta);
+
+    // Apply navmesh clamping and character collisions if NavController is attached
+    if (this.navController) {
+      to = this.navController.step(from, to, this.remotePeers);
+    } else {
+      // Fallback: use original moveForward/moveRight
+      this.controls.moveForward(this.velocity.z * dt);
+      this.controls.moveRight(this.velocity.x * dt);
+    }
+
+    // Set position directly (if NavController is active)
+    if (this.navController) {
+      this.camera.position.copy(to);
+    }
 
     if (this.keys.space && this.onGround) {
       this.velocity.y = 4.5;

@@ -66,5 +66,8 @@
     "*.{ts,tsx,js,jsx,json,css,md}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "three-pathfinding": "^1.3.0"
   }
 }
