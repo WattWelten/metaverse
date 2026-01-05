@@ -117,8 +117,7 @@ export class NetClient {
 
   disconnect(): void {
     if (this.socket) {
-      // Stoppe Reconnection explizit
-      this.socket.io.reconnect(false);
+      // Disconnect stoppt automatisch Reconnection
       this.socket.disconnect();
       this.socket.removeAllListeners();
       this.socket = null;

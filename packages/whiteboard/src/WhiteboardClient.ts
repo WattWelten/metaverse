@@ -2,37 +2,16 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 
 export class WhiteboardClient {
-  private doc: Y.Doc;
-  private provider: WebsocketProvider | null = null;
-  private awareness: any;
+  doc: Y.Doc;
+  provider: WebsocketProvider;
 
-  constructor() {
+  constructor(wsUrl: string, docId: string) {
     this.doc = new Y.Doc();
+    this.provider = new WebsocketProvider(wsUrl, docId, this.doc, { connect: true });
   }
 
-  connect(wsUrl: string, docId: string): void {
-    this.provider = new WebsocketProvider(wsUrl, docId, this.doc);
-    this.awareness = this.provider.awareness;
-    console.log(`[Whiteboard] Connected to ${wsUrl} (doc: ${docId})`);
-  }
-
-  disconnect(): void {
-    if (this.provider) {
-      this.provider.destroy();
-      this.provider = null;
-    }
-    console.log('[Whiteboard] Disconnected');
-  }
-
-  getDoc(): Y.Doc {
-    return this.doc;
-  }
-
-  getAwareness(): any {
-    return this.awareness;
-  }
-
-  isConnected(): boolean {
-    return this.provider !== null;
+  destroy(): void {
+    this.provider.disconnect();
+    this.doc.destroy();
   }
 }

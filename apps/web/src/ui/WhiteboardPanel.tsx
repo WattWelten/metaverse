@@ -1,97 +1,41 @@
-import { Excalidraw } from '@excalidraw/excalidraw';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Excalidraw, convertToExcalidrawElements } from '@excalidraw/excalidraw';
+import * as Y from 'yjs';
 import { WhiteboardClient } from '@metaverse/whiteboard';
 
+const ENABLED = import.meta.env.VITE_WHITEBOARD_ENABLED === 'true';
+
 interface WhiteboardPanelProps {
-  roomId: string;
-  visible: boolean;
-  onClose: () => void;
+  room: string;
 }
 
-export function WhiteboardPanel({ roomId, visible, onClose }: WhiteboardPanelProps) {
-  const [client] = useState(() => new WhiteboardClient());
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+export function WhiteboardPanel({ room }: WhiteboardPanelProps) {
+  const wsUrl = import.meta.env.VITE_YWS_URL || 'ws://localhost:1234';
+  const [ready, setReady] = useState(false);
+  const y = useMemo(() => new WhiteboardClient(wsUrl, room), [wsUrl, room]);
 
   useEffect(() => {
-    if (visible) {
-      const wsUrl = import.meta.env.VITE_YWS_URL || 'ws://localhost:1234';
-      client.connect(wsUrl, `whiteboard-${roomId}`);
-    } else {
-      client.disconnect();
-    }
-  }, [visible, roomId, client]);
+    setReady(true);
+    return () => y.destroy();
+  }, [y]);
 
-  // Yjs-Sync mit Excalidraw würde hier implementiert werden
-  // (Y.Map für Shapes, Awareness für Cursors)
+  if (!ENABLED) return null;
+  if (!ready) return <div>Whiteboard loading…</div>;
 
-  if (!visible) return null;
+  // Simple shared array for elements
+  const store = y.doc.getArray<unknown>('elements');
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        background: 'rgba(0, 0, 0, 0.9)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '8px',
-        padding: '24px',
-        zIndex: 1000,
-        width: isFullscreen ? '100vw' : '80vw',
-        height: isFullscreen ? '100vh' : '80vh',
-        maxWidth: isFullscreen ? 'none' : '1200px',
-        maxHeight: isFullscreen ? 'none' : '800px',
-        pointerEvents: 'auto',
-      }}
-      data-testid="whiteboard-panel"
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '16px',
+    <div className="whiteboard-panel" data-testid="whiteboard-panel">
+      <Excalidraw
+        onChange={(els) => {
+          store.delete(0, store.length);
+          store.push([els]);
         }}
-      >
-        <h3 style={{ color: '#fff', margin: 0 }}>Whiteboard</h3>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-          </button>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '20px',
-              padding: '0',
-              width: '24px',
-              height: '24px',
-            }}
-          >
-            ×
-          </button>
-        </div>
-      </div>
-      <div style={{ width: '100%', height: 'calc(100% - 60px)' }}>
-        <Excalidraw />
-      </div>
+        initialData={{
+          elements: convertToExcalidrawElements((store.toArray().flat() || []) as unknown[]),
+        }}
+      />
     </div>
   );
 }

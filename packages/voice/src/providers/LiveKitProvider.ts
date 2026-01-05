@@ -1,85 +1,71 @@
-import { Room } from 'livekit-client';
-import type { IVoiceProvider } from './IVoiceProvider.js';
+import { IVoiceProvider, JoinOptions, DeviceInfo } from './IVoiceProvider.js';
+import { Room, RoomEvent, createLocalAudioTrack } from 'livekit-client';
 
 export class LiveKitProvider implements IVoiceProvider {
   private room: Room | null = null;
-  private livekitUrl: string;
-  private wattosBaseUrl: string;
-  private isConnectedFlag = false;
+  private stateCb?: (s: 'idle' | 'connecting' | 'connected' | 'error', e?: unknown) => void;
+  private partCb?: (n: number) => void;
 
-  constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const env = (import.meta as any).env || {};
-    this.livekitUrl = env.VITE_LIVEKIT_URL || '';
-    this.wattosBaseUrl = env.VITE_WATTOS_BASE_URL || '';
+  onState(cb: (s: 'idle' | 'connecting' | 'connected' | 'error', e?: unknown) => void): void {
+    this.stateCb = cb;
   }
 
-  async join(roomId: string, userId: string): Promise<void> {
-    if (!this.livekitUrl) {
-      throw new Error('VITE_LIVEKIT_URL not set');
+  onParticipantChange(cb: (n: number) => void): void {
+    this.partCb = cb;
+  }
+
+  async join(opts: JoinOptions): Promise<void> {
+    this.stateCb?.('connecting');
+    try {
+      this.room = new Room();
+      this.room.on(RoomEvent.ConnectionStateChanged, (state) => {
+        if (state === 'connected') {
+          this.stateCb?.('connected');
+        } else if (state === 'disconnected') {
+          this.stateCb?.('idle');
+        } else if (state === 'reconnecting') {
+          this.stateCb?.('connecting');
+        }
+      });
+      this.room.on(RoomEvent.ParticipantConnected, () => {
+        this.partCb?.(this.room?.participants.size ?? 0);
+      });
+      this.room.on(RoomEvent.ParticipantDisconnected, () => {
+        this.partCb?.(this.room?.participants.size ?? 0);
+      });
+      await this.room.connect(opts.url, opts.token);
+      const track = await createLocalAudioTrack();
+      await this.room.localParticipant.publishTrack(track);
+      this.stateCb?.('connected');
+    } catch (error) {
+      this.stateCb?.('error', error);
+      throw error;
     }
-
-    // Token via wattos_plattform
-    const tokenUrl = `${this.wattosBaseUrl}/voice/token?room=${roomId}`;
-    const response = await fetch(tokenUrl);
-    const { token } = await response.json();
-
-    this.room = new Room();
-    await this.room.connect(this.livekitUrl, token);
-    this.isConnectedFlag = true;
-    console.log(`[LiveKit] Joined room ${roomId} as ${userId}`);
   }
 
   async leave(): Promise<void> {
-    if (this.room) {
-      await this.room.disconnect();
-      this.room = null;
-    }
-    this.isConnectedFlag = false;
-    console.log('[LiveKit] Left room');
+    await this.room?.disconnect();
+    this.room = null;
+    this.stateCb?.('idle');
   }
 
-  async publish(stream: MediaStream): Promise<void> {
-    if (!this.room) throw new Error('Not connected');
-    const track = stream.getAudioTracks()[0];
-    if (!track) throw new Error('No audio track in stream');
-    // Skeleton: Track publishing would be implemented here
-    // Full implementation would use:
-    // const { createLocalAudioTrack } = await import('livekit-client');
-    // const localTrack = await createLocalAudioTrack({ source: track });
-    // await this.room.localParticipant.publishTrack(localTrack);
-    console.log('[LiveKit] Published audio track (skeleton - not fully implemented)');
+  async mute(muted: boolean): Promise<void> {
+    const mic = this.room?.localParticipant?.getTrackPublication('microphone');
+    await mic?.mute(muted);
   }
 
-  async subscribe(participantId: string): Promise<MediaStream | null> {
-    if (!this.room) return null;
-    const participant = this.room.remoteParticipants.get(participantId);
-    if (!participant) return null;
-    // Get first audio track publication
-    const audioPublication = Array.from(participant.audioTrackPublications.values())[0];
-    const track = audioPublication?.track;
-    if (!track) return null;
-    // Create MediaStream from RemoteTrack
-    const mediaStream = new MediaStream([track.mediaStreamTrack]);
-    return mediaStream;
+  async listDevices(): Promise<DeviceInfo[]> {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices
+      .filter((d) => d.kind === 'audioinput' || d.kind === 'audiooutput')
+      .map((d) => ({
+        id: d.deviceId,
+        label: d.label,
+        kind: d.kind as 'audioinput' | 'audiooutput',
+      }));
   }
 
-  mute(muted: boolean): void {
-    if (!this.room) return;
-    this.room.localParticipant.setMicrophoneEnabled(!muted);
-    console.log(`[LiveKit] Muted: ${muted}`);
-  }
-
-  async getDevices(): Promise<MediaDeviceInfo[]> {
-    return navigator.mediaDevices.enumerateDevices();
-  }
-
-  async setDevice(deviceId: string): Promise<void> {
-    // Device-Switching würde hier implementiert werden
-    console.log(`[LiveKit] Set device: ${deviceId}`);
-  }
-
-  isConnected(): boolean {
-    return this.isConnectedFlag;
+  async setInputDevice(deviceId: string): Promise<void> {
+    await this.room?.switchActiveDevice('audioinput', deviceId);
   }
 }

@@ -1,10 +1,21 @@
+export interface DeviceInfo {
+  id: string;
+  label: string;
+  kind: 'audioinput' | 'audiooutput';
+}
+
+export interface JoinOptions {
+  room: string;
+  token: string;
+  url: string;
+}
+
 export interface IVoiceProvider {
-  join(roomId: string, userId: string): Promise<void>;
+  join(opts: JoinOptions): Promise<void>;
   leave(): Promise<void>;
-  publish(stream: MediaStream): Promise<void>;
-  subscribe(participantId: string): Promise<MediaStream | null>;
-  mute(muted: boolean): void;
-  getDevices(): Promise<MediaDeviceInfo[]>;
-  setDevice(deviceId: string): Promise<void>;
-  isConnected(): boolean;
+  mute(muted: boolean): Promise<void>;
+  listDevices(): Promise<DeviceInfo[]>;
+  setInputDevice(deviceId: string): Promise<void>;
+  onParticipantChange?(cb: (count: number) => void): void;
+  onState?(cb: (state: 'idle' | 'connecting' | 'connected' | 'error', err?: unknown) => void): void;
 }

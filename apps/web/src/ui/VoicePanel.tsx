@@ -1,156 +1,70 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LiveKitProvider } from '@metaverse/voice';
 
+const ENABLED = import.meta.env.VITE_VOICE_ENABLED === 'true';
+
 interface VoicePanelProps {
-  roomId: string;
-  userId: string;
-  visible: boolean;
-  onClose: () => void;
+  room: string;
 }
 
-export function VoicePanel({ roomId, userId, visible, onClose }: VoicePanelProps) {
-  const [provider] = useState(() => new LiveKitProvider());
-  const [isConnected, setIsConnected] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>('');
+export function VoicePanel({ room }: VoicePanelProps) {
+  const [state, setState] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
+  const [devices, setDevices] = useState<{ id: string; label: string }[]>([]);
+  const [joined, setJoined] = useState(false);
+  const prov = useMemo(() => new LiveKitProvider(), []);
 
   useEffect(() => {
-    provider.getDevices().then(setDevices);
-  }, [provider]);
+    prov.onState?.((s) => setState(s));
+  }, [prov]);
 
-  const handleJoin = async () => {
+  if (!ENABLED) return null;
+
+  async function join() {
+    const url = import.meta.env.VITE_LIVEKIT_URL || '';
+    const base = import.meta.env.VITE_WATTOS_BASE_URL || '';
+    const tokenUrl = `${base}/voice/token?room=${encodeURIComponent(room)}`;
     try {
-      await provider.join(roomId, userId);
-      setIsConnected(true);
+      const response = await fetch(tokenUrl);
+      // DEV: erwartet raw token (oder JSON.token)
+      const tokenData = await response.text();
+      const token = tokenData.startsWith('{') ? JSON.parse(tokenData).token : tokenData;
+      await prov.join({ url, token, room });
+      setJoined(true);
+      const deviceList = await prov.listDevices();
+      setDevices(deviceList.map((d) => ({ id: d.id, label: d.label || d.id })));
     } catch (error) {
       console.error('Failed to join voice room:', error);
+      setState('error');
     }
-  };
+  }
 
-  const handleLeave = async () => {
-    await provider.leave();
-    setIsConnected(false);
-  };
+  async function leave() {
+    await prov.leave();
+    setJoined(false);
+  }
 
-  const handleMute = () => {
-    const newMuted = !isMuted;
-    provider.mute(newMuted);
-    setIsMuted(newMuted);
-  };
-
-  if (!visible) return null;
+  async function mute(m: boolean) {
+    await prov.mute(m);
+  }
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        background: 'rgba(0, 0, 0, 0.9)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '8px',
-        padding: '24px',
-        zIndex: 1000,
-        minWidth: '320px',
-        pointerEvents: 'auto',
-      }}
-      data-testid="voice-panel"
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '16px',
-        }}
-      >
-        <h3 style={{ color: '#fff', margin: 0 }}>Voice</h3>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#fff',
-            cursor: 'pointer',
-            fontSize: '20px',
-            padding: '0',
-            width: '24px',
-            height: '24px',
-          }}
-        >
-          ×
-        </button>
-      </div>
-      {!isConnected ? (
-        <button
-          onClick={handleJoin}
-          style={{
-            background: 'rgba(0, 200, 0, 0.7)',
-            color: '#fff',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            padding: '12px 24px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            width: '100%',
-          }}
-        >
-          Join Voice Room
-        </button>
+    <div className="voice-panel" data-testid="voice-panel">
+      <div>Voice: {state}</div>
+      {!joined ? (
+        <button onClick={join}>Join</button>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <button
-            onClick={handleLeave}
-            style={{
-              background: 'rgba(200, 0, 0, 0.7)',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              padding: '12px 24px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            Leave
-          </button>
-          <button
-            onClick={handleMute}
-            style={{
-              background: isMuted ? 'rgba(200, 0, 0, 0.7)' : 'rgba(0, 200, 0, 0.7)',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              padding: '12px 24px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            {isMuted ? '🔇 Unmute' : '🔊 Mute'}
-          </button>
-          {devices.length > 0 && (
-            <select
-              value={selectedDevice}
-              onChange={(e) => setSelectedDevice(e.target.value)}
-              style={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: '#fff',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                padding: '8px',
-                borderRadius: '4px',
-                fontSize: '14px',
-              }}
-            >
-              <option value="">Select Device</option>
-              {devices.map((d) => (
-                <option key={d.deviceId} value={d.deviceId}>
-                  {d.label || d.kind}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
+        <>
+          <button onClick={leave}>Leave</button>
+          <button onClick={() => mute(true)}>Mute</button>
+          <button onClick={() => mute(false)}>Unmute</button>
+          <select onChange={(e) => prov.setInputDevice(e.target.value)}>
+            {devices.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+        </>
       )}
     </div>
   );

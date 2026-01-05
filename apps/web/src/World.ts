@@ -287,12 +287,7 @@ export class World {
     });
 
     // Stoppe Reconnection-Versuche nach Timeout
-    let connectionTimeout: NodeJS.Timeout | null = null;
-    const stopReconnection = () => {
-      if (this.netClient && this.soloMode) {
-        this.netClient.disconnect();
-      }
-    };
+    // Note: connectionTimeout and stopReconnection are reserved for future use
 
     // Avatar Manager initialisieren
     this.avatarManager = new AvatarManager(this.scene);

@@ -422,15 +422,27 @@ Alle Features sind flag-gesteuert über `.env.local`:
 
 **Status**: ✅ Abgeschlossen (28/28 E2E-Tests erfolgreich, Build erfolgreich)
 
-### Phase 6: Collaboration Core (OSS-Provider-Skelette) 🚧
+### Phase 6: Collaboration Core (OSS-Provider-Skelette)
 
-**Zweck**: Integration von OSS-Komponenten für Voice, Whiteboard und Media-Sharing
+**Zweck**: Integration von OSS-Komponenten für Voice, Whiteboard und Media-Sharing - lokal testbar, migrationssicher
 
 **Komponenten**:
 
 - LiveKit Provider für Voice (VITE_LIVEKIT_URL, Token via wattos_plattform)
 - Excalidraw + Yjs für Whiteboard (VITE_WHITEBOARD_ENABLED, VITE_YWS_URL)
 - Pinboard für PDF/Media-Sharing (Drag&Drop, iframe sandbox)
+
+**Data-Flows**:
+
+- Voice: Client → LiveKitProvider.join({url, token, room}) → LiveKit Room → Audio Tracks
+- Whiteboard: Client → WhiteboardClient(wsUrl, docId) → Yjs Doc → y-websocket → Sync
+- Rooms: URL-Parameter `?room=xyz` → getRoomFromURL() → Room-ID für Voice/Whiteboard
+
+**Testplan**:
+
+- 2 Tabs sehen sich (gleiche room-ID): Multiplayer-Roster zeigt beide Teilnehmer
+- Whiteboard-Sync: Shape in Tab 1 → erscheint in Tab 2 (Yjs-Sync)
+- Voice-Connect: Stub-Mode (DEV-Token) oder Cloud (LiveKit-URL gesetzt)
 
 **Feature-Flags**:
 

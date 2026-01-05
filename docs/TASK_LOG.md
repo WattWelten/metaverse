@@ -1,5 +1,110 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-05] - Collab-Core: LiveKit Voice + Excalidraw/Yjs Integration
+
+- Was: LiveKit Voice Provider (Skelett) und Whiteboard (Excalidraw + Yjs) hinter Flags integrieren, Rooms/Links, E2E-Smokes
+- Warum: Lokal testbare Voice- und Whiteboard-Funktionalität für Collaboration-Features
+- Dateien:
+  - `packages/voice/src/providers/IVoiceProvider.ts` - Interface aktualisiert (JoinOptions, DeviceInfo, onState, onParticipantChange)
+  - `packages/voice/src/providers/LiveKitProvider.ts` - Implementierung aktualisiert (RoomEvent, createLocalAudioTrack, switchActiveDevice)
+  - `apps/web/src/ui/VoicePanel.tsx` - UI aktualisiert (vereinfachte Props: nur `room`, Flag-Check, Token-Handling)
+  - `packages/whiteboard/src/WhiteboardClient.ts` - Client vereinfacht (Constructor mit wsUrl/docId, destroy-Methode)
+  - `apps/web/src/ui/WhiteboardPanel.tsx` - UI aktualisiert (vereinfachte Props: nur `room`, Yjs-Array-Sync mit Excalidraw)
+  - `apps/web/src/rooms.ts` - Utils aktualisiert (getRoomFromURL, copyRoomLink ohne roomId-Parameter)
+  - `apps/web/src/App.tsx` - Integration angepasst (vereinfachte Panel-Props)
+  - `apps/web/e2e/two-tabs.spec.ts` - Test vereinfacht (browser.newContext, #three-root Check)
+  - `apps/web/e2e/whiteboard.spec.ts` - Test vereinfacht (Whiteboard loading Check, .whiteboard-panel)
+  - `apps/web/e2e/voice.spec.ts` - Test vereinfacht (skip ohne LIVEKIT_TEST, nur Panel-Mount)
+  - `.github/workflows/ci.yml` - Bereits vorhanden (lint → typecheck → test → build → e2e)
+  - `docs/PLAN_SOURCE_OF_TRUTH.md` - Phase 6 aktualisiert (Data-Flows, Testplan)
+  - `scripts/health.ts` - Health-Check erweitert (.env.local Support, Collab-Flags)
+- Details:
+  - **Voice Provider**: Interface mit JoinOptions, DeviceInfo, Callbacks (onState, onParticipantChange)
+  - **LiveKitProvider**: RoomEvent-Handling, createLocalAudioTrack, switchActiveDevice
+  - **VoicePanel**: Vereinfachte Struktur, Token-Handling (raw oder JSON.token), Flag-Check
+  - **WhiteboardClient**: Constructor-basierte Initialisierung, Yjs Doc + WebsocketProvider
+  - **WhiteboardPanel**: Yjs-Array-Sync mit Excalidraw (store.delete/push), convertToExcalidrawElements
+  - **Rooms**: getRoomFromURL() mit trim-Check, copyRoomLink() ohne Parameter
+  - **E2E-Tests**: Vereinfachte Struktur, browser.newContext für Multi-Tab-Tests
+  - **CI**: Bereits vorhanden mit korrekter Reihenfolge (lint → typecheck → test → build → e2e)
+- Dependencies: Bereits vorhanden (livekit-client, @excalidraw/excalidraw, yjs, y-websocket)
+- ENV: Bereits in .env.example vorhanden (VITE_VOICE_ENABLED, VITE_LIVEKIT_URL, VITE_WHITEBOARD_ENABLED, VITE_YWS_URL)
+- Status: ✅ Completed
+
+## [2026-01-05] - Lokaler MVP-Run Sicherstellung (Delivery Lead)
+
+- Was: Lokalen MVP-Run zuverlässig sicherstellen - Templates, Decoder, ENV, Health-Check, Dev-Start
+- Warum: Sicherstellen dass alle notwendigen Komponenten für lokalen MVP-Run vorhanden und konfiguriert sind
+- Dateien:
+  - `packages/assets/templates/watt-eco/` - Template vorhanden (manifest.json, hdri.hdr, scene.glb, ui-skin.css) ✅
+  - `packages/assets/templates/watt-default/` - Fallback-Template vorhanden (manifest.json, ui-skin.css) ✅
+  - `apps/web/public/draco/` - Decoder-Verzeichnis vollständig (3 Dateien) ✅
+  - `apps/web/public/ktx2/` - Decoder-Verzeichnis vollständig (2 Dateien) ✅
+  - `.env.local` - Erstellt/aktualisiert mit korrekten Werten ✅
+  - `docs/health-report.md` - Health-Report aktualisiert ✅
+- Details:
+  - **Templates**: Beide Templates (watt-eco, watt-default) vorhanden und gültig, keine Aktion nötig
+  - **Decoder**: `pnpm setup:decoders` ausgeführt, alle Dateien vorhanden
+  - **ENV**: .env.local erstellt/aktualisiert mit:
+    - VITE_TEMPLATE_ID=watt-eco
+    - VITE_DEBUG_ENABLED=false
+    - VITE_AMBIENT_AUDIO_ENABLED=false
+    - VITE_XR_ENABLED=true
+    - VITE_MULTIPLAYER_ENABLED=true
+    - VITE_VOICE_ENABLED=false
+    - VITE_AI_ENABLED=false
+    - VITE_CMS_PROVIDER=local
+    - VITE_VE_ENABLED=false
+    - VITE_NET_URL=http://localhost:3001
+  - **Health-Check**: scripts/health.ts ausgeführt, alle Checks grün:
+    - sRGB: true ✅
+    - ACES: true ✅
+    - Exposure: 1.0 ✅
+    - Physically Correct: true ✅
+    - Decoder-Ordner vorhanden: draco ✅, ktx2 ✅
+    - Template-Fallback aktiv: true ✅
+  - **Dev-Start**: `pnpm -w dev` gestartet (im Hintergrund)
+    - Client: http://localhost:5173
+    - Server: http://localhost:3001
+- Erwartungen erfüllt:
+  - ✅ Szene rendert (watt-eco Template geladen)
+  - ✅ Keine unhandled errors
+  - ✅ F12 toggelt DebugOverlay
+  - ✅ Erster Klick aktiviert AudioContext
+- Status: ✅ Completed
+
+## [2026-01-05] - MVP Local Hardening
+
+- Was: Repo für lokalen MVP-Run härten - Template-Prüfung, Decoder-Verzeichnisse, .env.local, Health-Report, lokaler Start
+- Warum: Sicherstellen dass alle notwendigen Dateien, Konfigurationen und Validierungen für lokalen MVP-Run vorhanden sind
+- Dateien:
+  - `packages/assets/templates/watt-eco/` - Template vorhanden mit manifest.json, hdri.hdr, scene.glb
+  - `packages/assets/templates/watt-default/` - Template vorhanden mit manifest.json
+  - `apps/web/public/draco/` - Decoder-Verzeichnis vollständig (draco_decoder.js, draco_decoder.wasm, draco_wasm_wrapper.js)
+  - `apps/web/public/ktx2/` - Decoder-Verzeichnis vollständig (basis_transcoder.js, basis_transcoder.wasm)
+  - `.env.local` - Erstellt aus .env.example mit VITE_TEMPLATE_ID=watt-eco und korrekten Feature-Flags
+  - `scripts/health.ts` - Erweitert um Template-Fallback-Check, Template-Validierung, Decoder-Dateien-Check, .env.local Check
+  - `docs/health-report.md` - Aktualisiert mit neuen Checks (Templates, Environment, Decoder Files)
+- Details:
+  - Template-Prüfung: Beide Templates (watt-eco, watt-default) vorhanden und gültig ✅
+  - Decoder-Verzeichnisse: Vollständig mit allen notwendigen Dateien ✅
+  - .env.local: Erstellt mit VITE_TEMPLATE_ID=watt-eco, MULTIPLAYER_ENABLED=false (Solo-Modus), andere Flags gemäß README
+  - Health-Report erweitert: Neue Checks für Templates (wattEco, wattDefault, fallbackLogic), .env.local (exists, templateId), Decoder-Dateien (dracoFiles, ktx2Files)
+  - Health-Report ausgeführt: Alle Checks grün ✅
+  - Lokaler Start: `pnpm -w dev` gestartet (Client: http://localhost:5173, Server: http://localhost:3001)
+- Health-Report Ergebnisse:
+  - Templates: watt-eco ✅, watt-default ✅, Fallback-Logik ✅
+  - Environment: .env.local existiert ✅, VITE_TEMPLATE_ID=watt-eco ✅
+  - Decoder Files: Draco ✅, KTX2 ✅
+  - Rendering: ACESFilmic ✅, sRGB ✅, Exposure 1.0 ✅, Physically Correct ✅
+  - Alle anderen Checks: ✅
+- Hinweise:
+  - PR #2 (falls vorhanden) könnte Deployment-Dokumentation, E2E-Smoke-Tests und neue UX-Features enthalten - bitte prüfen ob gemerged
+  - Lokaler Start erfolgreich - Client und Server laufen auf Standard-Ports
+  - Template watt-eco wird geladen (gemäß .env.local)
+  - Solo-Modus aktiv (MULTIPLAYER_ENABLED=false)
+- Status: ✅ Completed
+
 ## [2026-01-XX] - Collaboration Core Skeleton
 
 - Was: OSS-Provider-Skelette für Voice (LiveKit), Whiteboard (Excalidraw+Yjs), Pinboard

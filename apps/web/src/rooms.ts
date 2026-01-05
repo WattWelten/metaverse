@@ -1,13 +1,10 @@
 export function getRoomFromURL(): string {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('room') || 'lobby';
+  const r = new URLSearchParams(location.search).get('room');
+  return r && r.trim() ? r.trim() : 'lobby';
 }
 
-export function getCopyLink(roomId: string): string {
-  return `${window.location.origin}${window.location.pathname}?room=${roomId}`;
-}
-
-export function copyRoomLink(roomId: string): Promise<void> {
-  const link = getCopyLink(roomId);
-  return navigator.clipboard.writeText(link);
+export function copyRoomLink(): void {
+  const u = new URL(location.href);
+  u.searchParams.set('room', getRoomFromURL());
+  navigator.clipboard?.writeText(u.toString());
 }

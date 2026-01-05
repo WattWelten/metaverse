@@ -272,9 +272,9 @@ export function App() {
     setShowVoicePanel(!showVoicePanel);
   };
 
-  const handleCopyLink = async () => {
+  const handleCopyLink = () => {
     try {
-      await copyRoomLink(roomId);
+      copyRoomLink();
       console.log('Room link copied to clipboard');
     } catch (error) {
       console.error('Failed to copy room link:', error);
@@ -337,20 +337,9 @@ export function App() {
           onDecline={() => handleVoiceConsent(false)}
         />
         {showDebug && <DebugOverlay world={worldRef.current} />}
-        {getFeatureFlags().VOICE_ENABLED && (
-          <VoicePanel
-            roomId={roomId}
-            userId={worldRef.current?.getUserId() || ''}
-            visible={showVoicePanel}
-            onClose={() => setShowVoicePanel(false)}
-          />
-        )}
-        {getFeatureFlags().WHITEBOARD_ENABLED && (
-          <WhiteboardPanel
-            roomId={roomId}
-            visible={showWhiteboard}
-            onClose={() => setShowWhiteboard(false)}
-          />
+        {getFeatureFlags().VOICE_ENABLED && showVoicePanel && <VoicePanel room={roomId} />}
+        {getFeatureFlags().WHITEBOARD_ENABLED && showWhiteboard && (
+          <WhiteboardPanel room={roomId} />
         )}
         <Pinboard visible={showPinboard} onClose={() => setShowPinboard(false)} />
       </div>

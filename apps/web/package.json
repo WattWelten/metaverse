@@ -16,6 +16,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.0",
     "@metaverse/ai": "workspace:*",
     "@metaverse/audio": "workspace:*",
     "@metaverse/avatars": "workspace:*",
@@ -24,10 +25,14 @@
     "@metaverse/net": "workspace:*",
     "@metaverse/ui": "workspace:*",
     "@metaverse/voice": "workspace:*",
+    "@metaverse/whiteboard": "workspace:*",
     "@metaverse/xr": "workspace:*",
+    "pdfjs-dist": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "three": "^0.170.0"
+    "three": "^0.170.0",
+    "yjs": "^13.6.0",
+    "y-websocket": "^2.0.0"
   },
   "devDependencies": {
     "@metaverse/eslint-config": "workspace:*",

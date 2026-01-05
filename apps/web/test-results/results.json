@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 6
+      "actualWorkers": 8
     },
     "preserveOutput": "always",
     "reporter": [
@@ -40,7 +40,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 8
         },
         "id": "chromium",
         "name": "chromium",
@@ -67,6 +67,1674 @@
   },
   "suites": [
     {
+      "title": "app-load.spec.ts",
+      "file": "app-load.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "app loads without errors",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14972,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Root styles: {\n  display: \u001b[32m'block'\u001b[39m,\n  visibility: \u001b[32m'visible'\u001b[39m,\n  width: \u001b[32m'1280px'\u001b[39m,\n  height: \u001b[32m'720px'\u001b[39m\n}\n"
+                    },
+                    {
+                      "text": "Errors: []\n"
+                    },
+                    {
+                      "text": "Warnings: [\n  \u001b[32m'Module \"util\" has been externalized for browser compatibility. Cannot access \"util.debuglog\" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.'\u001b[39m,\n  \u001b[32m'Module \"util\" has been externalized for browser compatibility. Cannot access \"util.inspect\" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.'\u001b[39m,\n  \u001b[32m'[GroupMarkerNotSet(crbug.com/242999)!:A8C0180014210000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.'\u001b[39m,\n  \u001b[32m'[GroupMarkerNotSet(crbug.com/242999)!:A8F0180014210000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.'\u001b[39m,\n  \u001b[32m'[.WebGL-0x5c8400ada200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels'\u001b[39m,\n  \u001b[32m'[.WebGL-0x5c8400ada200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels'\u001b[39m,\n  \u001b[32m'[.WebGL-0x5c8400ada200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels'\u001b[39m,\n  \u001b[32m'[.WebGL-0x5c8400ada200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)'\u001b[39m\n]\n"
+                    },
+                    {
+                      "text": "Canvas count: \u001b[33m1\u001b[39m\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:27:02.852Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "acad8e6833bbbcfc62f7-854bbc91e9326b062e5a",
+          "file": "app-load.spec.ts",
+          "line": 8,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "audio-context.spec.ts",
+      "file": "audio-context.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "resume audio on first click",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 16362,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:27:02.734Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "291446453019862e2273-2aad01d039976c96d3d3",
+          "file": "audio-context.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "avatar-sync.spec.ts",
+      "file": "avatar-sync.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Avatar Synchronisation",
+          "file": "avatar-sync.spec.ts",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "creates local avatar on room join",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 19257,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:02.632Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "65274f133a767f5dd896-e19f1c3f12331af6b8e1",
+              "file": "avatar-sync.spec.ts",
+              "line": 12,
+              "column": 3
+            },
+            {
+              "title": "sends avatar position updates",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 19661,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:02.896Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "65274f133a767f5dd896-abaa88f8c60b52c90195",
+              "file": "avatar-sync.spec.ts",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "receives avatar updates from other players",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 21512,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:02.748Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "65274f133a767f5dd896-87fd775907d2aeb1c20e",
+              "file": "avatar-sync.spec.ts",
+              "line": 72,
+              "column": 3
+            },
+            {
+              "title": "handles avatar loading errors gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 19641,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:02.743Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "65274f133a767f5dd896-4c1f1869a3744f790fe0",
+              "file": "avatar-sync.spec.ts",
+              "line": 93,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "basic.spec.ts",
+      "file": "basic.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "page loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 6,
+                  "status": "passed",
+                  "duration": 9037,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:27:02.764Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8946741c555a0c4515d8-53b2978019c38e22da4f",
+          "file": "basic.spec.ts",
+          "line": 5,
+          "column": 1
+        },
+        {
+          "title": "canvas is rendered",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 7,
+                  "status": "passed",
+                  "duration": 17557,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:27:02.748Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8946741c555a0c4515d8-77af61e7b4e5aabfcd2f",
+          "file": "basic.spec.ts",
+          "line": 10,
+          "column": 1
+        },
+        {
+          "title": "template switch works",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 6,
+                  "status": "passed",
+                  "duration": 11350,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:27:13.287Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8946741c555a0c4515d8-ad30045a5777c8c8a999",
+          "file": "basic.spec.ts",
+          "line": 21,
+          "column": 1
+        },
+        {
+          "title": "debug overlay toggles with F12",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 16898,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:27:19.773Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8946741c555a0c4515d8-c362995a53d98672cf08",
+          "file": "basic.spec.ts",
+          "line": 48,
+          "column": 1
+        },
+        {
+          "title": "exposure slider exists in debug overlay",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 11663,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:27:21.339Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8946741c555a0c4515d8-fda0b0d7804af672a7cc",
+          "file": "basic.spec.ts",
+          "line": 70,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "comprehensive-test.spec.ts",
+      "file": "comprehensive-test.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Comprehensive E2E Tests",
+          "file": "comprehensive-test.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "app loads without critical errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 15669,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:22.698Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-c1600e259947a98a258c",
+              "file": "comprehensive-test.spec.ts",
+              "line": 81,
+              "column": 3
+            },
+            {
+              "title": "canvas renders correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 10453,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:23.901Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-fc1757c398f0f5e666b1",
+              "file": "comprehensive-test.spec.ts",
+              "line": 153,
+              "column": 3
+            },
+            {
+              "title": "debug overlay toggle works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 14526,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:24.091Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-01f7bcc88d28304dd97b",
+              "file": "comprehensive-test.spec.ts",
+              "line": 167,
+              "column": 3
+            },
+            {
+              "title": "audio context resumes on interaction",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 9427,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:24.273Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-5583c62b57ee5db99982",
+              "file": "comprehensive-test.spec.ts",
+              "line": 180,
+              "column": 3
+            },
+            {
+              "title": "multiplayer connection attempt",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 16310,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:24.761Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-20002b3e1c4be9d392d4",
+              "file": "comprehensive-test.spec.ts",
+              "line": 197,
+              "column": 3
+            },
+            {
+              "title": "template switching works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 13047,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:25.744Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-26f771f7eed5c648b089",
+              "file": "comprehensive-test.spec.ts",
+              "line": 222,
+              "column": 3
+            },
+            {
+              "title": "performance metrics are available",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 13738,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:33.579Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-ad918a4b5dfaaeb0c67e",
+              "file": "comprehensive-test.spec.ts",
+              "line": 247,
+              "column": 3
+            },
+            {
+              "title": "no memory leaks on repeated template switches",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 15654,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:33.968Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-52841b12dcc3ea42da10",
+              "file": "comprehensive-test.spec.ts",
+              "line": 266,
+              "column": 3
+            },
+            {
+              "title": "error boundary handles errors gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 13250,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:34.653Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-135869731df0654a34e9",
+              "file": "comprehensive-test.spec.ts",
+              "line": 294,
+              "column": 3
+            },
+            {
+              "title": "network requests are handled correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10853,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:37.675Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-99a00d476cfaeb1ba365",
+              "file": "comprehensive-test.spec.ts",
+              "line": 306,
+              "column": 3
+            },
+            {
+              "title": "all feature flags are respected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 13553,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:38.414Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-2eec39cb56e77e8b7fd6",
+              "file": "comprehensive-test.spec.ts",
+              "line": 325,
+              "column": 3
+            },
+            {
+              "title": "accessibility basics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 11710,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:38.691Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-d24ca2a3b7d5addcc65b",
+              "file": "comprehensive-test.spec.ts",
+              "line": 343,
+              "column": 3
+            },
+            {
+              "title": "responsive layout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 9825,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:38.872Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b5cbbe0716864200cf62-73e67680b39b47a3f1db",
+              "file": "comprehensive-test.spec.ts",
+              "line": 356,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "debug-overlay.spec.ts",
+      "file": "debug-overlay.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "debug overlay toggle",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 6,
+                  "status": "passed",
+                  "duration": 12182,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:27:41.190Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "38b1e0bd378d5a7df8a4-f469e6fcf6e1768bf939",
+          "file": "debug-overlay.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "integration-complete.spec.ts",
+      "file": "integration-complete.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Complete Integration",
+          "file": "integration-complete.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "all features initialize correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 14779,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:48.502Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "06fbb7c2fb89591d71f9-abaf77bb191344786af1",
+              "file": "integration-complete.spec.ts",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "template switching maintains integrations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 18149,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:48.142Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "06fbb7c2fb89591d71f9-e8ce5c23c45b70f06b78",
+              "file": "integration-complete.spec.ts",
+              "line": 66,
+              "column": 3
+            },
+            {
+              "title": "performance metrics are available",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 16432,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:48.979Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "06fbb7c2fb89591d71f9-9e9a370f8da80b65b738",
+              "file": "integration-complete.spec.ts",
+              "line": 92,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "manual-multiplayer.spec.ts",
+      "file": "manual-multiplayer.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Manual Multiplayer Test",
+          "file": "manual-multiplayer.spec.ts",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "two clients should see each other in the same room",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 22980,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Room UI exists: { page1: \u001b[33mfalse\u001b[39m, page2: \u001b[33mfalse\u001b[39m }\n"
+                        },
+                        {
+                          "text": "FPS: { page1: \u001b[33m0\u001b[39m, page2: \u001b[33m0\u001b[39m }\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:48.928Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "1d5e1de246e0a435a050-f509f4ee2af3df2ea547",
+              "file": "manual-multiplayer.spec.ts",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "manual-production-build.spec.ts",
+      "file": "manual-production-build.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Manual Production Build Test",
+          "file": "manual-production-build.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "production build should load and work correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Production server not available",
+                      "location": {
+                        "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\manual-production-build.spec.ts",
+                        "line": 13,
+                        "column": 12
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "skipped",
+                      "duration": 3154,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:49.797Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Production server not available",
+                          "location": {
+                            "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\manual-production-build.spec.ts",
+                            "line": 13,
+                            "column": 12
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "17a04974887818754819-3c8ecfa247f488b52d34",
+              "file": "manual-production-build.spec.ts",
+              "line": 4,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "manual-template-switching.spec.ts",
+      "file": "manual-template-switching.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Manual Template Switching Test",
+          "file": "manual-template-switching.spec.ts",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "debug overlay and template switching should work",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 15803,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Debug overlay not found (debug might be disabled)\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:50.600Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "054236a2e9a2a7db1b53-46ed0ad1f9987d208ae5",
+              "file": "manual-template-switching.spec.ts",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "manual-voice.spec.ts",
+      "file": "manual-voice.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Manual Voice Test",
+          "file": "manual-voice.spec.ts",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "voice consent modal and mute toggle should work",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 9700,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Consent modal not found (voice might be disabled)\n"
+                        },
+                        {
+                          "text": "Mic toggle not found (voice/multiplayer might be disabled)\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:52.103Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "087c94701137f62e30fc-df4199e31cef9a7a41bd",
+              "file": "manual-voice.spec.ts",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "manual-xr.spec.ts",
+      "file": "manual-xr.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Manual XR Test",
+          "file": "manual-xr.spec.ts",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "XR button should be available if supported",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 14652,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "XR button not found (XR might be disabled or not supported)\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:53.024Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "658b3ef268a01d7c0e38-645f2beeaa4c3cb5d00a",
+              "file": "manual-xr.spec.ts",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "multiplayer-two-tabs.spec.ts",
+      "file": "multiplayer-two-tabs.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Multiplayer Two Tabs",
+          "file": "multiplayer-two-tabs.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "two browser contexts should see each other in same room",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "failed",
+                      "duration": 25159,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts:73:56",
+                        "location": {
+                          "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts",
+                          "column": 56,
+                          "line": 73
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 71 |\u001b[39m       \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39mpage1SoloMode \u001b[33m&&\u001b[39m \u001b[33m!\u001b[39mpage2SoloMode) {\n \u001b[90m 72 |\u001b[39m         \u001b[90m// Server is available - check that both received room-state\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 73 |\u001b[39m         expect(page1HasRoomState \u001b[33m||\u001b[39m page2HasRoomState)\u001b[33m.\u001b[39mtoBe(\u001b[36mtrue\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 74 |\u001b[39m       } \u001b[36melse\u001b[39m {\n \u001b[90m 75 |\u001b[39m         \u001b[90m// Server is not available - both should be in solo mode without errors\u001b[39m\n \u001b[90m 76 |\u001b[39m         expect(page1SoloMode \u001b[33m||\u001b[39m page2SoloMode)\u001b[33m.\u001b[39mtoBe(\u001b[36mtrue\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts",
+                            "column": 56,
+                            "line": 73
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  71 |       if (!page1SoloMode && !page2SoloMode) {\n  72 |         // Server is available - check that both received room-state\n> 73 |         expect(page1HasRoomState || page2HasRoomState).toBe(true);\n     |                                                        ^\n  74 |       } else {\n  75 |         // Server is not available - both should be in solo mode without errors\n  76 |         expect(page1SoloMode || page2SoloMode).toBe(true);\n    at D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts:73:56"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:27:54.100Z",
+                      "annotations": [],
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts",
+                        "column": 56,
+                        "line": 73
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "7efaf82f2c3c36042b7c-f353611fefdf47c29fb9",
+              "file": "multiplayer-two-tabs.spec.ts",
+              "line": 9,
+              "column": 3
+            },
+            {
+              "title": "transform should move remote avatar",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "failed",
+                      "duration": 22977,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts:174:35",
+                        "location": {
+                          "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts",
+                          "column": 35,
+                          "line": 174
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 172 |\u001b[39m         })\u001b[33m;\u001b[39m\n \u001b[90m 173 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 174 |\u001b[39m         expect(receivedTransform)\u001b[33m.\u001b[39mtoBe(\u001b[36mtrue\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 175 |\u001b[39m       } \u001b[36melse\u001b[39m {\n \u001b[90m 176 |\u001b[39m         \u001b[90m// Fallback: Just verify that both pages are running without errors\u001b[39m\n \u001b[90m 177 |\u001b[39m         \u001b[36mconst\u001b[39m errors1\u001b[33m:\u001b[39m string[] \u001b[33m=\u001b[39m []\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts",
+                            "column": 35,
+                            "line": 174
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  172 |         });\n  173 |\n> 174 |         expect(receivedTransform).toBe(true);\n      |                                   ^\n  175 |       } else {\n  176 |         // Fallback: Just verify that both pages are running without errors\n  177 |         const errors1: string[] = [];\n    at D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts:174:35"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:02.706Z",
+                      "annotations": [],
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer-two-tabs.spec.ts",
+                        "column": 35,
+                        "line": 174
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "7efaf82f2c3c36042b7c-1447bb3bf44e2dae21f7",
+              "file": "multiplayer-two-tabs.spec.ts",
+              "line": 126,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "multiplayer.spec.ts",
+      "file": "multiplayer.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Multiplayer Integration",
+          "file": "multiplayer.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "connects to multiplayer server",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 22411,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer.spec.ts:57:84",
+                        "location": {
+                          "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer.spec.ts",
+                          "column": 84,
+                          "line": 57
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 55 |\u001b[39m\n \u001b[90m 56 |\u001b[39m     \u001b[90m// Either connected, gracefully fell back to solo mode, or connection attempt was made\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 57 |\u001b[39m     expect(isSoloMode \u001b[33m||\u001b[39m isConnected \u001b[33m||\u001b[39m hasConnectionError \u001b[33m||\u001b[39m connectionAttempted)\u001b[33m.\u001b[39mtoBe(\u001b[36mtrue\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 58 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 59 |\u001b[39m\n \u001b[90m 60 |\u001b[39m   test(\u001b[32m'joins default room'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer.spec.ts",
+                            "column": 84,
+                            "line": 57
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  55 |\n  56 |     // Either connected, gracefully fell back to solo mode, or connection attempt was made\n> 57 |     expect(isSoloMode || isConnected || hasConnectionError || connectionAttempted).toBe(true);\n     |                                                                                    ^\n  58 |   });\n  59 |\n  60 |   test('joins default room', async ({ page }) => {\n    at D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer.spec.ts:57:84"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:04.087Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\test-results\\multiplayer-Multiplayer-In-57fb2-nects-to-multiplayer-server-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\multiplayer.spec.ts",
+                        "column": 84,
+                        "line": 57
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "141e0e3d3b30ec82e56e-c62b87aaf67805903278",
+              "file": "multiplayer.spec.ts",
+              "line": 16,
+              "column": 3
+            },
+            {
+              "title": "joins default room",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 19975,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[HEARTBEAT] joins default room läuft noch... (0m 0s)\n"
+                        },
+                        {
+                          "text": "[HEARTBEAT] joins default room beendet nach 0m 16s\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:05.994Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "141e0e3d3b30ec82e56e-0c7e294b68f23f2766c1",
+              "file": "multiplayer.spec.ts",
+              "line": 60,
+              "column": 3
+            },
+            {
+              "title": "handles server disconnect gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 17219,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:06.605Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "141e0e3d3b30ec82e56e-71212f7413ba422f98af",
+              "file": "multiplayer.spec.ts",
+              "line": 92,
+              "column": 3
+            },
+            {
+              "title": "player count updates in HUD",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 5798,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:06.610Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "141e0e3d3b30ec82e56e-3ea8e9d4b921e3ef8490",
+              "file": "multiplayer.spec.ts",
+              "line": 110,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
       "title": "smoke-local.spec.ts",
       "file": "smoke-local.spec.ts",
       "column": 0,
@@ -92,15 +1760,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 5805,
+                      "duration": 12470,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-04T20:15:14.312Z",
+                      "startTime": "2026-01-05T12:28:07.828Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -126,15 +1794,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3635,
+                      "duration": 12816,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-04T20:15:14.342Z",
+                      "startTime": "2026-01-05T12:28:12.115Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -160,15 +1828,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 8882,
+                      "duration": 23936,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-04T20:15:14.311Z",
+                      "startTime": "2026-01-05T12:28:12.661Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -197,12 +1865,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 5678,
+                      "duration": 11727,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-04T20:15:14.345Z",
+                      "startTime": "2026-01-05T12:28:20.453Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -228,15 +1896,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 6671,
+                      "duration": 9497,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-04T20:15:14.326Z",
+                      "startTime": "2026-01-05T12:28:24.694Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -262,15 +1930,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7753,
+                      "duration": 13135,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-04T20:15:14.328Z",
+                      "startTime": "2026-01-05T12:28:25.004Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -286,15 +1954,566 @@
           ]
         }
       ]
+    },
+    {
+      "title": "smoke-production.spec.ts",
+      "file": "smoke-production.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Production Smoke Tests",
+          "file": "smoke-production.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 7827,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:26.798Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfbb785fabc6b36fea5a-2f7e3a099ed3b19e0c3a",
+              "file": "smoke-production.spec.ts",
+              "line": 13,
+              "column": 3
+            },
+            {
+              "title": "join room via deep link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 19520,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:42.280Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfbb785fabc6b36fea5a-caa6f38d98e2708b47d5",
+              "file": "smoke-production.spec.ts",
+              "line": 22,
+              "column": 3
+            },
+            {
+              "title": "two browser tabs see each other (peer-joined)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 28844,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:43.451Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfbb785fabc6b36fea5a-0e77a378325ae5ff629e",
+              "file": "smoke-production.spec.ts",
+              "line": 47,
+              "column": 3
+            },
+            {
+              "title": "avatar movement synchronizes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 16449,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:32.480Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfbb785fabc6b36fea5a-f1934857b5bc266952fb",
+              "file": "smoke-production.spec.ts",
+              "line": 84,
+              "column": 3
+            },
+            {
+              "title": "no critical errors on production load",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 9111,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:34.468Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfbb785fabc6b36fea5a-efa8037a2fe9c6d4af50",
+              "file": "smoke-production.spec.ts",
+              "line": 102,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "template-load.spec.ts",
+      "file": "template-load.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Template Switching Under Load",
+          "file": "template-load.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "switches templates rapidly without crashing",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 11839,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:34.779Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "03757d5991d6b528d78f-17450497e13b4964cbf9",
+              "file": "template-load.spec.ts",
+              "line": 7,
+              "column": 3
+            },
+            {
+              "title": "handles template switch during multiplayer connection",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 17072,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:54.927Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "03757d5991d6b528d78f-dd044d4207234a26b5c4",
+              "file": "template-load.spec.ts",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "maintains state across template switches",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 15075,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:36.686Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "03757d5991d6b528d78f-cf26029e00e0794f9779",
+              "file": "template-load.spec.ts",
+              "line": 62,
+              "column": 3
+            },
+            {
+              "title": "handles missing template assets gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13519,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:38.349Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "03757d5991d6b528d78f-7f1950d7b4133c56bd01",
+              "file": "template-load.spec.ts",
+              "line": 89,
+              "column": 3
+            },
+            {
+              "title": "switches templates with ambient audio playing",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 10318,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[HEARTBEAT] switches templates with ambient audio playing läuft noch... (0m 0s)\n"
+                        },
+                        {
+                          "text": "[HEARTBEAT] switches templates with ambient audio playing beendet nach 0m 9s\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-05T12:28:43.671Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "03757d5991d6b528d78f-80e496b5097e07939d96",
+              "file": "template-load.spec.ts",
+              "line": 116,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "two-tabs.spec.ts",
+      "file": "two-tabs.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "two tabs join same room",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 4,
+                  "status": "passed",
+                  "duration": 21119,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:28:46.857Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cf8835baf10e25230330-a0ce96bb2f8665eb7e1a",
+          "file": "two-tabs.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "voice.spec.ts",
+      "file": "voice.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "voice connect stub",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "timedOut",
+                  "duration": 60139,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\voice.spec.ts",
+                        "column": 14,
+                        "line": 10
+                      },
+                      "message": "Error: page.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"voice-toggle\"]')\u001b[22m\n\n\n   8 |\n   9 |   // Click voice toggle button\n> 10 |   await page.click('[data-testid=\"voice-toggle\"]');\n     |              ^\n  11 |\n  12 |   // Wait for voice panel to appear\n  13 |   await expect(page.locator('[data-testid=\"voice-panel\"]')).toBeVisible();\n    at D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\voice.spec.ts:10:14"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:28:49.103Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\test-results\\voice-voice-connect-stub-chromium\\error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4f8e77fcf9b309101475-fbf1122767d6ccf06c5c",
+          "file": "voice.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "whiteboard.spec.ts",
+      "file": "whiteboard.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "whiteboard shape sync",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 5,
+                  "status": "timedOut",
+                  "duration": 60074,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\whiteboard.spec.ts",
+                        "column": 14,
+                        "line": 10
+                      },
+                      "message": "Error: page.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"whiteboard-toggle\"]')\u001b[22m\n\n\n   8 |\n   9 |   // Click whiteboard toggle button\n> 10 |   await page.click('[data-testid=\"whiteboard-toggle\"]');\n     |              ^\n  11 |\n  12 |   // Wait for whiteboard panel to appear\n  13 |   await expect(page.locator('[data-testid=\"whiteboard-panel\"]')).toBeVisible();\n    at D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\e2e\\whiteboard.spec.ts:10:14"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-05T12:28:51.862Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\cursor.ai\\Projects\\WattWelten_Metaverse\\apps\\web\\test-results\\whiteboard-whiteboard-shape-sync-chromium\\error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "b80d9f127a3c8c2edd5f-35ee64ebd2fa78f23e95",
+          "file": "whiteboard.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-04T20:15:11.458Z",
-    "duration": 12218.994,
-    "expected": 6,
-    "skipped": 0,
-    "unexpected": 0,
+    "startTime": "2026-01-05T12:26:57.859Z",
+    "duration": 174849.568,
+    "expected": 52,
+    "skipped": 1,
+    "unexpected": 5,
     "flaky": 0
   }
 }

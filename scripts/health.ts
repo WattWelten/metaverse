@@ -36,6 +36,19 @@ interface HealthReport {
     roomUtils: boolean;
     serverTokenEndpoint: boolean;
   };
+  templates?: {
+    wattEco: boolean;
+    wattDefault: boolean;
+    fallbackLogic: boolean;
+  };
+  envLocal?: {
+    exists: boolean;
+    templateId: string | null;
+  };
+  decoders?: {
+    dracoFiles: boolean;
+    ktx2Files: boolean;
+  };
 }
 
 function getPackageVersion(packageJson: Record<string, unknown>, name: string): string {
@@ -180,15 +193,27 @@ async function checkRendering(): Promise<{
 
 function checkFlags(): Record<string, boolean | string> {
   const envExamplePath = join(rootDir, '.env.example');
+  const envLocalPath = join(rootDir, '.env.local');
   const flags: Record<string, boolean | string> = {};
 
-  if (existsSync(envExamplePath)) {
-    const content = readFileSync(envExamplePath, 'utf-8');
+  // Check .env.local first (takes precedence), fallback to .env.example
+  const envPath = existsSync(envLocalPath) ? envLocalPath : envExamplePath;
+
+  if (existsSync(envPath)) {
+    const content = readFileSync(envPath, 'utf-8');
     const matches = content.matchAll(/VITE_(\w+)=(.*)/g);
     for (const match of matches) {
       const key = match[1];
       const value = match[2].trim();
       flags[key] = value === 'true' ? true : value === 'false' ? false : value;
+    }
+  }
+
+  // Explicitly check for collab flags
+  const collabFlags = ['VOICE_ENABLED', 'LIVEKIT_URL', 'WHITEBOARD_ENABLED', 'YWS_URL'];
+  for (const flag of collabFlags) {
+    if (!(flag in flags)) {
+      flags[flag] = false;
     }
   }
 
@@ -261,6 +286,99 @@ function checkCollaboration(): {
     pinboard: existsSync(pinboardPath),
     roomUtils: existsSync(roomUtilsPath),
     serverTokenEndpoint,
+  };
+}
+
+function checkTemplates(): {
+  wattEco: boolean;
+  wattDefault: boolean;
+  fallbackLogic: boolean;
+} {
+  const wattEcoPath = join(rootDir, 'packages/assets/templates/watt-eco/manifest.json');
+  const wattDefaultPath = join(rootDir, 'packages/assets/templates/watt-default/manifest.json');
+  const templateHostPath = join(rootDir, 'apps/web/src/TemplateHost.ts');
+  const templateRegistryPath = join(rootDir, 'packages/core/src/scene/TemplateRegistry.ts');
+
+  let wattEco = false;
+  let wattDefault = false;
+
+  if (existsSync(wattEcoPath)) {
+    try {
+      const manifest = JSON.parse(readFileSync(wattEcoPath, 'utf-8'));
+      wattEco = manifest.id === 'watt-eco' && typeof manifest.name === 'string';
+    } catch {
+      wattEco = false;
+    }
+  }
+
+  if (existsSync(wattDefaultPath)) {
+    try {
+      const manifest = JSON.parse(readFileSync(wattDefaultPath, 'utf-8'));
+      wattDefault = manifest.id === 'watt-default' && typeof manifest.name === 'string';
+    } catch {
+      wattDefault = false;
+    }
+  }
+
+  let fallbackLogic = false;
+  if (existsSync(templateHostPath)) {
+    const content = readFileSync(templateHostPath, 'utf-8');
+    fallbackLogic = /watt-default/.test(content) && /fallback/i.test(content);
+  }
+  if (!fallbackLogic && existsSync(templateRegistryPath)) {
+    const content = readFileSync(templateRegistryPath, 'utf-8');
+    fallbackLogic = /watt-default/.test(content) && /fallback/i.test(content);
+  }
+
+  return {
+    wattEco,
+    wattDefault,
+    fallbackLogic,
+  };
+}
+
+function checkEnvLocal(): {
+  exists: boolean;
+  templateId: string | null;
+} {
+  const envLocalPath = join(rootDir, '.env.local');
+  if (!existsSync(envLocalPath)) {
+    return { exists: false, templateId: null };
+  }
+
+  const content = readFileSync(envLocalPath, 'utf-8');
+  const templateIdMatch = content.match(/VITE_TEMPLATE_ID=(.+)/);
+  const templateId = templateIdMatch ? templateIdMatch[1].trim() : null;
+
+  return {
+    exists: true,
+    templateId,
+  };
+}
+
+function checkDecoderFiles(): {
+  dracoFiles: boolean;
+  ktx2Files: boolean;
+} {
+  const dracoDir = join(rootDir, 'apps/web/public/draco');
+  const ktx2Dir = join(rootDir, 'apps/web/public/ktx2');
+
+  let dracoFiles = false;
+  let ktx2Files = false;
+
+  if (existsSync(dracoDir)) {
+    const files = readdirSync(dracoDir);
+    dracoFiles = files.some((f) => f.endsWith('.js') || f.endsWith('.wasm'));
+  }
+
+  if (existsSync(ktx2Dir)) {
+    const files = readdirSync(ktx2Dir);
+    ktx2Files = files.some((f) => f.endsWith('.js') || f.endsWith('.wasm'));
+  }
+
+  return {
+    dracoFiles,
+    ktx2Files,
   };
 }
 
@@ -392,6 +510,15 @@ ${
   // Check collaboration components
   report.collaboration = checkCollaboration();
 
+  // Check templates
+  report.templates = checkTemplates();
+
+  // Check .env.local
+  report.envLocal = checkEnvLocal();
+
+  // Check decoder files
+  report.decoders = checkDecoderFiles();
+
   // Update report content with new sections
   const updatedReportContent =
     reportContent +
@@ -419,6 +546,19 @@ ${
 - Pinboard: ${report.collaboration?.pinboard ? '✅' : '❌'}
 - Room Utils: ${report.collaboration?.roomUtils ? '✅' : '❌'}
 - Server Token Endpoint: ${report.collaboration?.serverTokenEndpoint ? '✅' : '❌'}
+
+## Templates
+- watt-eco: ${report.templates?.wattEco ? '✅' : '❌'}
+- watt-default: ${report.templates?.wattDefault ? '✅' : '❌'}
+- Fallback Logic: ${report.templates?.fallbackLogic ? '✅' : '❌'}
+
+## Environment (.env.local)
+- Exists: ${report.envLocal?.exists ? '✅' : '❌'}
+- VITE_TEMPLATE_ID: ${report.envLocal?.templateId || 'not set'}
+
+## Decoder Files
+- Draco Files: ${report.decoders?.dracoFiles ? '✅' : '❌'}
+- KTX2 Files: ${report.decoders?.ktx2Files ? '✅' : '❌'}
 `;
 
   writeFileSync(reportPath, updatedReportContent, 'utf-8');

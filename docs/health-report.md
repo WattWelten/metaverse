@@ -1,6 +1,6 @@
 # Health Report
 
-Generated: 2026-01-04T20:54:37.686Z
+Generated: 2026-01-05T13:03:28.063Z
 
 ## Runtimes
 
@@ -41,11 +41,15 @@ Generated: 2026-01-04T20:54:37.686Z
 - WATTOS_WS_URL:
 - WATTOS_API_KEY:
 - WATTOS_TENANT:
+- LIVEKIT_URL:
+- LIVEKIT_TOKEN_ENDPOINT: ${VITE_WATTOS_BASE_URL}/voice/token
 - CMS_BASE_URL:
 - CMS_TOKEN:
 - READY_PLAYER_ME_API_KEY:
 - READY_PLAYER_ME_AVATAR_URL:
 - DEBUG_ENABLED: false
+- WHITEBOARD_ENABLED: true
+- YWS_URL: ws://localhost:1234
 
 ## CI/CD
 
@@ -54,9 +58,9 @@ Generated: 2026-01-04T20:54:37.686Z
 
 ## Documentation
 
-- Files: 45
-- Coverage: 643%
-- Files: ai-integration.md, architecture.md, assets-shopping.md, audio-voice.md, AUTOMATED_MANUAL_TEST_PLAN.md, AUTOMATED_TEST_RESULTS.md, avatars.md, change-review.md, content-provider.md, deployment-validation-report.md, deployment.md, DEPLOYMENT_QUICKSTART.md, DEPLOYMENT_STATUS.md, e2e-comprehensive-analysis.md, e2e-comprehensive-report.md, e2e-final-report.md, e2e-improvements-summary.md, e2e-test-results.md, e2e-tests-final-summary.md, final-status.md, health-report.md, integration-status.md, integration-validation-checklist.md, MANUAL_TEST_CHECKLIST.md, MVP_LOCAL_HARDENING_VALIDATION.md, next-steps-final.md, next-steps-progress.md, next-steps-summary.md, NEXT_STEPS_ACTION_PLAN.md, performance.md, PLAN_SOURCE_OF_TRUTH.md, production-build-report.md, production-e2e-status.md, PRODUCTION_ENV.md, PR_DESCRIPTION.md, PR_FULL_AUDIT.md, README.md, run-report.md, status-report.md, TASK_LOG.md, template-watt-eco.md, templates.md, test-fixes-summary.md, test-report.md, troubleshooting.md
+- Files: 48
+- Coverage: 686%
+- Files: ai-integration.md, architecture.md, assets-shopping.md, audio-voice.md, AUTOMATED_MANUAL_TEST_PLAN.md, AUTOMATED_TEST_RESULTS.md, avatars.md, change-review.md, CONSOLE_ERRORS_FIXES.md, CONSOLE_FIXES_SUMMARY.md, content-provider.md, deployment-validation-report.md, deployment.md, DEPLOYMENT_QUICKSTART.md, DEPLOYMENT_STATUS.md, e2e-comprehensive-analysis.md, e2e-comprehensive-report.md, e2e-final-report.md, e2e-improvements-summary.md, e2e-test-results.md, e2e-tests-final-summary.md, final-status.md, health-report.md, integration-status.md, integration-validation-checklist.md, MANUAL_TEST_CHECKLIST.md, METAVERSE_ANALYSIS.md, MVP_LOCAL_HARDENING_VALIDATION.md, next-steps-final.md, next-steps-progress.md, next-steps-summary.md, NEXT_STEPS_ACTION_PLAN.md, performance.md, PLAN_SOURCE_OF_TRUTH.md, production-build-report.md, production-e2e-status.md, PRODUCTION_ENV.md, PR_DESCRIPTION.md, PR_FULL_AUDIT.md, README.md, run-report.md, status-report.md, TASK_LOG.md, template-watt-eco.md, templates.md, test-fixes-summary.md, test-report.md, troubleshooting.md
 
 ## Environment
 
@@ -75,3 +79,28 @@ Generated: 2026-01-04T20:54:37.686Z
   - Draco: ✅
   - KTX2: ✅
 - XR Adapter: ✅ (three)
+
+## Collaboration
+
+- Voice Provider Interface: ✅
+- LiveKit Provider: ✅
+- Whiteboard Client: ✅
+- Pinboard: ✅
+- Room Utils: ✅
+- Server Token Endpoint: ✅
+
+## Templates
+
+- watt-eco: ✅
+- watt-default: ✅
+- Fallback Logic: ✅
+
+## Environment (.env.local)
+
+- Exists: ✅
+- VITE_TEMPLATE_ID: watt-eco
+
+## Decoder Files
+
+- Draco Files: ✅
+- KTX2 Files: ✅
