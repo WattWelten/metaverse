@@ -18,6 +18,7 @@ import {
 } from 'three';
 
 import { loadReadyPlayerMeAvatar } from './loaders/rpm.js';
+import { createNameTag } from './NameTag.js';
 
 export interface Avatar {
   id: string;
@@ -70,37 +71,55 @@ export class AvatarManager {
     avatarUrl: string,
     position?: { x: number; y: number; z: number }
   ): Promise<Avatar> {
+    console.log(`[AvatarManager] Loading avatar for ${userId} from ${avatarUrl}`);
     try {
       const avatarObject = await loadReadyPlayerMeAvatar(avatarUrl);
+      console.log(`[AvatarManager] Avatar object loaded, checking for animations...`);
 
       // Setup animation mixer if GLTF has animations
       let animationMixer: AnimationMixer | undefined;
-      let animationActions = new Map<string, AnimationAction>();
+      const animationActions = new Map<string, AnimationAction>();
 
       // Try to load with animations
       try {
+        console.log(`[AvatarManager] Loading GLTF with animations from ${avatarUrl}...`);
         const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
         const loader = new GLTFLoader();
         const gltf = await loader.loadAsync(avatarUrl);
+        console.log(`[AvatarManager] GLTF loaded, animations: ${gltf.animations?.length || 0}`);
 
         if (gltf.animations && gltf.animations.length > 0) {
           animationMixer = new AnimationMixer(avatarObject);
+          console.log(
+            `[AvatarManager] Found ${gltf.animations.length} animation clips for avatar ${userId}:`
+          );
           gltf.animations.forEach((clip: AnimationClip) => {
+            console.log(`  - "${clip.name}" (duration: ${clip.duration.toFixed(2)}s)`);
             // clipAction signature: clipAction(clip, optionalRoot)
             // Use type assertion to handle Three.js version differences
-            const action = (animationMixer as any).clipAction(
+            interface AnimationMixerWithClipAction extends AnimationMixer {
+              clipAction: (clip: AnimationClip, root?: Object3D) => AnimationAction;
+            }
+            const action = (animationMixer as AnimationMixerWithClipAction).clipAction(
               clip,
               avatarObject
             ) as AnimationAction;
             if (action) {
               // setLoop signature: setLoop(mode: AnimationActionLoopStyles, repetitions?: number)
-              (action as any).setLoop(LoopRepeat, Infinity);
+              interface AnimationActionWithSetLoop extends AnimationAction {
+                setLoop: (mode: number, repetitions?: number) => AnimationAction;
+              }
+              (action as AnimationActionWithSetLoop).setLoop(LoopRepeat, Infinity);
               animationActions.set(clip.name, action);
             }
           });
+          console.log(`[AvatarManager] Registered ${animationActions.size} animation actions`);
+        } else {
+          console.warn(`[AvatarManager] No animations found in avatar ${userId}`);
         }
-      } catch {
+      } catch (error) {
         // No animations available - continue without animations
+        console.warn(`[AvatarManager] Failed to load animations for avatar ${userId}:`, error);
       }
 
       const avatar: Avatar = {
@@ -115,6 +134,16 @@ export class AvatarManager {
 
       this.scene.add(avatar.object);
       this.avatars.set(userId, avatar);
+
+      // Start idle animation by default if available
+      if (animationMixer && animationActions && animationActions.size > 0) {
+        console.log(`[AvatarManager] Starting default idle animation for avatar ${userId}`);
+        this.playAnimation(avatar, 'idle');
+      } else {
+        console.warn(
+          `[AvatarManager] No animations available for avatar ${userId} - avatar will remain in T-Pose`
+        );
+      }
 
       return avatar;
     } catch (error) {
@@ -315,38 +344,76 @@ export class AvatarManager {
   }
 
   private playAnimation(avatar: Avatar, animationName: string): void {
-    if (!avatar.animationMixer || !avatar.animationActions) return;
+    if (!avatar.animationMixer || !avatar.animationActions) {
+      console.warn(
+        `[AvatarManager] Cannot play animation "${animationName}": No animationMixer or animationActions`
+      );
+      return;
+    }
 
     // Stop current animation
     if (avatar.currentAnimationAction) {
       avatar.currentAnimationAction.fadeOut(0.2);
     }
 
-    // Map animation names to clip names
-    const animationMap: Record<string, string> = {
-      idle: 'Idle',
-      walk: 'Walking',
-      wave: 'Wave',
-      dance: 'Dance',
-      sit: 'Sitting',
-      jump: 'Jump',
-      clap: 'Clap',
-      thumbsup: 'ThumbsUp',
+    // Map animation names to clip names (extended with alternatives)
+    const animationMap: Record<string, string[]> = {
+      idle: ['Idle', 'idle', 'IDLE', 'TPose', 'T-Pose', 'Tpose'],
+      walk: ['Walking', 'walk', 'Walk', 'walking', 'WALKING', 'WalkForward', 'walk_forward'],
+      wave: ['Wave', 'wave', 'WAVE', 'Waving'],
+      dance: ['Dance', 'dance', 'DANCE', 'Dancing'],
+      sit: ['Sitting', 'sit', 'Sit', 'SITTING', 'SitDown'],
+      jump: ['Jump', 'jump', 'JUMP', 'Jumping'],
+      clap: ['Clap', 'clap', 'CLAP', 'Clapping'],
+      thumbsup: ['ThumbsUp', 'thumbsup', 'Thumbs_Up', 'thumbs_up'],
     };
 
-    const clipName = animationMap[animationName] || animationName;
-    const action = avatar.animationActions.get(clipName);
+    // Try to find animation by exact match or alternatives
+    let action: AnimationAction | undefined;
+    const alternatives = animationMap[animationName] || [animationName];
+
+    for (const altName of alternatives) {
+      action = avatar.animationActions.get(altName);
+      if (action) {
+        console.log(`[AvatarManager] Playing animation "${animationName}" → "${altName}"`);
+        break;
+      }
+    }
+
+    // If not found by exact match, try case-insensitive partial match
+    if (!action) {
+      const lowerName = animationName.toLowerCase();
+      for (const [name, candidateAction] of avatar.animationActions.entries()) {
+        if (name.toLowerCase().includes(lowerName) || lowerName.includes(name.toLowerCase())) {
+          action = candidateAction;
+          console.log(
+            `[AvatarManager] Playing animation "${animationName}" → "${name}" (partial match)`
+          );
+          break;
+        }
+      }
+    }
 
     if (action) {
       action.reset().fadeIn(0.2).play();
       avatar.currentAnimationAction = action;
     } else {
-      // Fallback: try to find any animation that contains the name
-      for (const [name, action] of avatar.animationActions.entries()) {
-        if (name.toLowerCase().includes(animationName.toLowerCase())) {
-          action.reset().fadeIn(0.2).play();
-          avatar.currentAnimationAction = action;
-          break;
+      // Log available animations for debugging
+      const availableAnimations = Array.from(avatar.animationActions.keys());
+      console.warn(
+        `[AvatarManager] Animation "${animationName}" not found. Available animations: ${availableAnimations.join(', ')}`
+      );
+
+      // Fallback: Try to play first available animation if it's idle-like
+      if (availableAnimations.length > 0) {
+        const firstAnimation = availableAnimations[0];
+        const firstAction = avatar.animationActions.get(firstAnimation);
+        if (firstAction) {
+          console.log(
+            `[AvatarManager] Falling back to first available animation: "${firstAnimation}"`
+          );
+          firstAction.reset().fadeIn(0.2).play();
+          avatar.currentAnimationAction = firstAction;
         }
       }
     }
@@ -356,6 +423,18 @@ export class AvatarManager {
     this.avatars.forEach((avatar) => {
       if (avatar.animationMixer) {
         avatar.animationMixer.update(delta);
+        // Debug: Log if animation is not running (only once per avatar to avoid spam)
+        if (
+          avatar.currentAnimationAction &&
+          !avatar.currentAnimationAction.isRunning() &&
+          !(avatar as Avatar & { animationWarningLogged?: boolean }).animationWarningLogged
+        ) {
+          console.warn(
+            `[AvatarManager] Animation for avatar ${avatar.userId} is not running. Current action: ${avatar.currentAnimationAction.getClip().name}`
+          );
+          // Mark as logged to avoid spam
+          (avatar as Avatar & { animationWarningLogged?: boolean }).animationWarningLogged = true;
+        }
       }
     });
   }
@@ -459,5 +538,83 @@ export class AvatarManager {
 
   getAllAvatars(): Avatar[] {
     return Array.from(this.avatars.values());
+  }
+
+  setLocalVisibleHead(visible: boolean, userId?: string): void {
+    // If userId is provided, use it; otherwise try 'me' as fallback
+    const localAvatar = userId ? this.avatars.get(userId) : this.avatars.get('me');
+    if (!localAvatar) {
+      console.warn(
+        `[AvatarManager] setLocalVisibleHead: Avatar not found (userId: ${userId || 'me'})`
+      );
+      return;
+    }
+
+    localAvatar.object.traverse((obj) => {
+      if ((obj as Mesh).isMesh) {
+        const mesh = obj as Mesh;
+        const name = mesh.name.toLowerCase();
+        // Hide head meshes in first-person mode
+        if (/head|skull|face|hair|hat|cap/i.test(name)) {
+          mesh.visible = visible;
+        }
+      }
+    });
+  }
+
+  setName(userId: string, name: string): void {
+    const avatar = this.avatars.get(userId);
+    if (!avatar) return;
+
+    // Find nameTag in avatar object
+    interface TextObject {
+      text?: string;
+      sync?: () => void;
+    }
+    let nameTag: (Object3D & TextObject) | Sprite | null = null;
+    avatar.object.traverse((obj) => {
+      // Check if it's a troika-three-text Text object
+      const textObj = obj as Object3D & TextObject;
+      if (textObj.text !== undefined && textObj.sync) {
+        nameTag = textObj;
+      }
+      // Check if it's a Sprite (existing implementation)
+      if ((obj as Sprite).isSprite) {
+        nameTag = obj as Sprite;
+      }
+    });
+
+    if (nameTag) {
+      // Update troika-three-text
+      const textObj = nameTag as Object3D & TextObject;
+      if (typeof textObj.text !== 'undefined' && textObj.sync) {
+        textObj.text = name || 'Gast';
+        textObj.sync();
+      } else {
+        // Update Sprite (existing implementation)
+        const spriteTag = nameTag as Sprite;
+        if (spriteTag.isSprite) {
+          // Recreate sprite with new name
+          const oldPos = spriteTag.position.clone();
+          const oldParent = spriteTag.parent;
+          if (oldParent) {
+            oldParent.remove(spriteTag);
+            const newTag = this.createNameTag(name);
+            newTag.position.copy(oldPos);
+            oldParent.add(newTag);
+          }
+        }
+      }
+    } else {
+      // Create new nameTag if none exists
+      try {
+        const newTag = createNameTag(name);
+        avatar.object.add(newTag);
+      } catch {
+        // Fallback: use existing createNameTag method
+        const newTag = this.createNameTag(name);
+        avatar.object.add(newTag);
+      }
+    }
   }
 }

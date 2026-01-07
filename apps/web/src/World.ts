@@ -1,9 +1,22 @@
-import { AmbientManager } from '@metaverse/audio';
-import { AvatarManager } from '@metaverse/avatars';
+import { AgentBridge } from '@metaverse/ai';
+import { AmbientManager, Ambience3D, ZoneSystem, ZoneVisualizer } from '@metaverse/audio';
+import {
+  AvatarManager,
+  EmoteSystem,
+  LipDriver,
+  SpotlightMarker,
+  type EmoteId,
+} from '@metaverse/avatars';
+import { ScreenSurface } from '@metaverse/collab';
 import type { TemplateInstance } from '@metaverse/core';
 import { MediaBillboard, setPhysicallyCorrectLights } from '@metaverse/core';
+import { PropFactory, type BuiltProp } from '@metaverse/environment';
+import { SeatingSystem } from '@metaverse/interactions';
+import { StageManager, parseStageMessage } from '@metaverse/moderation';
+import { NavMeshSystem } from '@metaverse/navigation';
+import { extractHolesFromScene } from '@metaverse/navigation';
 import { NetClient } from '@metaverse/net';
-import { VoiceClient } from '@metaverse/voice';
+import { VoiceClient, MicAnalyser } from '@metaverse/voice';
 import type { IXRAdapter } from '@metaverse/xr';
 import { createXRAdapter } from '@metaverse/xr';
 import {
@@ -20,19 +33,22 @@ import {
   Texture,
   Vector3,
 } from 'three';
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { PMREMGenerator } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
+import { CameraRig } from './controllers/CameraRig';
 import { PlayerController } from './controllers/PlayerController';
+import { buildEco } from './environment/Eco';
+import { buildEcoAuto } from './environment/EcoAuto';
 import { getFeatureFlags, type FeatureFlags } from './FeatureFlags';
 import { InteractionManager } from './interactions/InteractionManager';
+import { NavController } from './navigation/NavController';
 import { PostProcessing } from './render/Post';
 import { TemplateHost } from './TemplateHost';
-import { buildEco } from './environment/Eco';
-import { NavMeshSystem } from '@metaverse/navigation';
-import { extractHolesFromScene } from '@metaverse/navigation';
-import { NavController } from './navigation/NavController';
+import type { VoiceClientWithProvider } from './types/voiceProvider';
+
+// import { buildEcoProfessional } from './environment/EcoProfessional'; // Not used yet
 
 export class World {
   private scene: Scene;
@@ -51,13 +67,17 @@ export class World {
   private defaultLights: { hemi: HemisphereLight; sun: DirectionalLight } | null = null;
   private navMeshSystem: NavMeshSystem | null = null;
   private navController: NavController | null = null;
+  private cameraRig: CameraRig | null = null;
+  private ecoAutoBuilt = false; // Track if procedural scene was built
 
   // Multiplayer & Networking
   private netClient: NetClient | null = null;
   private avatarManager: AvatarManager | null = null;
   private ambientManager: AmbientManager | null = null;
   private voiceClient: VoiceClient | null = null;
+  private agentBridge: AgentBridge | null = null;
   private userId: string;
+  private sessionId: string | null = null;
   private lastAvatarUpdate = 0;
   private readonly AVATAR_UPDATE_THROTTLE = 33; // ms (30 Hz)
   private soloMode = false;
@@ -83,6 +103,17 @@ export class World {
   // Interactions
   private interactionManager: InteractionManager | null = null;
   private isSitting = false;
+  private seatingSystem: SeatingSystem | null = null;
+  private props: BuiltProp[] = [];
+  private zoneSystem: ZoneSystem | null = null;
+  private zoneVisualizer: ZoneVisualizer | null = null;
+  private ambience3D: Ambience3D | null = null;
+  private screens: ScreenSurface[] = [];
+  private emoteSystem: EmoteSystem | null = null;
+  private micAnalyser: MicAnalyser | null = null;
+  private lipDriver: LipDriver | null = null;
+  private stageManager: StageManager | null = null;
+  private spotlightMarkers: Map<string, SpotlightMarker> = new Map();
 
   // Avatar Movement Controls
   private keysPressed = new Set<string>();
@@ -187,6 +218,7 @@ export class World {
     // Initialize Multiplayer & Audio Systems
     this.initMultiplayer(flags);
     this.initAudio(flags);
+    this.initAgentBridge(flags);
 
     // Initialize Interaction Manager
     this.interactionManager = new InteractionManager(this.scene);
@@ -307,27 +339,37 @@ export class World {
   }
 
   private initMultiplayer(flags: FeatureFlags): void {
+    // Avatar Manager immer initialisieren (auch im Solo-Modus)
+    if (!this.avatarManager) {
+      this.avatarManager = new AvatarManager(this.scene);
+    }
+
     if (!flags.MULTIPLAYER_ENABLED) {
-      console.log('Multiplayer disabled via feature flag');
+      console.log('[World] Multiplayer disabled via feature flag');
       return;
     }
 
+    console.log('[World] Initializing Multiplayer...');
     const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
     const roomId = this.getRoomIdFromURL();
+    console.log(
+      `[World] Multiplayer config: serverUrl=${serverUrl}, roomId=${roomId}, userId=${this.userId}`
+    );
 
     this.netClient = new NetClient({
       serverUrl,
       userId: this.userId,
       roomId,
       autoConnect: false, // Manuell verbinden nach Template-Load
+      sessionId: this.sessionId || undefined,
     });
+    console.log('[World] ✅ NetClient created');
 
     // Stoppe Reconnection-Versuche nach Timeout
     // Note: connectionTimeout and stopReconnection are reserved for future use
 
-    // Avatar Manager initialisieren
-    this.avatarManager = new AvatarManager(this.scene);
-    if (this.netClient) {
+    // NetClient an AvatarManager anbinden (nur im Multiplayer-Modus)
+    if (this.netClient && this.avatarManager) {
       this.avatarManager.setNetClient(this.netClient.asAvatarManagerClient());
     }
 
@@ -363,14 +405,72 @@ export class World {
     );
   }
 
+  private initAgentBridge(flags: FeatureFlags): void {
+    if (!flags.AI_ENABLED) {
+      console.log('[AI] AgentBridge disabled via feature flag');
+      return;
+    }
+
+    try {
+      this.agentBridge = new AgentBridge({
+        baseUrl: flags.WATTOS_BASE_URL || 'https://api.wattos.local',
+        wsUrl: flags.WATTOS_WS_URL || 'wss://api.wattos.local/realtime',
+        apiKey: flags.WATTOS_API_KEY || '',
+        tenant: flags.WATTOS_TENANT,
+        sessionId: this.userId,
+        userId: this.userId,
+      });
+
+      this.agentBridge.connect().catch((error) => {
+        console.error('[AI] Failed to connect AgentBridge:', error);
+      });
+
+      // Event-Handler für AI-Events
+      this.agentBridge.on('agent_speech', (data) => {
+        console.log('[AI] Agent speech:', data);
+        // Optional: Zeige AI-Nachricht in UI
+      });
+
+      this.agentBridge.on('tool_call', (data) => {
+        console.log('[AI] Tool call:', data);
+        // Optional: Führe Aktion aus (z.B. Objekt platzieren)
+      });
+
+      this.agentBridge.on('connected', () => {
+        console.log('[AI] AgentBridge connected');
+      });
+
+      this.agentBridge.on('disconnected', () => {
+        console.log('[AI] AgentBridge disconnected');
+      });
+
+      this.agentBridge.on('error', (error) => {
+        console.error('[AI] AgentBridge error:', error);
+      });
+    } catch (error) {
+      console.error('[AI] Failed to initialize AgentBridge:', error);
+    }
+  }
+
   private initAudio(flags: FeatureFlags): void {
     // Ambient Audio
     if (flags.AMBIENT_AUDIO_ENABLED) {
+      console.log('[World] Initializing Ambient Audio...');
       this.ambientManager = new AmbientManager();
+      console.log('[World] ✅ AmbientManager created');
+    } else {
+      console.log('[World] Ambient Audio disabled via feature flag');
     }
 
     // Voice Client
-    if (flags.VOICE_ENABLED && this.netClient) {
+    if (flags.VOICE_ENABLED) {
+      if (!this.netClient) {
+        console.warn(
+          '[World] Voice enabled but NetClient not available. Voice requires Multiplayer.'
+        );
+        return;
+      }
+      console.log('[World] Initializing Voice Client...');
       const roomId = this.getRoomIdFromURL();
       this.voiceClient = new VoiceClient({
         userId: this.userId,
@@ -378,7 +478,80 @@ export class World {
         enableSpatialAudio: true,
         netClient: this.netClient.asVoiceClient(),
       });
+      console.log(`[World] ✅ VoiceClient created (roomId=${roomId}, spatialAudio=true)`);
+
+      // Initialize StageManager for moderation features
+      if (import.meta.env.VITE_STAGE_ENABLED === 'true') {
+        console.log('[World] Initializing StageManager...');
+        this.stageManager = new StageManager();
+        this.setupStageModeration();
+        console.log('[World] ✅ StageManager created');
+      }
+    } else {
+      console.log('[World] Voice disabled via feature flag');
     }
+  }
+
+  private setupStageModeration(): void {
+    if (!this.voiceClient || !this.stageManager) return;
+
+    const provider = (this.voiceClient as VoiceClientWithProvider).provider;
+    if (!provider || typeof provider.onData !== 'function') return;
+
+    // Subscribe to data channel messages
+    provider.onData((data: string, _participantId: string) => {
+      const message = parseStageMessage(data);
+      if (message) {
+        this.stageManager?.handleMessage(message);
+      }
+    });
+
+    // Subscribe to stage state changes
+    this.stageManager.onStateChange((state) => {
+      // Update spotlight markers
+      if (state.spotlight) {
+        this.setSpotlight(state.spotlight, true);
+      } else {
+        // Remove all spotlights
+        this.spotlightMarkers.forEach((marker, userId) => {
+          marker.detach();
+          marker.dispose();
+          this.spotlightMarkers.delete(userId);
+        });
+      }
+    });
+  }
+
+  setSpotlight(participantId: string, enabled: boolean): void {
+    if (!this.avatarManager) return;
+
+    const avatar = this.avatarManager.getAvatar(participantId);
+    if (!avatar) return;
+
+    if (enabled) {
+      // Add spotlight marker
+      if (!this.spotlightMarkers.has(participantId)) {
+        const marker = new SpotlightMarker();
+        marker.attachTo(avatar.object);
+        this.spotlightMarkers.set(participantId, marker);
+      }
+    } else {
+      // Remove spotlight marker
+      const marker = this.spotlightMarkers.get(participantId);
+      if (marker) {
+        marker.detach();
+        marker.dispose();
+        this.spotlightMarkers.delete(participantId);
+      }
+    }
+  }
+
+  getStageManager(): StageManager | null {
+    return this.stageManager;
+  }
+
+  getZoneSystem(): ZoneSystem | null {
+    return this.zoneSystem;
   }
 
   private async initXR(): Promise<void> {
@@ -422,9 +595,18 @@ export class World {
     // Load default template (this will also initialize PlayerController if spawn is defined)
     await this.loadTemplate(flags.TEMPLATE_ID);
 
-    // Build Eco environment if template is watt-eco
-    if (flags.TEMPLATE_ID === 'watt-eco' || import.meta.env.VITE_ECO_ENABLED === 'true') {
-      buildEco(this.scene);
+    // Build Eco environment if template is watt-eco (only once)
+    if (
+      !this.ecoAutoBuilt &&
+      (flags.TEMPLATE_ID === 'watt-eco' || import.meta.env.VITE_ECO_ENABLED === 'true')
+    ) {
+      // Use buildEcoAuto if explicitly enabled, otherwise fallback to buildEco
+      if (import.meta.env.VITE_ECO_AUTO_ENABLED === 'true') {
+        await buildEcoAuto(this.scene);
+      } else {
+        buildEco(this.scene);
+      }
+      this.ecoAutoBuilt = true;
     }
 
     // Initialize Navigation (Navmesh)
@@ -440,6 +622,9 @@ export class World {
       });
     }
 
+    // Initialize Template++ Features: Props, Seating, Zones, Ambience, Screens
+    await this.initTemplateFeatures(template);
+
     // Create local avatar for WASD controls
     if (this.avatarManager) {
       // Create capsule avatar as fallback if no Ready Player Me avatar is loaded
@@ -451,10 +636,19 @@ export class World {
         this.avatarPosition = { ...existingAvatar.position };
         this.avatarRotation = { ...existingAvatar.rotation };
       }
+
+      // Initialize CameraRig with local avatar as target
+      const localAvatar = this.avatarManager.getAvatar(this.userId);
+      if (localAvatar && !this.cameraRig) {
+        this.cameraRig = new CameraRig(this.camera, localAvatar.object);
+        // Start in first-person mode
+        this.cameraRig.switch('fp');
+      }
     }
 
     // Multiplayer verbinden (nach Template-Load)
     if (this.netClient && flags.MULTIPLAYER_ENABLED) {
+      console.log('[World] Connecting to multiplayer server...');
       try {
         this.netClient.connect();
 
@@ -507,14 +701,17 @@ export class World {
         });
 
         if (this.netClient.isConnected() && !this.soloMode) {
+          console.log('[World] ✅ Connected to multiplayer server');
           const roomId = this.getRoomIdFromURL();
+          console.log(`[World] Joining room: ${roomId}`);
           this.netClient.joinRoom(roomId);
           // Lokalen Avatar erstellen
           await this.createLocalAvatar();
           // Chat-Events setzen
           this.setupChat();
+          console.log('[World] ✅ Multiplayer fully initialized');
         } else {
-          console.log('Running in solo mode');
+          console.log('[World] Running in solo mode (server not reachable or connection failed)');
           // Create avatar even in solo mode for WASD controls
           if (this.avatarManager) {
             const existingAvatar = this.avatarManager.getAvatar(this.userId);
@@ -546,6 +743,7 @@ export class World {
 
     // Start render loop
     this.animate();
+    console.log('[World] ready – pointer lock via EnterOverlay');
   }
 
   async initNavigation(): Promise<void> {
@@ -600,6 +798,115 @@ export class World {
     };
     window.addEventListener('keydown', handleKeyDown);
     // Cleanup wird in dispose() gemacht
+  }
+
+  private async initTemplateFeatures(template: TemplateInstance | null): Promise<void> {
+    if (!template) return;
+    const manifest = template.manifest;
+
+    // 1. Props erstellen
+    if (manifest.props) {
+      this.props = [];
+      manifest.props.forEach((propDef) => {
+        try {
+          const prop = PropFactory.build(this.scene, propDef);
+          this.props.push(prop);
+          // Registriere Sitzplätze
+          if (prop.seatAnchors && prop.seatAnchors.length > 0) {
+            if (!this.seatingSystem) {
+              this.seatingSystem = new SeatingSystem();
+              console.log('[World] SeatingSystem created');
+            }
+            this.seatingSystem.registerAnchors(prop.seatAnchors);
+            console.log(
+              `[World] Registered ${prop.seatAnchors.length} seat anchors from prop ${propDef.id}`
+            );
+          }
+        } catch (error) {
+          console.warn(`Failed to build prop ${propDef.id}:`, error);
+        }
+      });
+      console.log(`✅ Built ${this.props.length} props`);
+    }
+
+    // 2. Zones initialisieren
+    if (manifest.zones) {
+      this.zoneSystem = new ZoneSystem(manifest.zones);
+      console.log(`✅ Initialized ${manifest.zones.length} zones`);
+
+      // Initialize ZoneVisualizer if debug mode is enabled
+      if (import.meta.env.VITE_ZONE_DEBUG === 'true' || import.meta.env.DEV) {
+        this.zoneVisualizer = new ZoneVisualizer(this.scene);
+        this.zoneVisualizer.setEnabled(true);
+        this.zoneVisualizer.visualizeZones(manifest.zones);
+        console.log('✅ Zone visualization enabled');
+      }
+    }
+
+    // 3. Ambience3D initialisieren
+    if (manifest.ambience && manifest.ambience.length > 0) {
+      this.ambience3D = new Ambience3D();
+      for (const amb of manifest.ambience) {
+        try {
+          await this.ambience3D.addLoop(amb.id, amb.url, amb.pos, amb.maxDist);
+        } catch (error) {
+          console.warn(`Failed to load ambience ${amb.id}:`, error);
+        }
+      }
+      console.log(`✅ Initialized ${manifest.ambience.length} 3D ambience sources`);
+    }
+
+    // 4. Screens erstellen
+    if (manifest.screens) {
+      this.screens = [];
+      manifest.screens.forEach((screenDef) => {
+        const screen = new ScreenSurface(screenDef.pos, screenDef.size, screenDef.id);
+        this.scene.add(screen.mesh);
+        this.screens.push(screen);
+      });
+      console.log(`✅ Created ${this.screens.length} screens`);
+    }
+
+    // Resume Ambience3D audio context
+    if (this.ambience3D) {
+      this.ambience3D.resume();
+    }
+
+    // 5. Initialize EmoteSystem, MicAnalyser & LipDriver
+    if (this.avatarManager && !this.emoteSystem) {
+      this.emoteSystem = new EmoteSystem();
+      console.log('✅ EmoteSystem initialized');
+    }
+
+    if (this.voiceClient && this.avatarManager && !this.micAnalyser) {
+      this.micAnalyser = new MicAnalyser();
+      this.lipDriver = new LipDriver();
+      console.log('✅ MicAnalyser and LipDriver initialized');
+    }
+
+    // 6. E-Taste Handler für Seating
+    if (this.seatingSystem) {
+      console.log('[World] Seating system initialized - E key to sit/stand');
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key.toLowerCase() === 'e' && this.playerController?.controls.isLocked) {
+          const avatar = this.avatarManager?.getAvatar(this.userId);
+          if (this.seatingSystem) {
+            const wasSeated = this.seatingSystem.isSeated();
+            const seated = this.seatingSystem.trySeat(this.camera, avatar?.object);
+            if (seated) {
+              this.isSitting = this.seatingSystem.isSeated();
+              console.log(
+                `[World] ${this.isSitting ? 'Sitting' : 'Standing'} (was: ${wasSeated ? 'sitting' : 'standing'})`
+              );
+            }
+          }
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      // Cleanup wird in dispose() gemacht
+    } else {
+      console.log('[World] Seating system not initialized (no seats in template)');
+    }
   }
 
   private async applyTemplateLighting(template: TemplateInstance): Promise<void> {
@@ -697,12 +1004,54 @@ export class World {
     this.postProcessing.setSize(width, height);
   }
 
+  private validateCameraPosition(): void {
+    // Validate camera position - reset to spawn if invalid
+    const pos = this.camera.position;
+    const isValid =
+      isFinite(pos.x) &&
+      isFinite(pos.y) &&
+      isFinite(pos.z) &&
+      pos.y >= -10 &&
+      pos.y <= 100 &&
+      Math.abs(pos.x) < 1000 &&
+      Math.abs(pos.z) < 1000;
+
+    if (!isValid) {
+      console.warn('[World] Invalid camera position detected, resetting to spawn');
+      const template = this.templateHost.getCurrentTemplate();
+      if (template?.manifest?.spawn) {
+        const spawn = template.manifest.spawn;
+        let spawnPos: [number, number, number];
+        if (Array.isArray(spawn)) {
+          spawnPos = spawn as [number, number, number];
+        } else if ('position' in spawn && Array.isArray(spawn.position)) {
+          spawnPos = spawn.position as [number, number, number];
+        } else {
+          spawnPos = [0, 1.6, 6];
+        }
+        this.camera.position.set(spawnPos[0], spawnPos[1], spawnPos[2]);
+        this.controls.target.set(spawnPos[0], spawnPos[1], spawnPos[2]);
+        this.controls.update();
+      } else {
+        // Fallback to default position
+        this.camera.position.set(0, 1.6, 6);
+        this.controls.target.set(0, 1.6, 6);
+        this.controls.update();
+      }
+    }
+  }
+
   private animate(): void {
     this.animationFrameId = requestAnimationFrame(() => this.animate());
 
     const delta = this.clock.getDelta();
 
-    // Update PlayerController if active (PointerLock mode)
+    // Validate camera position periodically (every 60 frames ~1 second at 60fps)
+    if (this.frameCount % 60 === 0) {
+      this.validateCameraPosition();
+    }
+
+    // Update PlayerController if active (ALWAYS update when locked, for WASD movement)
     if (this.playerController && this.playerController.controls.isLocked) {
       // Collect remote avatar positions for collision detection
       const remotePeers: Vector3[] = [];
@@ -718,8 +1067,160 @@ export class World {
       // Update PlayerController with remote peers for collision detection
       this.playerController.setRemotePeers(remotePeers);
 
-      this.playerController.update(delta);
+      // Disable OrbitControls when PointerLock is active (prevents setPointerCapture error)
+      this.controls.enabled = false;
+
+      // Update CameraRig if active (only in TP mode, FP mode uses PlayerController directly)
+      if (this.cameraRig && this.avatarManager) {
+        const localAvatar = this.avatarManager.getAvatar(this.userId);
+        if (localAvatar) {
+          const isFP = this.cameraRig.mode === 'fp';
+
+          if (isFP) {
+            // FP mode: PlayerController moves camera directly, CameraRig should NOT override
+            // Only sync avatar position to camera
+            this.playerController.update(delta);
+            // Avatar position: camera is at head level (y=1.6), avatar feet should be at y=0
+            // Ready Player Me avatars are normalized to 1.7m height, so head is at y≈1.7
+            // Position avatar so feet are at y=0 (avatar center is typically at y≈0.85)
+            localAvatar.object.position.set(
+              this.camera.position.x,
+              this.camera.position.y - 1.7, // Avatar feet at y=0, head at y≈1.7
+              this.camera.position.z
+            );
+            localAvatar.object.rotation.y = this.camera.rotation.y;
+            // Ensure avatar is visible in FP mode (body should be visible when looking down)
+            localAvatar.object.visible = true;
+
+            // Update avatar animation based on movement
+            const animation = this.playerController.isMoving() ? 'walk' : 'idle';
+            this.avatarManager.updateAvatar(
+              this.userId,
+              {
+                x: localAvatar.object.position.x,
+                y: localAvatar.object.position.y,
+                z: localAvatar.object.position.z,
+              },
+              {
+                x: localAvatar.object.rotation.x,
+                y: localAvatar.object.rotation.y,
+                z: localAvatar.object.rotation.z,
+              },
+              animation
+            );
+            // DO NOT call cameraRig.update() in FP mode - it would override PlayerController!
+          } else {
+            // TP mode: PlayerController moves camera, then CameraRig repositions it behind avatar
+            // BUT: We need to sync avatar position FIRST, then let CameraRig position camera
+            this.playerController.update(delta);
+
+            // Sync avatar to camera position BEFORE CameraRig updates
+            // Avatar feet at y=0, head at y≈1.7
+            localAvatar.object.position.set(
+              this.camera.position.x,
+              this.camera.position.y - 1.7,
+              this.camera.position.z
+            );
+            localAvatar.object.rotation.y = this.camera.rotation.y;
+            // Ensure avatar is fully visible in TP mode
+            localAvatar.object.visible = true;
+
+            // Update avatar animation based on movement
+            const animation = this.playerController.isMoving() ? 'walk' : 'idle';
+            this.avatarManager.updateAvatar(
+              this.userId,
+              {
+                x: localAvatar.object.position.x,
+                y: localAvatar.object.position.y,
+                z: localAvatar.object.position.z,
+              },
+              {
+                x: localAvatar.object.rotation.x,
+                y: localAvatar.object.rotation.y,
+                z: localAvatar.object.rotation.z,
+              },
+              animation
+            );
+
+            // Now CameraRig can reposition camera behind avatar
+            this.cameraRig.update(delta, this.scene);
+          }
+        } else {
+          // No avatar, just update PlayerController
+          this.playerController.update(delta);
+        }
+      } else {
+        // No CameraRig, just update PlayerController (CRITICAL: This enables WASD movement!)
+        this.playerController.update(delta);
+
+        // Sync avatar position and animation when no CameraRig
+        if (this.avatarManager) {
+          const localAvatar = this.avatarManager.getAvatar(this.userId);
+          if (localAvatar) {
+            // Avatar feet at y=0, head at y≈1.7
+            localAvatar.object.position.set(
+              this.camera.position.x,
+              this.camera.position.y - 1.7,
+              this.camera.position.z
+            );
+            localAvatar.object.rotation.y = this.camera.rotation.y;
+            // Ensure avatar is visible
+            localAvatar.object.visible = true;
+
+            // Update avatar animation based on movement
+            const animation = this.playerController.isMoving() ? 'walk' : 'idle';
+            this.avatarManager.updateAvatar(
+              this.userId,
+              {
+                x: localAvatar.object.position.x,
+                y: localAvatar.object.position.y,
+                z: localAvatar.object.position.z,
+              },
+              {
+                x: localAvatar.object.rotation.x,
+                y: localAvatar.object.rotation.y,
+                z: localAvatar.object.rotation.z,
+              },
+              animation
+            );
+          }
+        }
+      }
     } else {
+      // Pointer Lock nicht aktiv - synchronisiere avatarPosition mit aktueller Kamera-Position
+      // bevor updateAvatarMovement() aufgerufen wird
+      if (this.avatarManager) {
+        const localAvatar = this.avatarManager.getAvatar(this.userId);
+        if (localAvatar) {
+          // Synchronisiere avatarPosition mit Avatar-Objekt
+          this.avatarPosition = {
+            x: localAvatar.object.position.x,
+            y: localAvatar.object.position.y,
+            z: localAvatar.object.position.z,
+          };
+          this.avatarRotation = {
+            x: localAvatar.object.rotation.x,
+            y: localAvatar.object.rotation.y,
+            z: localAvatar.object.rotation.z,
+          };
+        } else {
+          // Fallback: Synchronisiere mit Kamera-Position (minus eye height)
+          this.avatarPosition = {
+            x: this.camera.position.x,
+            y: this.camera.position.y - 1.6,
+            z: this.camera.position.z,
+          };
+          this.avatarRotation = {
+            x: 0,
+            y: this.camera.rotation.y,
+            z: 0,
+          };
+        }
+      }
+
+      // Pointer Lock nicht aktiv - OrbitControls für Kamera-Rotation
+      this.controls.enabled = true;
+
       // Update avatar movement (WASD controls) - fallback to OrbitControls
       this.updateAvatarMovement(delta);
       // Update controls (for camera rotation)
@@ -761,6 +1262,62 @@ export class World {
         y: cameraPos.y,
         z: cameraPos.z,
       });
+
+      // Update peer positions for spatial audio (if LiveKitProvider supports it)
+      if (this.avatarManager && getFeatureFlags().VOICE_ENABLED) {
+        const allAvatars = this.avatarManager.getAllAvatars();
+        allAvatars.forEach((avatar) => {
+          if (avatar.userId !== this.userId) {
+            // Try to update peer position via voice client
+            const voiceProvider = (this.voiceClient as VoiceClientWithProvider)?.provider;
+            if (voiceProvider && typeof voiceProvider.setPeerPosition === 'function') {
+              voiceProvider.setPeerPosition(
+                avatar.userId,
+                avatar.position.x,
+                avatar.position.y,
+                avatar.position.z
+              );
+            }
+          }
+        });
+      }
+    }
+
+    // Update ZoneSystem - check zone every frame
+    if (this.zoneSystem) {
+      const zoneId = this.zoneSystem.which(this.camera.position);
+      const currentActive = this.zoneSystem.getActive();
+      if (zoneId !== currentActive) {
+        this.zoneSystem.setActive(zoneId);
+        // Update zone visualizer if enabled
+        if (this.zoneVisualizer) {
+          this.zoneVisualizer.highlightZone(zoneId);
+        }
+        // Apply zone-specific audio settings (gain, reverb)
+        if (this.voiceClient && getFeatureFlags().VOICE_ENABLED) {
+          const zoneGain = this.zoneSystem.gainFor(zoneId);
+          const zoneReverb = this.zoneSystem.reverbFor(zoneId);
+          this.voiceClient.applyZoneSettings(zoneGain, zoneReverb || undefined);
+        }
+      }
+    }
+
+    // Update Ambience3D Listener
+    if (this.ambience3D) {
+      this.ambience3D.setListener(
+        this.camera.position.x,
+        this.camera.position.y,
+        this.camera.position.z
+      );
+    }
+
+    // Update Lip-Sync
+    if (this.micAnalyser && this.lipDriver && this.avatarManager) {
+      const amplitude = this.micAnalyser.sample();
+      const avatar = this.avatarManager.getAvatar(this.userId);
+      if (avatar) {
+        this.lipDriver.update(amplitude);
+      }
     }
 
     // Update FPS
@@ -825,10 +1382,59 @@ export class World {
     try {
       await this.voiceClient.enable();
       console.log('Voice enabled successfully');
+
+      // Attach mic stream to MicAnalyser for lip-sync
+      if (this.micAnalyser && this.voiceClient) {
+        const provider = (this.voiceClient as VoiceClientWithProvider).provider;
+        if (provider && provider.room) {
+          // Type assertion for room object (structure depends on provider)
+          const room = provider.room as {
+            localParticipant?: {
+              audioTrackPublications?: Map<string, unknown>;
+            };
+          };
+          const audioTracks = room.localParticipant?.audioTrackPublications;
+          if (audioTracks) {
+            const firstTrack = Array.from(audioTracks.values())[0] as
+              | { track?: { mediaStreamTrack?: MediaStreamTrack } }
+              | undefined;
+            if (firstTrack?.track?.mediaStreamTrack) {
+              const stream = new MediaStream([firstTrack.track.mediaStreamTrack]);
+              await this.micAnalyser.attach(stream);
+            }
+          }
+        }
+      }
+
+      // Attach avatar to LipDriver
+      if (this.lipDriver && this.avatarManager) {
+        const avatar = this.avatarManager.getAvatar(this.userId);
+        if (avatar) {
+          this.lipDriver.attach(avatar.object);
+        }
+      }
     } catch (error) {
       console.error('Failed to enable voice:', error);
       throw error;
     }
+  }
+
+  attachLocalMicStream(stream: MediaStream): void {
+    if (this.micAnalyser) {
+      this.micAnalyser.attach(stream).catch((err) => {
+        console.warn('Failed to attach mic stream:', err);
+      });
+    }
+    if (this.lipDriver && this.avatarManager) {
+      const avatar = this.avatarManager.getAvatar(this.userId);
+      if (avatar) {
+        this.lipDriver.attach(avatar.object);
+      }
+    }
+  }
+
+  getMicLevel(): number {
+    return this.micAnalyser?.sample() || 0;
   }
 
   disableVoice(): void {
@@ -858,12 +1464,36 @@ export class World {
   lockPointer(): void {
     if (this.playerController) {
       this.playerController.lock();
+      console.log('[PointerLock] Lock requested');
     }
   }
 
   unlockPointer(): void {
     if (this.playerController) {
       this.playerController.unlock();
+    }
+  }
+
+  togglePointerLock(): void {
+    if (this.playerController) {
+      if (this.playerController.controls.isLocked) {
+        this.playerController.unlock();
+      } else {
+        this.playerController.lock();
+      }
+    }
+  }
+
+  setAudioVolume(volume: number): void {
+    if (this.ambientManager) {
+      this.ambientManager.setMasterVolume(volume);
+    }
+    // VoiceClient hat keine direkte Volume-API, daher nur AmbientManager
+  }
+
+  setMouseInvert(invert: boolean): void {
+    if (this.playerController) {
+      this.playerController.setMouseInvert(invert);
     }
   }
 
@@ -878,13 +1508,29 @@ export class World {
   async loadTemplate(templateId: string): Promise<void> {
     await this.templateHost.loadTemplate(templateId);
 
+    // Rebuild Eco environment if needed (after template load/unmount might have cleared scene)
+    const flags = getFeatureFlags();
+    if (
+      this.ecoAutoBuilt &&
+      (flags.TEMPLATE_ID === 'watt-eco' || import.meta.env.VITE_ECO_ENABLED === 'true')
+    ) {
+      if (import.meta.env.VITE_ECO_AUTO_ENABLED === 'true') {
+        // Check if scene was cleared (no Ground object)
+        const hasGround = this.scene.children.some((obj) => obj.name === 'Ground');
+        if (!hasGround) {
+          console.log('[World] Rebuilding procedural scene after template load');
+          await buildEcoAuto(this.scene);
+        }
+      }
+    }
+
     // Apply lighting from new template
     const template = this.templateHost.getCurrentTemplate();
     if (template) {
       await this.applyTemplateLighting(template);
 
-      // Initialize PlayerController with spawn position from manifest
-      if (!this.playerController && template.manifest?.spawn) {
+      // Set camera to spawn position from manifest (even if PlayerController not yet created)
+      if (template.manifest?.spawn) {
         const spawn = template.manifest.spawn;
         let spawnPos: [number, number, number];
         let spawnRotY = 0;
@@ -905,18 +1551,53 @@ export class World {
             (spawn as { z?: number }).z || 6,
           ];
         } else {
-          // Fallback
-          spawnPos = [0, 1.6, 6];
+          // Fallback - position camera to see the scene better
+          spawnPos = [0, 1.6, 8]; // Further back to see more of the scene
         }
 
-        this.playerController = new PlayerController(this.camera, this.renderer.domElement, {
-          position: spawnPos,
-          rotationY: spawnRotY,
-        });
+        // Set camera position immediately
+        this.camera.position.set(spawnPos[0], spawnPos[1], spawnPos[2]);
+        this.camera.rotation.y = spawnRotY;
+        this.controls.target.set(spawnPos[0], spawnPos[1], spawnPos[2]);
+        this.controls.update();
+        console.log(
+          `[World] Camera positioned at spawn: (${spawnPos[0]}, ${spawnPos[1]}, ${spawnPos[2]}), rotationY: ${spawnRotY}`
+        );
+        console.log(
+          `[World] Camera looking at: (${this.controls.target.x}, ${this.controls.target.y}, ${this.controls.target.z})`
+        );
 
-        // Attach NavController if already initialized
-        if (this.navController) {
-          this.playerController.attachNavController(this.navController);
+        // Initialize PlayerController with spawn position from manifest
+        if (!this.playerController) {
+          this.playerController = new PlayerController(this.camera, this.renderer.domElement, {
+            position: spawnPos,
+            rotationY: spawnRotY,
+          });
+
+          // Attach NavController if already initialized
+          if (this.navController) {
+            this.playerController.attachNavController(this.navController);
+          }
+        }
+      } else {
+        // No spawn in manifest - initialize PlayerController with default position
+        if (!this.playerController) {
+          const defaultSpawn: [number, number, number] = [0, 1.6, 6];
+          this.camera.position.set(...defaultSpawn);
+          this.controls.target.set(...defaultSpawn);
+          this.controls.update();
+          console.log(
+            `[World] No spawn in manifest, using default position: (${defaultSpawn[0]}, ${defaultSpawn[1]}, ${defaultSpawn[2]})`
+          );
+          this.playerController = new PlayerController(this.camera, this.renderer.domElement, {
+            position: defaultSpawn,
+            rotationY: 0,
+          });
+
+          // Attach NavController if already initialized
+          if (this.navController) {
+            this.playerController.attachNavController(this.navController);
+          }
         }
       }
     }
@@ -986,9 +1667,41 @@ export class World {
       this.ambientManager.dispose();
     }
 
+    if (this.ambience3D) {
+      this.ambience3D.dispose();
+    }
+
     if (this.voiceClient) {
       this.voiceClient.disable();
     }
+
+    // Cleanup MicAnalyser & LipDriver
+    if (this.micAnalyser) {
+      this.micAnalyser.dispose();
+      this.micAnalyser = null;
+    }
+    this.lipDriver = null;
+
+    // Cleanup Template++ Features
+    this.props.forEach((prop) => {
+      this.scene.remove(prop.object);
+      interface Disposable {
+        dispose?: () => void;
+      }
+      prop.object.traverse((obj) => {
+        const disposable = obj as Object3D & Disposable;
+        if (disposable.dispose) {
+          disposable.dispose();
+        }
+      });
+    });
+    this.props = [];
+
+    this.screens.forEach((screen) => {
+      screen.detach();
+      this.scene.remove(screen.mesh);
+    });
+    this.screens = [];
 
     // Cleanup media billboards
     this.mediaBillboards.forEach((billboard) => {
@@ -996,6 +1709,12 @@ export class World {
       this.scene.remove(billboard.getObject());
     });
     this.mediaBillboards.clear();
+
+    // Cleanup zone visualizer
+    if (this.zoneVisualizer) {
+      this.zoneVisualizer.dispose();
+      this.zoneVisualizer = null;
+    }
 
     this.templateHost.dispose();
     this.postProcessing.dispose();
@@ -1016,6 +1735,29 @@ export class World {
 
   getAvatarManager(): AvatarManager | null {
     return this.avatarManager;
+  }
+
+  getRig(): CameraRig | null {
+    return this.cameraRig;
+  }
+
+  getAgentBridge(): AgentBridge | null {
+    return this.agentBridge;
+  }
+
+  switchView(): void {
+    if (this.cameraRig) {
+      this.cameraRig.switch();
+      const isFP = this.cameraRig.mode === 'fp';
+      // Hide local avatar head in FP mode
+      if (this.avatarManager) {
+        this.avatarManager.setLocalVisibleHead(!isFP, this.userId);
+      }
+      console.log(
+        '[CameraRig] Switched to',
+        this.cameraRig.mode === 'fp' ? 'First-Person' : 'Third-Person'
+      );
+    }
   }
 
   async loadAvatarFromUrl(url: string): Promise<void> {
@@ -1058,6 +1800,46 @@ export class World {
     return this.userId;
   }
 
+  setSessionId(sessionId: string): void {
+    this.sessionId = sessionId;
+    // Update NetClient if it exists
+    if (this.netClient) {
+      // Reconnect with new session ID if needed
+      // Note: NetClient doesn't have a setSessionId method, so we may need to reconnect
+      // For now, we just store it and it will be used on next connection
+    }
+  }
+
+  buildStageScreen(screenId: string = 'main'): ScreenSurface | null {
+    return this.screens.find((s) => s.mesh.name === screenId) || this.screens[0] || null;
+  }
+
+  attachLocalStream(stream: MediaStream): void {
+    const screen = this.buildStageScreen();
+    if (screen) {
+      screen.attach(stream);
+    }
+  }
+
+  attachRemoteStream(_participantId: string, stream: MediaStream | null): void {
+    const screen = this.buildStageScreen();
+    if (screen) {
+      if (stream) {
+        screen.attach(stream);
+      } else {
+        screen.detach();
+      }
+    }
+  }
+
+  triggerEmote(emoteId: EmoteId): void {
+    if (!this.emoteSystem || !this.avatarManager) return;
+    const avatar = this.avatarManager.getAvatar(this.userId);
+    if (avatar) {
+      this.emoteSystem.trigger(avatar.object, emoteId);
+    }
+  }
+
   private setupChat(): void {
     if (!this.netClient) return;
 
@@ -1074,6 +1856,11 @@ export class World {
     // Media Sharing
     this.netClient.onMediaShare((data) => {
       this.addMediaBillboard(data);
+    });
+
+    // File Sharing
+    this.netClient.onFileShare((data) => {
+      this.handleFileShare(data);
     });
   }
 
@@ -1136,6 +1923,64 @@ export class World {
 
     // Add locally immediately
     this.addMediaBillboard({ userId: this.userId, url, type, position: pos });
+  }
+
+  shareFile(
+    file: { id: string; url: string; mimeType: string; originalName: string },
+    position?: { x: number; y: number; z: number }
+  ): void {
+    if (!this.netClient || this.soloMode) return;
+
+    const pos = position || {
+      x: this.camera.position.x,
+      y: this.camera.position.y + 1,
+      z: this.camera.position.z + 2,
+    };
+
+    this.netClient.shareFile({
+      fileId: file.id,
+      url: file.url,
+      mimeType: file.mimeType,
+      originalName: file.originalName,
+      position: pos,
+    });
+
+    // Handle locally immediately
+    this.handleFileShare({
+      userId: this.userId,
+      fileId: file.id,
+      url: file.url,
+      mimeType: file.mimeType,
+      originalName: file.originalName,
+      position: pos,
+      timestamp: Date.now(),
+    });
+  }
+
+  private handleFileShare(data: {
+    userId: string;
+    fileId: string;
+    url: string;
+    mimeType: string;
+    originalName: string;
+    position?: { x: number; y: number; z: number };
+    timestamp: number;
+  }): void {
+    // For images/videos, use media billboard
+    if (data.mimeType.startsWith('image/') || data.mimeType.startsWith('video/')) {
+      this.addMediaBillboard({
+        userId: data.userId,
+        url: data.url,
+        type: data.mimeType.startsWith('image/') ? 'image' : 'video',
+        position: data.position || {
+          x: this.camera.position.x,
+          y: this.camera.position.y + 1,
+          z: this.camera.position.z + 2,
+        },
+      });
+    }
+    // For PDFs and other files, we could add a 3D file icon or link
+    // For MVP, files are accessible via Pinboard
   }
 
   setAvatarAnimation(animation: string): void {

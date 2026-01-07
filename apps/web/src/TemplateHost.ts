@@ -54,7 +54,10 @@ export class TemplateHost {
     try {
       // Register default template loader if not already registered
       if (!templateRegistry.getCurrentInstance()) {
-        templateRegistry.register('watt-default', this.createDefaultTemplateLoader());
+        const defaultLoader = this.createDefaultTemplateLoader();
+        templateRegistry.register('watt-default', defaultLoader);
+        // Register watt-eco with the same loader (uses same format)
+        templateRegistry.register('watt-eco', defaultLoader);
       }
 
       // Check if aborted before loading
@@ -62,6 +65,7 @@ export class TemplateHost {
         return;
       }
 
+      console.log(`[TemplateHost] Loading template: ${templateId}`);
       const instance = await templateRegistry.load(templateId, this.scene);
 
       // Check if aborted after loading
@@ -73,6 +77,7 @@ export class TemplateHost {
 
       this.currentTemplate = instance;
       this.loadingAbortController = null;
+      console.log(`✅ [TemplateHost] Template "${templateId}" loaded successfully`);
     } catch (error) {
       // Ignore abort errors
       if (signal.aborted) {
@@ -97,8 +102,10 @@ export class TemplateHost {
         const loader = createGLTFLoader(this.renderer || undefined);
         const gltf = await loader.loadAsync(`/templates/${manifest.name}/scene.glb`);
         sceneObject = gltf.scene || gltf.scenes?.[0] || new Object3D();
-      } catch {
+        console.log(`✅ Template "${manifest.name}": Loaded scene.glb`);
+      } catch (error) {
         // Generate a simple default scene
+        console.log(`ℹ️ Template "${manifest.name}": No scene.glb found, generating default scene`);
         sceneObject = this.createDefaultScene();
       }
 
@@ -113,6 +120,36 @@ export class TemplateHost {
             scene.add(sceneObject);
             // Initialize LOD visibility
             this.initializeLOD(lodMap);
+
+            // Calculate bounding box for debugging
+            const { Box3, Vector3 } = await import('three');
+            const box = new Box3().setFromObject(sceneObject);
+            const size = box.getSize(new Vector3());
+            const center = box.getCenter(new Vector3());
+
+            console.log(`✅ Template "${manifest.name}": Scene mounted`);
+            console.log(`  - Children: ${sceneObject.children.length}`);
+            console.log(
+              `  - Bounding box: size=(${size.x.toFixed(2)}, ${size.y.toFixed(2)}, ${size.z.toFixed(2)}), center=(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`
+            );
+
+            // Ensure all objects are visible
+            let visibleCount = 0;
+            let hiddenCount = 0;
+            sceneObject.traverse((child) => {
+              if ('visible' in child) {
+                if (child.visible) {
+                  visibleCount++;
+                } else {
+                  hiddenCount++;
+                  child.visible = true; // Force visibility
+                }
+              }
+            });
+            if (hiddenCount > 0) {
+              console.log(`  - Made ${hiddenCount} hidden objects visible`);
+            }
+            console.log(`  - Visible objects: ${visibleCount}, Hidden objects: ${hiddenCount}`);
           }
           // Apply lighting from manifest
           await this.applyLighting(manifest);
@@ -135,42 +172,49 @@ export class TemplateHost {
 
   private createDefaultScene(): Object3D {
     const group = new Object3D();
+    group.name = 'DefaultTemplateScene';
 
-    // Ground plane (larger, more visible)
-    const groundGeometry = new BoxGeometry(50, 0.2, 50);
+    // Ground plane (smaller, more reasonable size)
+    const groundGeometry = new BoxGeometry(20, 0.2, 20);
     const groundMaterial = new MeshStandardMaterial({
       color: 0x4a5568,
       roughness: 0.8,
       metalness: 0.1,
     });
     const ground = new Mesh(groundGeometry, groundMaterial);
+    ground.name = 'Ground';
     ground.position.y = -0.1;
     ground.receiveShadow = true;
+    ground.visible = true;
     group.add(ground);
 
-    // Sky dome (simple hemisphere for ambient feel)
-    const skyGeometry = new SphereGeometry(100, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    // Sky dome (smaller, more reasonable size)
+    const skyGeometry = new SphereGeometry(50, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
     const skyMaterial = new MeshBasicMaterial({
       color: 0x87ceeb,
       side: BackSide,
     });
     const sky = new Mesh(skyGeometry, skyMaterial);
+    sky.name = 'Sky';
+    sky.visible = true;
     group.add(sky);
 
-    // Grid helper for orientation
-    const gridHelper = new GridHelper(50, 50, 0x444444, 0x222222);
+    // Grid helper for orientation (smaller to match ground)
+    const gridHelper = new GridHelper(20, 20, 0x444444, 0x222222);
+    gridHelper.name = 'Grid';
     gridHelper.position.y = 0.01;
+    gridHelper.visible = true;
     group.add(gridHelper);
 
-    // Some geometric shapes for visual interest (better than random cubes)
+    // Some geometric shapes for visual interest (closer to origin, more visible)
     const shapes: Array<{
       type: 'box' | 'sphere' | 'cylinder';
       pos: [number, number, number];
       color: number;
     }> = [
-      { type: 'box', pos: [5, 1, 5], color: 0xff6b6b },
-      { type: 'sphere', pos: [-5, 1, 5], color: 0x4ecdc4 },
-      { type: 'cylinder', pos: [0, 1, -5], color: 0x95e1d3 },
+      { type: 'box', pos: [3, 1, 3], color: 0xff6b6b },
+      { type: 'sphere', pos: [-3, 1, 3], color: 0x4ecdc4 },
+      { type: 'cylinder', pos: [0, 1, -3], color: 0x95e1d3 },
     ];
 
     shapes.forEach((shape) => {
@@ -189,10 +233,16 @@ export class TemplateHost {
         metalness: 0.3,
       });
       const mesh = new Mesh(geometry, material);
+      mesh.name = `Shape_${shape.type}_${shape.pos.join('_')}`;
       mesh.position.set(shape.pos[0], shape.pos[1], shape.pos[2]);
       mesh.castShadow = true;
+      mesh.visible = true;
       group.add(mesh);
     });
+
+    // Ensure group is visible
+    group.visible = true;
+    console.log(`[TemplateHost] Created default scene with ${group.children.length} children`);
 
     return group;
   }

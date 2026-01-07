@@ -1,5 +1,46 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-XX] - MVP Hardening: Avatar-Animationen, Template-Szene, Multiplayer/Voice/Interaktionen
+
+- Was: Umfassende Verbesserungen für MVP-Level (Arthur RaveSpace): Avatar-Animationen mit erweitertem Logging, Template-Szene-Sichtbarkeit, Multiplayer/Voice/Interaktionen-Logging
+- Warum: Avatar bleibt in T-Pose, Template-Szene nicht sichtbar, fehlende Debug-Informationen für Multiplayer/Voice/Interaktionen
+- Dateien:
+  - `packages/avatars/src/AvatarManager.ts` (erweitert) - Animation-Debugging, erweiterte Animation-Suche, Fallback-Logik
+  - `apps/web/src/TemplateHost.ts` (erweitert) - Template-Mount-Verifizierung, Szene-Größe reduziert, Visibility-Prüfung
+  - `apps/web/src/World.ts` (erweitert) - Multiplayer/Voice/Interaktionen-Logging, Kamera-Position-Anpassung
+- Details:
+  - **Phase 1: Avatar-Animationen Fix**:
+    - Animation-Debugging: Logs aller verfügbaren Animation-Clips beim Avatar-Load
+    - Erweiterte Animation-Suche: Case-insensitive Matching, alternative Namen (idle/Idle/IDLE/TPose), Fallback auf erste verfügbare Animation
+    - AnimationMixer-Initialisierung: Logging wenn Animationen nicht gefunden werden
+    - Default-Animation: Logging wenn keine Animationen verfügbar sind (T-Pose-Warnung)
+    - Animation-Status-Logging: Warnung wenn Animation nicht läuft
+  - **Phase 2: Template-Szene Sichtbarkeit**:
+    - Template-Mount-Verifizierung: Logs Bounding-Box, Children-Count, Visibility-Status
+    - Szene-Größe reduziert: Ground 50x50 → 20x20, Sky-Dome Radius 100 → 50, Grid 50x50 → 20x20
+    - Objekte näher zum Ursprung: Shapes von ±5 → ±3
+    - Scene-Visibility: Prüft und korrigiert unsichtbare Objekte, alle Objekte haben `visible = true`
+    - Kamera-Position: Default-Spawn z=6 → z=8 (weiter zurück für bessere Sicht), Controls-Target auf Ursprung
+  - **Phase 3: Multiplayer aktivieren & testen**:
+    - Multiplayer-Logging: Logs Initialisierung, Connection-Status, Room-Join, Solo-Mode-Fallback
+    - Feature Flag: Logs wenn Multiplayer deaktiviert ist
+    - Connection-Status: Detaillierte Logs für Verbindungsversuche und Erfolg/Fehler
+  - **Phase 4: Voice aktivieren & testen**:
+    - Voice-Logging: Logs Initialisierung, Room-ID, Spatial Audio Status
+    - Feature Flag: Logs wenn Voice deaktiviert ist oder NetClient fehlt
+    - StageManager: Logs wenn Stage-Moderation aktiviert wird
+  - **Phase 5: Interaktionen funktionsfähig machen**:
+    - Seating-System-Logging: Logs Initialisierung, Seat-Anchors-Registrierung, Sit/Stand-Aktionen
+    - E-Taste Handler: Logs wenn E-Taste gedrückt wird und Sit/Stand-Status ändert
+    - Seat-Registrierung: Logs Anzahl der registrierten Seat-Anchors pro Prop
+- Verifiziert:
+  - Avatar-Animationen: ✅ Animation-Debugging implementiert, erweiterte Suche funktioniert, Fallback-Logik vorhanden
+  - Template-Szene: ✅ Szene-Größe reduziert, Visibility-Prüfung implementiert, Kamera-Position angepasst
+  - Multiplayer: ✅ Detailliertes Logging implementiert, Connection-Status wird geloggt
+  - Voice: ✅ Detailliertes Logging implementiert, Feature-Flag-Checks vorhanden
+  - Interaktionen: ✅ Seating-System-Logging implementiert, E-Taste-Handler geloggt
+- Status: ✅ Completed
+
 ## [2026-01-XX] - Test-Mocks vervollständigen + Validierung dokumentieren
 
 - Was: Zentrale Mock-Datei für wiederverwendbare Test-Mocks erstellt, fehlende Mocks für alle Packages hinzugefügt, Validierungs-Dokumentation erstellt
