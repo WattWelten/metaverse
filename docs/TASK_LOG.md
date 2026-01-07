@@ -1,5 +1,247 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-XX] - Test-Mocks vervollständigen + Validierung dokumentieren
+
+- Was: Zentrale Mock-Datei für wiederverwendbare Test-Mocks erstellt, fehlende Mocks für alle Packages hinzugefügt, Validierungs-Dokumentation erstellt
+- Warum: Test-Mocks vereinheitlichen und wiederverwendbar machen, Validierungs-Scripts dokumentieren für bessere Developer Experience
+- Dateien:
+  - `apps/web/src/__tests__/mocks.ts` (neu) - Zentrale Mock-Datei mit allen Package-Mocks
+  - `docs/validation.md` (neu) - Umfassende Dokumentation aller Validierungs-Scripts
+  - `docs/TASK_LOG.md` (aktualisiert) - Dieser Eintrag
+- Details:
+  - **Zentrale Mock-Datei**:
+    - Wiederverwendbare Mock-Funktionen für alle Packages
+    - Three.js Mocks (Scene, Camera, Renderer, Lights, etc.)
+    - Metaverse Package Mocks (@metaverse/net, @metaverse/avatars, @metaverse/voice, @metaverse/audio, @metaverse/environment, @metaverse/interactions, @metaverse/moderation, @metaverse/navigation, @metaverse/collab, @metaverse/ai, @metaverse/xr, @metaverse/core)
+    - AudioContext Mocks für AmbientManager Tests
+    - Three.js Examples Mocks (OrbitControls, RGBELoader)
+    - `setupMocks()` Funktion für einfache Verwendung in Tests
+  - **Validierungs-Dokumentation**:
+    - Umfassende Dokumentation für `validate-build.ts` (9 Phasen: TypeScript, ESLint, Build, Tests, Dependencies, Assets, Environment, CI, Production)
+    - Dokumentation für `health.ts` (Runtime-Versionen, Package-Struktur, Rendering-Konfiguration, Feature-Flags, CI/CD, Dokumentation, Features, Collaboration, Templates, Environment, Decoder-Dateien, Build-Validierung)
+    - Dokumentation für `validate-templates.ts` (Template-Validierung)
+    - Dokumentation für `import-template.js` (Manifest-Validierung)
+    - Verwendung, Best Practices, Troubleshooting
+- Verifiziert:
+  - Mock-Datei: ✅ Alle Packages gemockt, AudioContext Mock vorhanden, setupMocks() Funktion funktioniert
+  - Validierungs-Dokumentation: ✅ Alle Scripts dokumentiert, Verwendung beschrieben, Best Practices aufgeführt
+- Status: ✅ Completed
+
+## [2026-01-XX] - Auto-Template Watt-Eco Setup (Zero-Blender)
+
+- Was: Vollautomatisches Setup-Script für watt-eco Template mit Asset-Downloads (HDRI, Water-Normals) und erweiterter prozeduraler Landschaft (Wald-Lichtung, See, Wege, Bäume)
+- Warum: Schöne, sofort lauffähige Welt ohne Blender-Abhängigkeit, vollautomatisches Setup über `pnpm run setup:template:watt-eco`
+- Dateien:
+  - `package.json` (erweitert) - Scripts hinzugefügt: `setup:template:watt-eco`, `dev:eco`, `cross-env` Dependency
+  - `scripts/setup-template-watt-eco.ts` (neu) - Setup-Script für Asset-Downloads und Manifest-Update
+  - `apps/web/src/environment/EcoAuto.ts` (neu) - Erweiterte prozedurale Landschaft mit Boden, See, Wegen, Bäumen
+  - `apps/web/src/World.ts` (erweitert) - Integration von `buildEcoAuto()` mit Flag `VITE_ECO_AUTO_ENABLED`
+- Details:
+  - **Setup-Script**: Lädt HDRI von PolyHaven (forest_slope_2k.hdr, Fallback: spruit_sunset_2k.hdr), Water-Normals von three.js Examples, erstellt Platzhalter-Audio (silence.wav), aktualisiert Manifest mit korrekten Asset-Pfaden
+  - **Asset-Pfade**: Assets werden in `apps/web/public/assets/watt-eco/` gespeichert, Manifest referenziert `/assets/watt-eco/...`
+  - **Prozedurale Landschaft**:
+    - Boden: 200x200 Einheiten, 128x128 Segmente, Noise-Amplitude 0.6, sanfte Hügel
+    - See: 18m Radius, Position (-6, 0.02, -10), physisches Material mit Transmission/IOR
+    - Wege: Drei Pfade (Hauptweg zur Bühne, zwei Seitenwege zu Treffpunkten), Breite 2.0-2.4m, Y-Offset 0.03
+    - Bäume: 140 Low-Poly-Bäume (Stamm 0.15-0.22m Radius, 1.6m Höhe + Krone 0.9m Radius, 1.8m Höhe), intelligente Platzierung (Mindestabstand 20m zum See, 2.8m zu Wegen)
+  - **World.ts Integration**: `buildEcoAuto()` wird aufgerufen wenn `VITE_TEMPLATE_ID === 'watt-eco'` und `VITE_ECO_AUTO_ENABLED === 'true'`, sonst Fallback zu `buildEco()`
+- Verifiziert:
+  - Setup-Script: ✅ Lädt HDRI (Primary oder Fallback), Water-Normals, erstellt silence.wav, aktualisiert Manifest
+  - Asset-Pfade: ✅ Korrekte Pfade in Manifest (`/assets/watt-eco/...`)
+  - Prozedurale Landschaft: ✅ Boden mit Noise, See mit physischem Material, Wege, Bäume mit intelligenter Platzierung
+  - World.ts Integration: ✅ `buildEcoAuto()` wird korrekt aufgerufen mit Flag-Check
+- Status: ✅ Completed
+
+## [2026-01-XX] - Template++ Features: Props, Seating, Zones, Stage, Ambience, ScreenShare, RPM, Emotes, Moderation
+
+- Was: Vollständige Implementierung aller Template++ Features gemäß Cursor-SUPERPROMPT
+- Warum: Erweiterte Metaverse-Erfahrung mit Props, Seating, Zones, Stage-Moderation, ScreenShare, Ready Player Me, Emotes, Lip-Sync, Participants-Management
+- Dateien:
+  - `packages/core/src/scene/TemplateRegistry.ts` (erweitert) - TemplateManifest erweitert um props, zones, screens, ambience
+  - `packages/assets/templates/watt-eco/manifest.json` (erweitert) - Dummy-Einträge für props, zones, screens, ambience
+  - `packages/environment/` (neu - Package) - PropFactory für procedurale Props (bench, firepit, sign)
+  - `packages/interactions/` (neu - Package) - SeatingSystem für interaktive Sitzplätze (E-Taste)
+  - `packages/audio/src/zones/ZoneSystem.ts` (neu) - ZoneSystem für räumliche Audio-Zonen
+  - `packages/audio/src/ambience/Ambience3D.ts` (neu) - Ambience3D für 3D-Ambient-Sounds mit Distance-Rolloff
+  - `packages/collab/` (neu - Package) - ScreenSurface für VideoTexture auf Stage-Screens
+  - `packages/moderation/` (neu - Package) - StageProtocol, StageManager für Stage-Moderation
+  - `packages/avatars/src/emotes/EmoteSystem.ts` (neu) - EmoteSystem für Emoji-Bubbles (1-9 Tasten)
+  - `packages/avatars/src/lipsync/LipDriver.ts` (neu) - LipDriver für Avatar-Lip-Sync basierend auf Mic-Amplitude
+  - `packages/avatars/src/SpotlightMarker.ts` (neu) - SpotlightMarker für visuelle Spotlight-Markierung
+  - `packages/voice/src/lipsync/MicAnalyser.ts` (neu) - MicAnalyser für Mikrofon-Amplitude-Analyse
+  - `packages/voice/src/providers/LiveKitProvider.ts` (erweitert) - ScreenShare, Participants-API, ActiveSpeakers, Output-Device, Data-Channel
+  - `apps/web/src/ui/ShareButton.tsx` (neu) - ShareButton für Screen-Sharing
+  - `apps/web/src/ui/RpmCreatorModal.tsx` (neu) - RpmCreatorModal für Ready Player Me Integration
+  - `apps/web/src/ui/AvatarModal.tsx` (erweitert) - "Mit Ready Player Me erstellen" Button
+  - `apps/web/src/ui/EmoteBar.tsx` (neu) - EmoteBar für Emote-Auswahl (G-Toggle)
+  - `apps/web/src/ui/ParticipantsPanel.tsx` (neu) - ParticipantsPanel mit Host-Actions
+  - `apps/web/src/ui/DevicePickerModal.tsx` (neu) - DevicePickerModal für Input/Output-Geräte
+  - `apps/web/src/ui/MicRing.tsx` (neu) - MicRing für visuelle Mikrofon-Lautstärke-Anzeige
+  - `apps/web/src/ui/StageControls.tsx` (neu) - StageControls für Host-only Stage-Moderation
+  - `apps/web/src/ui/RaiseHandButton.tsx` (neu) - RaiseHandButton für Hand-heben (R-Taste)
+  - `apps/web/src/World.ts` (erweitert) - Integration aller Template++ Features, StageManager, SpotlightMarker
+  - `apps/web/src/App.tsx` (erweitert) - Integration aller neuen UI-Komponenten
+  - `apps/web/src/styles/apple.css` (neu) - Apple Design-System CSS
+  - `apps/web/package.json` (erweitert) - Neue Workspace-Dependencies (@metaverse/environment, @metaverse/interactions, @metaverse/collab, @metaverse/moderation)
+- Details:
+  - **Phase 1: Template++ Core Features**
+    - Props: Procedurale Generierung von Bänken, Feuerstellen, Schildern mit Sitzplatz-Anchors
+    - Seating: E-Taste für Sitzen/Aufstehen mit Kamera-Anpassung
+    - Zones: Räumliche Audio-Zonen mit Gain-Mixing und Reverb
+    - Ambience3D: 3D-Ambient-Sounds mit Distance-Rolloff
+    - Screens: ScreenSurface für VideoTexture auf Stage-Screens
+  - **Phase 2: ScreenShare + Ready Player Me**
+    - ScreenShare: LiveKit Screen-Sharing auf Stage-Screens
+    - Ready Player Me: Avatar-Creator Integration via iframe + postMessage
+  - **Phase 3: Emotes + Lip-Sync**
+    - Emotes: Emoji-Bubbles (1-9 Tasten) mit VRM-Support
+    - Lip-Sync: Mic-Amplitude-basierte Avatar-Lip-Sync
+  - **Phase 4: Participants + Device Picker + Mic-Ring**
+    - ParticipantsPanel: Teilnehmerliste mit Sprecher-Status, Mute-Status, Rollen
+    - DevicePickerModal: Input/Output-Geräteauswahl mit Test-Ton
+    - MicRing: Visuelle Mikrofon-Lautstärke-Anzeige in Topbar
+  - **Phase 5: Stage Moderation**
+    - StageManager: Verwaltung von Stage-State (locked, spotlight, raisedHands, hosts)
+    - StageProtocol: Data-Channel-Messages für Stage-Moderation
+    - StageControls: Host-only UI für Stage-Lock, Raise-Hand-Queue, Spotlight
+    - RaiseHandButton: R-Taste für Hand-heben
+    - SpotlightMarker: Visuelle Markierung für Spotlight-Avatare
+    - ParticipantsPanel: Host-Actions (Spotlight, Promote/Demote Host)
+- Verifiziert:
+  - Props: ✅ Procedurale Generierung funktioniert, Sitzplätze werden registriert
+  - Seating: ✅ E-Taste funktioniert, Kamera-Anpassung für Sitzen
+  - Zones: ✅ Zone-System funktioniert, Gain-Mixing aktiv
+  - Ambience3D: ✅ 3D-Sounds mit Distance-Rolloff funktionieren
+  - Screens: ✅ ScreenSurface erstellt, VideoTexture funktioniert
+  - ScreenShare: ✅ LiveKit Screen-Sharing auf Stage-Screens
+  - Ready Player Me: ✅ Avatar-Creator Integration funktioniert
+  - Emotes: ✅ Emoji-Bubbles funktionieren (1-9 Tasten)
+  - Lip-Sync: ✅ Mic-Analyse und Avatar-Lip-Sync funktionieren
+  - ParticipantsPanel: ✅ Teilnehmerliste mit allen Features
+  - DevicePickerModal: ✅ Geräteauswahl mit Test-Ton funktioniert
+  - MicRing: ✅ Visuelle Lautstärke-Anzeige funktioniert
+  - Stage Moderation: ✅ Alle Features implementiert und integriert
+- Status: ✅ Completed
+
+## [2026-01-XX] - SettingsModal Erweiterung: Mouse Lock, Mouse Invert, Audio-Volume
+
+- Was: SettingsModal erweitert um Mouse Lock Toggle, Mouse Invert Option, Audio-Slider mit AmbientManager-Verbindung
+- Warum: Vollständige Settings-Funktionalität wie geplant, fehlende Features implementieren
+- Dateien:
+  - `apps/web/src/state/prefs.ts` (erweitert) - mouseInvert, mouseLockEnabled, audioVolume hinzugefügt
+  - `apps/web/src/controllers/PlayerController.ts` (erweitert) - setMouseInvert() Methode hinzugefügt, Mouse-Invert-Logik implementiert
+  - `apps/web/src/World.ts` (erweitert) - setAudioVolume(), togglePointerLock(), setMouseInvert() Methoden hinzugefügt
+  - `apps/web/src/ui/SettingsModal.tsx` (erweitert) - Mouse Lock Toggle, Mouse Invert Checkbox, Audio-Slider mit World-Verbindung
+  - `apps/web/src/App.tsx` (erweitert) - Callbacks für Audio-Volume, Mouse-Lock-Toggle, Mouse-Invert hinzugefügt, Prefs werden beim Start geladen
+- Details:
+  - **Mouse Lock Toggle**: Checkbox im SettingsModal, speichert in Prefs, togglet PointerLock via World.togglePointerLock()
+  - **Mouse Invert**: Checkbox im SettingsModal, speichert in Prefs, invertiert Pitch-Rotation (X-Achse) in PlayerController
+  - **Audio-Volume**: Slider im SettingsModal, verbindet mit AmbientManager.setMasterVolume(), speichert in Prefs
+  - **Prefs erweitert**: mouseInvert (default: false), mouseLockEnabled (default: true), audioVolume (default: 1.0)
+  - **PlayerController.setMouseInvert()**: Invertiert Pitch-Rotation (camera.rotation.x) basierend auf Delta-Berechnung
+  - **World.setAudioVolume()**: Setzt Master-Volume für AmbientManager
+  - **World.togglePointerLock()**: Togglet PointerLock zwischen Lock/Unlock
+  - **World.setMouseInvert()**: Delegiert an PlayerController.setMouseInvert()
+- Verifiziert:
+  - Mouse Lock Toggle: ✅ Checkbox funktioniert, speichert in Prefs, togglet PointerLock
+  - Mouse Invert: ✅ Checkbox funktioniert, speichert in Prefs, invertiert Pitch-Rotation
+  - Audio-Volume: ✅ Slider funktioniert, verbindet mit AmbientManager, speichert in Prefs
+  - Prefs: ✅ Alle neuen Prefs werden korrekt geladen und gespeichert
+- Status: ✅ Completed
+
+## [2026-01-XX] - Nordwest-Style Onboarding + Apple Design System + wattos_plattform Integration
+
+- Was: Vollständiges Onboarding-System mit Apple-inspiriertem Design, Prejoin-Panel, Avatar-Auswahl, Settings-Modal, lokalen Prefs, wattos_plattform Integration
+- Warum: Onboarding-Erfahrung wie moin.metaverse-nordwest.com mit Apple-inspiriertem Design und skalierbarer Architektur
+- Dateien:
+  - `packages/core/src/theme/ThemeTokens.ts` (erweitert) - AppleDesignTokens Interface und appleDesignTokens hinzugefügt
+  - `apps/web/src/styles/design-system.css` (neu) - Apple-inspirierte Design-System CSS mit Glassmorphism, Typografie, Animationen
+  - `packages/ui/src/apple/` (neu) - Apple-Komponenten-Bibliothek (AppleButton, AppleInput, AppleModal, AppleCard, AppleSegmentedControl, AppleSlider)
+  - `packages/ui/src/index.ts` (erweitert) - Apple-Komponenten exportiert
+  - `apps/web/src/state/prefs.ts` (neu) - Prefs-System mit localStorage (username, avatarUrl, quality, viewMode)
+  - `apps/web/src/ui/FPS.tsx` (neu) - useFPS Hook für FPS-Monitoring
+  - `apps/web/src/ui/PrejoinPanel.tsx` (neu) - Prejoin-Panel mit Avatar-Auswahl, Username, Qualität, Controls-Hints
+  - `apps/web/src/ui/AvatarModal.tsx` (neu) - Avatar-Modal mit Preset-Galerie und URL-Input
+  - `apps/web/src/ui/SettingsModal.tsx` (neu) - Settings-Modal mit Audio, Steuerung, Qualität, Name, Vollbild/Respawn
+  - `apps/web/src/FeatureFlags.ts` (erweitert) - WATTOS_BASE_URL, WATTOS_WS_URL, WATTOS_API_KEY, WATTOS_TENANT hinzugefügt
+  - `apps/web/src/World.ts` (erweitert) - AgentBridge Integration (initAgentBridge, getAgentBridge)
+  - `packages/avatars/src/AvatarManager.ts` (erweitert) - setName() Methode hinzugefügt für NameTag-Updates
+  - `apps/web/src/controllers/PlayerController.ts` (gefixt) - this.dom Property hinzugefügt für Focus
+  - `apps/web/src/App.tsx` (erweitert) - PrejoinPanel, SettingsModal, Qualität-System, Apple-Design Topbar
+  - `apps/web/src/main.tsx` (erweitert) - Design-System CSS importiert
+  - `docs/design-system.md` (neu) - Design-System Dokumentation
+  - `docs/wattos-integration.md` (neu) - wattos_plattform Integration Dokumentation
+- Details:
+  - **Apple Design System**: SF Pro Font Stack, Glassmorphism, Apple's Typographic Scale, System Colors, sanfte Animationen
+  - **Prefs-System**: localStorage-basiert mit Versionierung (ww_prefs_v1), Defaults: username='Gast', quality='fair', viewMode='tp'
+  - **PrejoinPanel**: Rechts positioniert, Glassmorphism, Apple-Komponenten, Controls-Hints
+  - **SettingsModal**: ESC/M öffnet/schließt, Audio-Slider, First-Person Checkbox, Qualität-SegmentedControl, Name-Input, Vollbild/Respawn
+  - **Qualität-System**: PixelRatio-Anpassung (Low: 0.75x, Fair: 1.0x, High: 1.5x)
+  - **AgentBridge**: Automatische Initialisierung wenn AI_ENABLED=true, Event-Handler für agent_speech, tool_call, connected, disconnected, error
+  - **AvatarManager.setName()**: Unterstützt sowohl troika-three-text als auch Sprite-basierte NameTags
+  - **PlayerController**: this.dom Property für Canvas-Focus
+  - **Topbar**: Apple-Design mit Glassmorphism, Copy Link, Menü-Button, FPS/Players-Anzeige
+- Verifiziert:
+  - Design-System: ✅ CSS lädt korrekt, Apple-Komponenten funktionieren
+  - Prefs-System: ✅ localStorage speichert/lädt korrekt
+  - PrejoinPanel: ✅ Erscheint beim ersten Laden, "Weiter" startet PointerLock
+  - SettingsModal: ✅ ESC/M öffnet/schließt, alle Controls funktionieren
+  - AgentBridge: ✅ Verbindet mit wattos_plattform (wenn enabled)
+  - AvatarManager.setName(): ✅ Aktualisiert NameTag korrekt
+  - PlayerController: ✅ Canvas-Focus funktioniert
+- Status: ✅ Completed
+
+# TASK LOG - MVP Hardening
+
+## [2026-01-05] - WASD + Avatar + FP/TP Wiring Fix
+
+- Was: PlayerController korrekt anbinden (update im Renderloop), EnterOverlay mit Canvas-Fokus, Topbar mit Avatar-Panel, V-Taste für FP/TP Toggle, Sanity-Logs
+- Warum: WASD-Bewegung funktionierte nicht, Avatar-UI fehlte, EnterOverlay setzte keinen Canvas-Fokus
+- Dateien:
+  - `apps/web/src/World.ts` (gefixt) - PlayerController.update() wird jetzt IMMER aufgerufen wenn locked, switchView() Methode hinzugefügt, Logs ergänzt
+  - `apps/web/src/controllers/PlayerController.ts` (gefixt) - lock() setzt Canvas-Fokus, Debug-Logs für Keys
+  - `apps/web/src/ui/EnterOverlay.tsx` (gefixt) - Canvas-Fokus nach Enter, Logs
+  - `apps/web/src/App.tsx` (gefixt) - Topbar mit Copy Link + AvatarPanel + Hints, switchView() verwendet
+  - `apps/web/src/ui/AvatarPanel.tsx` (gefixt) - Kompakteres Design für Topbar-Integration
+- Details:
+  - **PlayerController.update()**: Wird jetzt IMMER aufgerufen wenn `controls.isLocked` (war das Hauptproblem für fehlende WASD-Bewegung)
+  - **EnterOverlay**: Setzt Canvas-Fokus nach Enter-Klick für Keyboard-Events
+  - **Topbar**: Copy Link Button, AvatarPanel (kompakt), Hints (WASD + Mouse • V = View • H = Navmesh)
+  - **switchView()**: Zentrale Methode in World.ts für V-Taste, blendet Avatar-Head in FP-Mode aus
+  - **Logs**: [World] ready, [PointerLock] Lock requested, [CameraRig] Switched to FP/TP, [PlayerController] Keys (debug)
+- Verifiziert:
+  - PlayerController: ✅ Update wird im Renderloop aufgerufen
+  - EnterOverlay: ✅ Canvas-Fokus wird gesetzt
+  - Topbar: ✅ Copy Link + AvatarPanel + Hints sichtbar
+  - V-Taste: ✅ switchView() funktioniert
+  - Avatar: ✅ Fallback wird gespawnt (createCapsuleAvatar)
+- Status: ✅ Completed
+
+## [2026-01-05] - Experience Pass V1: FP/TP Camera, Spatial Voice, Avatar Nametags
+
+- Was: First-Person ↔ Third-Person Camera Toggle (V-Key), Spatial Audio für Voice, Avatar Nametags mit troika-three-text, setLocalVisibleHead() für FP-Mode
+- Warum: Immersive Kamera-Steuerung, räumliches Audio für Voice-Chat, bessere Avatar-Identifikation
+- Dateien:
+  - `packages/avatars/src/AvatarManager.ts` (erweitert) - setLocalVisibleHead() hinzugefügt für FP-Mode (blendet Kopf aus)
+  - `apps/web/src/World.ts` (erweitert) - CameraRig initialisiert, getRig() exportiert, CameraRig.update() in animate() integriert
+  - `apps/web/src/controllers/CameraRig.ts` (vorhanden) - FP/TP Toggle mit sanfter Dämpfung und Anti-Clipping
+  - `apps/web/src/App.tsx` (erweitert) - V-Key-Listener für Camera-Toggle, setLocalVisibleHead() bei FP-Mode
+  - `packages/voice/src/providers/LiveKitProvider.ts` (erweitert) - setPeerPosition() für Spatial Audio hinzugefügt
+  - `scripts/health.ts` (erweitert) - Flags-Prüfung für TEMPLATE_ID, MULTIPLAYER_ENABLED, NAV_DEBUG, VOICE_ENABLED, DEBUG_ENABLED
+  - `apps/web/e2e/view-toggle.spec.ts` (vorhanden) - E2E-Test für V-Key-Toggle
+  - `apps/web/e2e/remote-avatar.spec.ts` (vorhanden) - E2E-Test für Multiplayer-Avatare
+- Details:
+  - **CameraRig**: FP-Mode (Kopfposition), TP-Mode (Offset hinter Avatar), Anti-Clipping via Raycasting, sanfte Dämpfung (stiffness=12, damping=14)
+  - **AvatarManager.setLocalVisibleHead()**: Blendet Kopf-Meshes in FP-Mode aus (head|skull|face|hair|hat|cap)
+  - **LiveKitProvider.setPeerPosition()**: Aktualisiert Spatial Audio Position für Remote-Peers
+  - **Health-Script**: Prüft neue Feature-Flags (TEMPLATE_ID, MULTIPLAYER_ENABLED, NAV_DEBUG, VOICE_ENABLED, DEBUG_ENABLED)
+- Verifiziert:
+  - CameraRig: ✅ Vorhanden mit FP/TP Toggle
+  - NameTag: ✅ Vorhanden mit troika-three-text
+  - avatarLoader: ✅ Vorhanden mit VRM-Support
+  - E2E-Tests: ✅ Vorhanden (view-toggle, remote-avatar)
+- Status: ✅ Completed
+
 ## [2026-01-05] - Run + Avatars + Voice + Eco Environment + Navmesh
 
 - Was: Vollständig betretbare Metaverse-Erfahrung mit Avatar-Auswahl, Eco-Umgebung (Sky+Water+Trees), Navmesh-Navigation und Character-Kollisionen
