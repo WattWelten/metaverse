@@ -720,6 +720,30 @@ export class AvatarManager {
         console.warn(
           `[AvatarManager] Available animation names: ${animationActions ? Array.from(animationActions.keys()).join(', ') : 'none'}`
         );
+
+        // Procedural idle fallback: Subtle breathing and slight rotation
+        if (this.local?.object) {
+          const root = this.local.object;
+          let t = 0;
+          const baseY = root.position.y;
+          const baseRotY = root.rotation.y;
+
+          const idleFn = (dt: number) => {
+            t += dt;
+            if (!root) return;
+            // Subtle breathing effect (vertical oscillation)
+            const a = Math.sin(t * 1.2) * 0.005;
+            root.position.y = baseY + a;
+            // Subtle idle rotation (slow sway)
+            root.rotation.y = baseRotY + Math.sin(t * 0.6) * 0.02;
+          };
+
+          // Store procedural idle function in local object
+          (this.local as any).proceduralIdle = idleFn;
+          console.info(
+            '[AvatarManager] ✅ Applied procedural idle fallback (breathing + subtle rotation)'
+          );
+        }
       }
 
       console.log(`✅ [AvatarManager] Local avatar loaded from URL: ${url}`);

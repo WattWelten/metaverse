@@ -1307,6 +1307,16 @@ export class World {
       this.avatarManager.updateInterpolation(delta);
       // Update avatar animations
       this.avatarManager.updateAnimations(delta);
+
+      // Update procedural idle fallback if no animations available
+      const local = this.avatarManager.getLocal();
+      if (
+        local &&
+        (local as any).proceduralIdle &&
+        typeof (local as any).proceduralIdle === 'function'
+      ) {
+        (local as any).proceduralIdle(delta);
+      }
     }
 
     // Avatar-Position synchronisieren (throttled) - nur wenn nicht WASD-Steuerung aktiv

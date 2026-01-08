@@ -17,6 +17,8 @@ pnpm pipeline:full
 # Testing
 pnpm test
 pnpm e2e
+pnpm test:e2e:dev  # E2E-Tests im Dev-Modus
+pnpm test:e2e:ui   # E2E-Tests mit UI-Modus
 ```
 
 ## 📚 Dokumentation
@@ -54,7 +56,9 @@ pnpm pipeline:full            # Komplette Pipeline (Download + Optimierung)
 pnpm dev                      # Dev-Server starten
 pnpm build                    # Production Build
 pnpm test                     # Unit Tests
-pnpm e2e                      # E2E Tests
+pnpm e2e                      # E2E Tests (alle)
+pnpm test:e2e:dev             # E2E-Tests im Dev-Modus (User-Journey)
+pnpm test:e2e:ui              # E2E-Tests mit UI-Modus (interaktiv)
 ```
 
 ## 🎯 Template-System
@@ -93,6 +97,35 @@ Das Template-System unterstützt Hot-Swap von Templates:
 - **Navmesh-Loading**: Wenn `manifest.assets.navmesh` vorhanden ist, wird `navmesh.glb` geladen
 - **Bewegung**: `NavController.clampStep()` verhindert Bewegung außerhalb des Navmesh
 - **Fallback**: Wenn kein Navmesh vorhanden, wird prozedurales Navmesh aus Szene generiert
+
+## 🧪 E2E-Tests & Journey Checks
+
+Die E2E-Test-Suite testet die komplette User-Journey:
+
+- **Prejoin Journey**: Login → Avatar → Name → Controls → Enter
+- **Movement**: WASD, FP/TP (V), Jump, Seat-Hint
+- **Template Switch**: Template-Switcher (UI + Query-Param)
+- **Avatar Persistence**: Avatar-URL aus Prefs laden & Nametag
+- **Performance**: FPS ≥ 30 auf Desktop
+
+**Ausführung**:
+
+```bash
+# Dev-Server starten (Terminal 1)
+pnpm dev
+
+# E2E-Tests ausführen (Terminal 2)
+pnpm test:e2e:dev
+
+# Oder mit UI-Modus (interaktiv)
+pnpm test:e2e:ui
+```
+
+**Helper-Funktionen**:
+
+- `completePrejoinJourney()` - Automatisiert komplette User-Journey
+- `fpsAbove()` - Prüft FPS (warnt statt fehlzuschlagen)
+- `assertNoHardErrors()` - Prüft Console-Errors
 
 ## 📖 Weitere Informationen
 

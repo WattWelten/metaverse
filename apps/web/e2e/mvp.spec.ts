@@ -5,10 +5,12 @@ test.describe('MVP Functionality', () => {
     await page.goto('/?room=test&template=watt-eco');
 
     // Wait for app to load
-    await page.waitForSelector('[data-testid="app-container"]', { timeout: 10000 }).catch(() => {
-      // Fallback: wait for any visible element
-      await page.waitForTimeout(2000);
-    });
+    await page
+      .waitForSelector('[data-testid="app-container"]', { timeout: 10000 })
+      .catch(async () => {
+        // Fallback: wait for any visible element
+        await page.waitForTimeout(2000);
+      });
 
     // Check if template switcher is visible (if enabled)
     const switcher = page.locator('#template-switcher');

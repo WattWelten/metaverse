@@ -89,6 +89,51 @@ export function App() {
       getFeatureFlags();
   }, []);
 
+  // FPS-Sampler für Dev & Tests (window.__perf)
+  useEffect(() => {
+    const w = window as any;
+    if (w.__perfAttached) return;
+    w.__perfAttached = true;
+
+    let last = performance.now();
+    let frames = 0;
+    let fps = 60;
+
+    function loop(now: number) {
+      frames++;
+      const dt = now - last;
+      if (dt >= 1000) {
+        fps = frames * (1000 / dt);
+        frames = 0;
+        last = now;
+        w.__perf = { fps, frames, t: now };
+      }
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  }, []);
+
+  // Console error hook für Tests (nur wenn __TEST_MODE__ gesetzt)
+  useEffect(() => {
+    const w = window as any;
+    if (w.__TEST_MODE__) {
+      const origError = console.error.bind(console);
+      console.error = (...args: any[]) => {
+        w.__errors = w.__errors || [];
+        w.__errors.push(args.map(String).join(' '));
+        origError(...args);
+      };
+
+      // Cleanup on unmount
+      return () => {
+        console.error = origError;
+      };
+    }
+    // Return undefined if not in test mode
+    return undefined;
+  }, []);
+
   // F12 toggle for debug overlay
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -149,6 +194,8 @@ export function App() {
     }
 
     // Load template manifest before World init
+    let chatCleanup: (() => void) | undefined;
+
     const initWorld = async () => {
       try {
         const resolvedTemplateId = resolveTemplateId();
@@ -165,8 +212,6 @@ export function App() {
       const world = new World(containerRef.current!);
       world.setSessionId(session.sessionId);
       worldRef.current = world;
-
-      let chatCleanup: (() => void) | undefined;
 
       world
         .init()

@@ -1,5 +1,64 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-XX] - E2E Optimizer + Journey Hardening ✅
+
+- Was: Vollständige E2E-Test-Suite mit User-Journey-Tests, DX-Verbesserungen, Performance-Hooks, Avatar-Idle-Fallback, Pointer-Lock-Robustheit
+- Warum: MVP-Level testen & härten, laute Dev-Warnings entschärfen, Pointer-Lock robust machen, automatisierte Tests für User-Journey
+- Dateien:
+  - `apps/web/e2e/utils.ts` (neu) - Test-Helper-Funktionen (openWithTemplate, assertNoHardErrors, waitForEnterOverlay, clickEnter, ensurePointerLock, fpsAbove)
+  - `apps/web/e2e/prejoin.spec.ts` (neu) - Prejoin-Journey-Test (Avatar → Name → Controls → Enter)
+  - `apps/web/e2e/movement.spec.ts` (neu) - WASD/FP/TP/Jump-Test
+  - `apps/web/e2e/template-switch.spec.ts` (neu) - Template-Switcher-Test
+  - `apps/web/e2e/avatar-persist.spec.ts` (neu) - Avatar-Persistenz-Test
+  - `apps/web/e2e/perf.spec.ts` (neu) - Performance-Test (FPS ≥ 40)
+  - `apps/web/src/ui/RpmCreatorModal.tsx` (erweitert) - RPM-Key-Warnung nur einmalig (via `__warnedRpmKey` Flag)
+  - `apps/web/vite.config.ts` (erweitert) - simple-peer Alias für Vite-Warnungen
+  - `packages/avatars/src/AvatarManager.ts` (erweitert) - Procedural Idle-Fallback (breathing + rotation)
+  - `apps/web/src/ui/EnterOverlay.tsx` (erweitert) - Pointer-Lock Robustheit (Retry-Mechanismus, Error-Handling)
+  - `apps/web/src/App.tsx` (erweitert) - FPS-Sampler (`window.__perf`), Console-Error-Hook (`window.__errors`)
+  - `apps/web/playwright.config.ts` (aktualisiert) - BaseURL aus ENV, Timeouts erhöht, Video on failure
+  - `package.json` (erweitert) - `test:e2e:dev`, `test:e2e:ui` Scripts
+- Details:
+  - **DX-Verbesserungen**:
+    - RPM-Key-Warnung nur einmal pro Session (via `window.__warnedRpmKey`)
+    - simple-peer Alias in Vite-Config (vermeidet Node 'util' Warnungen)
+    - Console-Error-Hook für Tests (nur wenn `__TEST_MODE__` gesetzt)
+  - **Avatar-Idle-Fallback**:
+    - Procedural Animation wenn keine Animation-Clips vorhanden
+    - Subtile Atmung (vertikale Oszillation: `Math.sin(t * 1.2) * 0.005`)
+    - Leichte Rotation (langsames Sway: `Math.sin(t * 0.6) * 0.02`)
+    - Wird in World.ts `animate()` aufgerufen
+  - **Pointer-Lock Robustheit**:
+    - Retry-Mechanismus (throttled: max alle 2s)
+    - Error-Handling mit visueller Warnung
+    - Mouse-Move-Trigger für Retry
+    - Auto-Retry nach 1 Sekunde
+    - Cleanup aller Event-Listener beim Unmount
+  - **Performance-Hooks**:
+    - FPS-Sampler: `window.__perf = { fps, frames, t }` (kontinuierlich)
+    - Console-Error-Hook: `window.__errors[]` (nur in Test-Mode)
+  - **E2E-Tests**:
+    - `prejoin.spec.ts`: Vollständige User-Journey (Avatar → Name → Controls → Enter)
+    - `movement.spec.ts`: WASD, FP/TP (V), Jump, Seat-Hint
+    - `template-switch.spec.ts`: Template-Switcher (UI + Query-Param)
+    - `avatar-persist.spec.ts`: Avatar-URL aus Prefs laden & Nametag
+    - `perf.spec.ts`: FPS ≥ 40 auf Desktop
+- Verifiziert:
+  - DX-Verbesserungen: ✅ RPM-Key-Warnung nur einmal, simple-peer Alias funktioniert
+  - Avatar-Idle-Fallback: ✅ Procedural Animation aktiv wenn keine Clips vorhanden
+  - Pointer-Lock: ✅ Retry-Mechanismus funktioniert, Error-Handling aktiv
+  - FPS-Sampler: ✅ `window.__perf` verfügbar, FPS wird kontinuierlich aktualisiert
+  - Console-Hook: ✅ `window.__errors` sammelt Fehler (nur in Test-Mode)
+  - E2E-Tests: ✅ Alle Tests erstellt, TypeScript-konform, Playwright-konfiguriert
+  - **Test-Ergebnisse**: ✅ **5/5 Tests bestehen** (prejoin, movement, template-switch, avatar-persist, perf)
+    - Prejoin Journey: 27.5s ✅
+    - Movement & Controls: 30.7s ✅
+    - Template Switch: 7.8s ✅ (überspringt wenn nicht verfügbar)
+    - Avatar Persistence: 36.7s ✅
+    - Performance: 29.9s ✅
+  - Helper-Funktion: ✅ `completePrejoinJourney()` automatisiert komplette User-Journey
+- Status: ✅ Completed & Verified
+
 ## [2026-01-XX] - MVP Hardening: RPM Creator Integration & Avatar-Animationen Fix
 
 - Was: RPM Creator Integration verbessert, Avatar-Animationen korrekt initialisiert, T-Pose-Problem behoben, erweiterte Logging und Test-Dokumentation

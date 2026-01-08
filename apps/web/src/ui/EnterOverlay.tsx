@@ -1,6 +1,6 @@
 import { resumeContext } from '@metaverse/audio';
 import { AppleButton } from '@metaverse/ui';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface EnterOverlayProps {
   onEnter: () => void;
@@ -8,18 +8,96 @@ interface EnterOverlayProps {
 
 export function EnterOverlay({ onEnter }: EnterOverlayProps) {
   const [loading, setLoading] = useState(false);
+  const [pointerLockError, setPointerLockError] = useState(false);
+  const retryTimeoutRef = useRef<number | null>(null);
+  const lastRetryRef = useRef<number>(0);
+  const errorHandlerRef = useRef<(() => void) | null>(null);
+  const mouseMoveHandlerRef = useRef<(() => void) | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (errorHandlerRef.current) {
+        document.removeEventListener('pointerlockerror', errorHandlerRef.current);
+      }
+      if (mouseMoveHandlerRef.current) {
+        document.removeEventListener('mousemove', mouseMoveHandlerRef.current);
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleEnter = async () => {
     setLoading(true);
+    setPointerLockError(false);
+
     try {
       await resumeContext();
       onEnter();
+
       // Focus auf Canvas setzen für Keyboard-Events
       const canvas = document.querySelector('canvas') as HTMLCanvasElement;
-      if (canvas) {
-        canvas.focus();
-        console.log('[PointerLock] Canvas focused, requesting lock...');
+      if (!canvas) {
+        console.warn('[PointerLock] Canvas not found');
+        setLoading(false);
+        return;
       }
+
+      canvas.focus();
+      console.log('[PointerLock] Canvas focused, requesting lock...');
+
+      // Pointer-Lock Error Handling
+      const handlePointerLockError = () => {
+        console.warn('[PointerLock] Failed to lock pointer - user interaction may be required');
+        setPointerLockError(true);
+      };
+
+      errorHandlerRef.current = handlePointerLockError;
+      document.addEventListener('pointerlockerror', handlePointerLockError);
+
+      // Retry mechanism (throttled: max every 2s)
+      const retryLock = () => {
+        const now = Date.now();
+        if (now - lastRetryRef.current < 2000) return; // Throttle: max every 2s
+        lastRetryRef.current = now;
+
+        if (document.pointerLockElement !== canvas && canvas.requestPointerLock) {
+          console.log('[PointerLock] Retrying pointer lock...');
+          canvas.requestPointerLock();
+        }
+      };
+
+      // Try to request lock immediately
+      if (canvas.requestPointerLock) {
+        canvas.requestPointerLock();
+      }
+
+      // Retry on mouse move if not locked (user might move mouse to trigger)
+      const handleMouseMove = () => {
+        if (document.pointerLockElement === canvas) {
+          // Success! Clean up
+          setPointerLockError(false);
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('pointerlockerror', handlePointerLockError);
+          mouseMoveHandlerRef.current = null;
+          errorHandlerRef.current = null;
+        } else {
+          // Not locked yet, retry (throttled)
+          retryLock();
+        }
+      };
+
+      mouseMoveHandlerRef.current = handleMouseMove;
+      document.addEventListener('mousemove', handleMouseMove);
+
+      // Auto-retry after 1 second if still not locked
+      retryTimeoutRef.current = window.setTimeout(() => {
+        if (document.pointerLockElement !== canvas) {
+          retryLock();
+        }
+      }, 1000);
     } catch (error) {
       console.error('Failed to enter metaverse:', error);
     } finally {
@@ -115,6 +193,26 @@ export function EnterOverlay({ onEnter }: EnterOverlayProps) {
             >
               Klicke auf "Enter", um die Maussteuerung zu aktivieren und das Metaverse zu betreten.
             </p>
+            {pointerLockError && (
+              <div
+                style={{
+                  padding: '12px',
+                  marginBottom: '16px',
+                  background: 'var(--color-fill-primary)',
+                  border: '1px solid var(--color-system-yellow)',
+                  borderRadius: '8px',
+                  color: 'var(--color-label)',
+                }}
+              >
+                <p
+                  className="text-footnote"
+                  style={{ margin: 0, color: 'var(--color-label-secondary)' }}
+                >
+                  ⚠️ Maussteuerung konnte nicht automatisch aktiviert werden. Bitte klicke ins
+                  Fenster.
+                </p>
+              </div>
+            )}
           </>
         )}
 
