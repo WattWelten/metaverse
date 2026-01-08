@@ -6,11 +6,13 @@
 import { test, expect } from '@playwright/test';
 
 import { waitForAppReady } from './helpers/wait-for-app.js';
+import { setSessionBeforeLoad } from './utils.js';
 
 const SERVER_URL = process.env.VITE_SERVER_URL || 'http://localhost:3001';
 
 test.describe('Production Smoke Tests', () => {
   test('page loads successfully', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
 
@@ -20,6 +22,7 @@ test.describe('Production Smoke Tests', () => {
   });
 
   test('join room via deep link', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     const roomId = `test-${Date.now()}`;
     await page.goto(`/?room=${roomId}`);
     await waitForAppReady(page);
@@ -49,12 +52,14 @@ test.describe('Production Smoke Tests', () => {
 
     // Open first tab
     const page1 = await context.newPage();
+    await setSessionBeforeLoad(page1);
     await page1.goto(`/?room=${roomId}`);
     await waitForAppReady(page1);
     await page1.waitForTimeout(2000);
 
     // Open second tab
     const page2 = await context.newPage();
+    await setSessionBeforeLoad(page2);
     await page2.goto(`/?room=${roomId}`);
     await waitForAppReady(page2);
     await page2.waitForTimeout(3000);
@@ -82,6 +87,7 @@ test.describe('Production Smoke Tests', () => {
   });
 
   test('avatar movement synchronizes', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
 
@@ -115,6 +121,7 @@ test.describe('Production Smoke Tests', () => {
       }
     });
 
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
     await page.waitForTimeout(3000);

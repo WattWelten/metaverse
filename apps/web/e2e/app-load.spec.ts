@@ -5,6 +5,8 @@
 
 import { test, expect } from '@playwright/test';
 
+import { setSessionBeforeLoad } from './utils.js';
+
 test('app loads without errors', async ({ page }) => {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -23,6 +25,8 @@ test('app loads without errors', async ({ page }) => {
     errors.push(`Page Error: ${error.message}`);
   });
 
+  // Setze Session vor dem Laden
+  await setSessionBeforeLoad(page);
   await page.goto('/');
 
   // Warte auf Page-Load

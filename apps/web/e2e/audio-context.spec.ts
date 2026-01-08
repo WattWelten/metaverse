@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 import { waitForAppReady } from './helpers/wait-for-app.js';
+import { setSessionBeforeLoad } from './utils.js';
 
 test('resume audio on first click', async ({ page }) => {
+  await setSessionBeforeLoad(page);
   await page.goto('/');
 
   // Wait for app to be ready

@@ -36,7 +36,7 @@ test.describe('RPM Creator & Avatar Animations', () => {
         }
       }
     } catch (error) {
-      console.log('[E2E] Login step skipped - might already be logged in or in prejoin');
+      // Login step skipped - might already be logged in or in prejoin
     }
 
     // Step 2: Wait for Prejoin Panel
@@ -57,13 +57,9 @@ test.describe('RPM Creator & Avatar Animations', () => {
         .first();
       const hasRpmButton = await rpmButton.isVisible().catch(() => false);
 
-      if (hasRpmButton) {
-        console.log('[E2E] RPM Creator button is visible - API key is set');
-        // Note: We can't actually test the RPM Creator iframe interaction in E2E
-        // as it requires user interaction with Ready Player Me's external service
-      } else {
-        console.log('[E2E] RPM Creator button is not visible - API key not set (this is OK)');
-      }
+      // Note: We can't actually test the RPM Creator iframe interaction in E2E
+      // as it requires user interaction with Ready Player Me's external service
+      // RPM Creator button visibility depends on API key being set
 
       // Close modal
       const closeButton = page
@@ -91,7 +87,6 @@ test.describe('RPM Creator & Avatar Animations', () => {
       return prefsStr ? JSON.parse(prefsStr) : null;
     });
 
-    console.log('[E2E] LocalStorage prefs:', prefs);
     // Note: avatarUrl might not be set if RPM Creator wasn't used
     // This is expected if API key is not set
   });
@@ -122,7 +117,7 @@ test.describe('RPM Creator & Avatar Animations', () => {
         }
       }
     } catch (error) {
-      console.log('[E2E] Login step skipped - might already be logged in or in prejoin');
+      // Login step skipped - might already be logged in or in prejoin
     }
 
     // Step 2: Wait for Prejoin Panel and continue
@@ -151,8 +146,7 @@ test.describe('RPM Creator & Avatar Animations', () => {
       const canvas = page.locator('canvas').first();
       const canvasCount = await canvas.count();
       if (canvasCount === 0) {
-        console.log('[E2E] Canvas not found - world might not be initialized yet');
-        // Take screenshot for debugging
+        // Canvas not found - world might not be initialized yet
         await page.screenshot({ path: 'test-results/canvas-not-found.png' });
       }
     }
@@ -173,7 +167,6 @@ test.describe('RPM Creator & Avatar Animations', () => {
     const animationLogs = consoleLogs.filter(
       (log) => log.includes('animation') || log.includes('Animation')
     );
-    console.log('[E2E] Animation-related console logs:', animationLogs);
 
     // Step 6: Try to enter the world (press Enter for pointer lock)
     await page.keyboard.press('Enter');
@@ -187,7 +180,6 @@ test.describe('RPM Creator & Avatar Animations', () => {
 
     // Check for walk animation logs
     const walkLogs = consoleLogs.filter((log) => log.includes('walk') || log.includes('Walk'));
-    console.log('[E2E] Walk animation logs:', walkLogs);
 
     // Note: We can't directly verify the avatar is not in T-Pose visually in E2E
     // But we can verify that animation logs are present
@@ -252,7 +244,7 @@ test.describe('RPM Creator & Avatar Animations', () => {
         }
       }
     } catch (error) {
-      console.log('[E2E] Login step skipped - might already be logged in or in prejoin');
+      // Login step skipped - might already be logged in or in prejoin
     }
 
     // Step 2: Continue through prejoin
@@ -281,8 +273,7 @@ test.describe('RPM Creator & Avatar Animations', () => {
     try {
       await page.waitForSelector('canvas', { timeout: 30000 });
     } catch (error) {
-      console.log('[E2E] Canvas not found - checking console logs instead');
-      // Take screenshot for debugging
+      // Canvas not found - checking console logs instead
       await page.screenshot({ path: 'test-results/canvas-not-found-prefs.png' });
     }
 
@@ -297,26 +288,19 @@ test.describe('RPM Creator & Avatar Animations', () => {
         log.includes('Loading RPM avatar') ||
         log.includes('Local avatar loaded')
     );
-    console.log('[E2E] All console logs (first 20):', allLogs.slice(0, 20));
-    console.log('[E2E] Avatar-related console logs:', consoleLogs);
-    console.log('[E2E] Avatar loading from prefs logs:', prefsLogs);
+    // Avatar loading from prefs logs collected
 
     // If no prefs logs, check if avatar was loaded at all
     if (prefsLogs.length === 0) {
       const anyAvatarLogs = consoleLogs.filter((log) => log.includes('Avatar'));
-      console.log('[E2E] Any avatar-related logs:', anyAvatarLogs);
       // If we have any avatar logs, consider it a partial success
-      if (anyAvatarLogs.length > 0) {
-        console.log('[E2E] Avatar logs found but not from prefs - might be using default avatar');
-      }
+      // Avatar logs found but not from prefs - might be using default avatar
     }
 
     // More lenient check - verify that some activity happened (either avatar or world)
     // This test verifies that the app is working, even if avatar loading from prefs isn't logged
     const hasActivity = consoleLogs.length > 0 || allLogs.length > 10;
-    if (!hasActivity) {
-      console.log('[E2E] WARNING: No console logs captured - app might not be loading');
-    }
+    // WARNING: No console logs captured - app might not be loading
     expect(hasActivity).toBe(true);
   });
 });

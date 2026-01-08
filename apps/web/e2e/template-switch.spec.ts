@@ -21,7 +21,7 @@ test.describe('Template Switching', () => {
 
     if (!isVisible) {
       // Template-Switcher nicht sichtbar (Feature-Flag deaktiviert?) - Test überspringen
-      console.log('[E2E] Template-Switcher nicht sichtbar, Test übersprungen');
+      test.skip();
       return;
     }
 
@@ -29,20 +29,18 @@ test.describe('Template Switching', () => {
 
     if (options.length <= 1) {
       // Nur ein Template verfügbar - Test überspringen
-      console.log('[E2E] Nur ein Template verfügbar, Test übersprungen');
+      test.skip();
       return;
     }
 
     // Wähle anderes Template
     const firstValue = await dd.inputValue().catch(() => '');
-    console.log(`[E2E] Template vor Wechsel: "${firstValue}"`);
 
     await dd.selectOption({ index: 1 });
     await page.waitForTimeout(3000);
 
     // Prüfe ob Template-Wert sich geändert hat
     const newValue = await dd.inputValue().catch(() => '');
-    console.log(`[E2E] Template nach Wechsel: "${newValue}"`);
 
     const valueChanged = newValue !== firstValue && newValue !== '';
 
@@ -51,12 +49,6 @@ test.describe('Template Switching', () => {
     expect(isVisible).toBe(true); // Template-Switcher vorhanden = Test erfolgreich
 
     // Optional: Prüfe ob Wert sich geändert hat (wenn Hot-Swap implementiert ist)
-    if (valueChanged) {
-      console.log('[E2E] ✅ Template-Wert hat sich geändert - Hot-Swap funktioniert!');
-    } else {
-      console.log(
-        '[E2E] ⚠️ Template-Wert hat sich nicht geändert - Hot-Swap möglicherweise noch nicht implementiert'
-      );
-    }
+    expect(valueChanged).toBe(true);
   });
 });

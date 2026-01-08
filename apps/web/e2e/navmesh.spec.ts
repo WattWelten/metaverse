@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
 
+import { waitForAppReady } from './helpers/wait-for-app.js';
+import { setSessionBeforeLoad } from './utils.js';
+
 test.describe('Navmesh', () => {
   test('page loads and canvas is visible', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('http://localhost:5173/?room=e2e');
-    await page.waitForLoadState('networkidle');
+    await waitForAppReady(page);
 
     // Check that canvas is visible
     const canvas = page.locator('canvas');
@@ -31,8 +35,9 @@ test.describe('Navmesh', () => {
   });
 
   test('navmesh debug toggle (H key) works', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('http://localhost:5173/?room=e2e');
-    await page.waitForLoadState('networkidle');
+    await waitForAppReady(page);
 
     // Wait for world to initialize
     await page.waitForTimeout(3000);

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 import { createHeartbeat } from './helpers/heartbeat.js';
 import { waitForAppReady } from './helpers/wait-for-app.js';
+import { setSessionBeforeLoad } from './utils.js';
 
 const SERVER_URL = process.env.VITE_SERVER_URL || 'http://localhost:3001';
 
@@ -11,6 +12,8 @@ test.describe('Multiplayer Integration', () => {
     await page.addInitScript(() => {
       (window as any).__MULTIPLAYER_ENABLED__ = 'true';
     });
+    // Set session before load
+    await setSessionBeforeLoad(page);
   });
 
   test('connects to multiplayer server', async ({ page }) => {
@@ -91,7 +94,7 @@ test.describe('Multiplayer Integration', () => {
 
   test('handles server disconnect gracefully', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 20000 });
+    await waitForAppReady(page);
 
     // Wait for initial connection
     await page.waitForTimeout(2000);
@@ -99,7 +102,7 @@ test.describe('Multiplayer Integration', () => {
     // Simulate server disconnect by navigating away and back
     // (In a real test, we'd stop the server, but for E2E we simulate)
     await page.reload();
-    await page.waitForSelector('canvas', { timeout: 20000 });
+    await waitForAppReady(page);
     await page.waitForTimeout(2000);
 
     // Should handle disconnect without crashing
@@ -109,7 +112,7 @@ test.describe('Multiplayer Integration', () => {
 
   test('player count updates in HUD', async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('canvas', { timeout: 20000 });
+    await waitForAppReady(page);
 
     // Wait for HUD to render
     await page.waitForTimeout(2000);

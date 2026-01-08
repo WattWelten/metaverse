@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
 
+import { waitForAppReady } from './helpers/wait-for-app.js';
+import { setSessionBeforeLoad } from './utils.js';
+
 test.describe('View Toggle (FP/TP Camera)', () => {
   test('page loads and V key toggles view mode', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('http://localhost:5173/?room=e2e');
-    await page.waitForLoadState('networkidle');
+    await waitForAppReady(page);
 
     // Check that canvas is visible
     const canvas = page.locator('canvas');

@@ -1,27 +1,72 @@
 import { Page, expect } from '@playwright/test';
 
 /**
- * Öffnet die App mit einem bestimmten Template und führt Login durch (falls nötig)
+ * Setzt eine Session direkt in localStorage, bevor die Seite geladen wird
+ * Dies beschleunigt Tests, die keinen Login-Flow testen
  */
-export async function openWithTemplate(page: Page, id = 'watt-eco') {
-  await page.goto(`/?room=e2e&template=${id}`, { waitUntil: 'domcontentloaded' });
-  // Warte auf React-Hydration
-  await page.waitForTimeout(2000);
+export async function setSessionBeforeLoad(page: Page, username = 'E2E Tester') {
+  const session = {
+    sessionId: `e2e-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    user: {
+      userId: `e2e-user-${Date.now()}`,
+      username: username,
+    },
+  };
+
+  // Setze Session in localStorage bevor die Seite geladen wird
+  await page.addInitScript((sessionData) => {
+    localStorage.setItem('metaverse_session', JSON.stringify(sessionData));
+    localStorage.setItem('ww_session', JSON.stringify(sessionData));
+  }, session);
+}
+
+/**
+ * Führt den Login-Prozess durch, falls das Login-Modal sichtbar ist
+ */
+export async function performLoginIfNeeded(page: Page, username = 'E2E Tester') {
+  // Warte kurz auf React-Rendering
+  await page.waitForTimeout(1000);
 
   // Prüfe ob Login-Modal sichtbar ist
-  const loginButton = page.getByRole('button', { name: /Metaverse betreten|Anmelden|Login/i });
-  const isLoginVisible = await loginButton.isVisible().catch(() => false);
+  const loginModal = page
+    .locator('text=Welcome to Metaverse')
+    .or(page.locator('text=Willkommen im WattWelten Metaverse'));
+  const isLoginVisible = await loginModal.isVisible().catch(() => false);
 
   if (isLoginVisible) {
     // Login durchführen
     const nameInput = page
-      .getByLabel(/Name|Username/i)
+      .locator('input[placeholder="Username"]')
       .or(page.locator('input[type="text"]').first());
-    await nameInput.fill('E2E Tester');
+    await nameInput.waitFor({ state: 'visible', timeout: 5000 });
+    await nameInput.fill(username);
+
+    const loginButton = page
+      .locator('button:has-text("Enter Metaverse")')
+      .or(page.locator('button:has-text("Metaverse betreten")'));
+    await loginButton.waitFor({ state: 'visible', timeout: 5000 });
     await loginButton.click();
-    // Warte auf Login-Verarbeitung
+
+    // Warte auf Login-Verarbeitung und Modal-Schließung
+    await loginModal.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
     await page.waitForTimeout(2000);
   }
+}
+
+/**
+ * Öffnet die App mit einem bestimmten Template und führt Login durch (falls nötig)
+ */
+export async function openWithTemplate(page: Page, id = 'watt-eco', username = 'E2E Tester') {
+  // Setze Session vor dem Laden, um Login zu überspringen
+  await setSessionBeforeLoad(page, username);
+
+  await page.goto(`/?room=e2e&template=${id}`, { waitUntil: 'domcontentloaded' });
+
+  // Warte auf React-Hydration
+  await page.waitForTimeout(2000);
+
+  // Falls Login-Modal trotzdem erscheint, führe Login durch
+  await performLoginIfNeeded(page, username);
 }
 
 /**

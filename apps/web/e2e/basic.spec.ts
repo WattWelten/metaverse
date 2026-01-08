@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 import { waitForAppReady } from './helpers/wait-for-app.js';
+import { setSessionBeforeLoad } from './utils.js';
 
 test('page loads', async ({ page }) => {
   await page.goto('/');
@@ -8,25 +9,25 @@ test('page loads', async ({ page }) => {
 });
 
 test('canvas is rendered', async ({ page }) => {
+  // Setze Session vor dem Laden
+  await setSessionBeforeLoad(page);
   await page.goto('/');
 
   // Warte auf vollständige App-Initialisierung
   await waitForAppReady(page);
 
-  // Prüfe dass Canvas sichtbar ist
-  const canvas = page.locator('canvas');
+  // Prüfe dass Canvas sichtbar ist (verwende .first() da es mehrere Canvas-Elemente geben kann)
+  const canvas = page.locator('canvas').first();
   await expect(canvas).toBeVisible();
 });
 
 test('template switch works', async ({ page }) => {
+  // Setze Session vor dem Laden
+  await setSessionBeforeLoad(page);
   await page.goto('/');
 
-  // Warte auf App-Initialisierung
-  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
-  await page.waitForTimeout(2000);
-
-  // Wait for page to load - erhöhte Timeout für App-Initialisierung
-  await page.waitForSelector('canvas', { timeout: 30000 });
+  // Warte auf vollständige App-Initialisierung
+  await waitForAppReady(page);
 
   // Open debug overlay (F12)
   await page.keyboard.press('F12');
@@ -46,13 +47,12 @@ test('template switch works', async ({ page }) => {
 });
 
 test('debug overlay toggles with F12', async ({ page }) => {
+  // Setze Session vor dem Laden
+  await setSessionBeforeLoad(page);
   await page.goto('/');
 
-  // Warte auf App-Initialisierung
-  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
-  await page.waitForTimeout(2000);
-
-  await page.waitForSelector('canvas', { timeout: 30000 });
+  // Warte auf vollständige App-Initialisierung
+  await waitForAppReady(page);
 
   // Press F12 to open
   await page.keyboard.press('F12');
@@ -68,13 +68,12 @@ test('debug overlay toggles with F12', async ({ page }) => {
 });
 
 test('exposure slider exists in debug overlay', async ({ page }) => {
+  // Setze Session vor dem Laden
+  await setSessionBeforeLoad(page);
   await page.goto('/');
 
-  // Warte auf App-Initialisierung
-  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
-  await page.waitForTimeout(2000);
-
-  await page.waitForSelector('canvas', { timeout: 30000 });
+  // Warte auf vollständige App-Initialisierung
+  await waitForAppReady(page);
 
   // Open debug overlay
   await page.keyboard.press('F12');

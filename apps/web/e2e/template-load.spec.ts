@@ -2,9 +2,11 @@ import { test, expect } from '@playwright/test';
 
 import { createHeartbeat } from './helpers/heartbeat.js';
 import { waitForAppReady } from './helpers/wait-for-app.js';
+import { setSessionBeforeLoad } from './utils.js';
 
 test.describe('Template Switching Under Load', () => {
   test('switches templates rapidly without crashing', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
 
@@ -38,6 +40,7 @@ test.describe('Template Switching Under Load', () => {
       (window as any).__MULTIPLAYER_ENABLED__ = 'true';
     });
 
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
 
@@ -60,6 +63,7 @@ test.describe('Template Switching Under Load', () => {
   });
 
   test('maintains state across template switches', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
     await page.waitForTimeout(2000);
@@ -87,6 +91,7 @@ test.describe('Template Switching Under Load', () => {
   });
 
   test('handles missing template assets gracefully', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
     await page.waitForTimeout(2000);
@@ -123,8 +128,9 @@ test.describe('Template Switching Under Load', () => {
         (window as any).__AMBIENT_AUDIO_ENABLED__ = 'true';
       });
 
+      await setSessionBeforeLoad(page);
       await page.goto('/');
-      await page.waitForSelector('canvas', { timeout: 20000 });
+      await waitForAppReady(page);
 
       // Wait for ambient audio to start
       await page.waitForTimeout(3000);

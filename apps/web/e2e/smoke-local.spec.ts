@@ -6,6 +6,7 @@
 import { test, expect } from '@playwright/test';
 
 import { waitForAppReady } from './helpers/wait-for-app.js';
+import { setSessionBeforeLoad } from './utils.js';
 
 test.describe('Local Smoke Tests', () => {
   test('app loads without errors', async ({ page }) => {
@@ -25,6 +26,7 @@ test.describe('Local Smoke Tests', () => {
       }
     });
 
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
     await page.waitForTimeout(2000);
@@ -34,6 +36,7 @@ test.describe('Local Smoke Tests', () => {
   });
 
   test('canvas renders', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
 
@@ -49,6 +52,7 @@ test.describe('Local Smoke Tests', () => {
   });
 
   test('template loads (watt-eco or fallback)', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
 
@@ -79,6 +83,7 @@ test.describe('Local Smoke Tests', () => {
   });
 
   test('debug-overlay toggles with F12', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
 
@@ -101,6 +106,7 @@ test.describe('Local Smoke Tests', () => {
   });
 
   test('audio-context resumes after user interaction', async ({ page }) => {
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
 
@@ -135,6 +141,7 @@ test.describe('Local Smoke Tests', () => {
 
   test('feature-flags work (solo mode without server)', async ({ page }) => {
     // Test that app works even if multiplayer is disabled
+    await setSessionBeforeLoad(page);
     await page.goto('/');
     await waitForAppReady(page);
 
