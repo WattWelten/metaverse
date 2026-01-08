@@ -1,6 +1,8 @@
-import { Object3D, Box3, Vector3 } from 'three';
+import { Object3D, Box3, Vector3, AnimationClip } from 'three';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { VRMLoaderPlugin } from '@pixiv/three-vrm';
+import type { VRM } from '@pixiv/three-vrm';
 
 /**
  * Ready Player Me Avatar Loader
@@ -70,4 +72,73 @@ export function getReadyPlayerMeUrl(userIdOrUrl: string, _apiKey?: string): stri
   // Format: https://models.readyplayer.me/{userId}.glb
   const baseUrl = 'https://models.readyplayer.me';
   return `${baseUrl}/${userIdOrUrl}.glb`;
+}
+
+/**
+ * Ready Player Me Avatar Loader mit VRM-Support
+ * Lädt Avatar mit VRM-Plugin für erweiterte Features (Emotes, Lip-Sync)
+ * Gibt auch Animationen zurück für Avatar-Animationen
+ */
+export async function loadRpm(
+  url: string
+): Promise<{ object: Object3D; vrm?: VRM; animations?: AnimationClip[] }> {
+  const loader = new GLTFLoader();
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('/libs/draco/');
+  loader.setDRACOLoader(dracoLoader);
+
+  // Register VRM Plugin
+  loader.register((parser) => new VRMLoaderPlugin(parser));
+
+  try {
+    const gltf = await loader.loadAsync(url);
+    const vrm = (gltf.userData?.vrm as VRM | undefined) || undefined;
+    const obj = vrm?.scene ?? gltf.scene;
+
+    // Store GLTF reference in object userData for animation access
+    (obj as any).userData.gltf = gltf;
+    (obj as any).userData.gltfScene = gltf.scene;
+
+    // Optimize: Enable frustum culling
+    obj.traverse((o) => {
+      (o as any).frustumCulled = true;
+    });
+
+    // Normalize avatar size (same as loadReadyPlayerMeAvatar)
+    const box = new Box3().setFromObject(obj);
+    const size = box.getSize(new Vector3());
+    const center = box.getCenter(new Vector3());
+    const targetHeight = 1.7;
+    const scale = size.y > 0 ? targetHeight / size.y : 1;
+    obj.scale.set(scale, scale, scale);
+    const bottomY = box.min.y * scale;
+    obj.position.set(-center.x * scale, -bottomY, -center.z * scale);
+
+    // Enable shadows
+    obj.traverse((child: Object3D) => {
+      if (child.type === 'Mesh') {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
+    // Extract animations from GLTF
+    const animations = gltf.animations || [];
+    if (animations.length > 0) {
+      console.log(
+        `✅ Avatar loaded with VRM support: ${vrm ? 'VRM detected' : 'GLB only'}, ${animations.length} animation(s) found`
+      );
+    } else {
+      console.log(
+        `✅ Avatar loaded with VRM support: ${vrm ? 'VRM detected' : 'GLB only'}, no animations found`
+      );
+    }
+
+    return { object: obj, vrm, animations };
+  } catch (error) {
+    console.error('Failed to load RPM avatar with VRM:', error);
+    // Fallback to standard loader
+    const obj = await loadReadyPlayerMeAvatar(url);
+    return { object: obj };
+  }
 }

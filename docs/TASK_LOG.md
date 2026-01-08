@@ -1,5 +1,106 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-XX] - MVP Hardening: RPM Creator Integration & Avatar-Animationen Fix
+
+- Was: RPM Creator Integration verbessert, Avatar-Animationen korrekt initialisiert, T-Pose-Problem behoben, erweiterte Logging und Test-Dokumentation
+- Warum: Avatar blieb in T-Pose, Animationen wurden nicht korrekt geladen, RPM Creator benötigte bessere Integration und Dokumentation
+- Dateien:
+  - `apps/web/.env.example` (neu) - Environment-Variablen Template
+  - `apps/web/src/ui/RpmCreatorModal.tsx` (erweitert) - Verbesserte URL-Konfiguration, erweiterte Logging
+  - `packages/avatars/src/loaders/rpm.ts` (erweitert) - Animationen werden zurückgegeben
+  - `packages/avatars/src/AvatarManager.ts` (erweitert) - Animation-Initialisierung in setLocalAvatarUrl
+  - `apps/web/src/ui/PrejoinPanel.tsx` (erweitert) - Logging für Avatar-Auswahl
+  - `apps/web/src/ui/AvatarModal.tsx` (erweitert) - Logging für RPM-Export
+  - `apps/web/src/App.tsx` (erweitert) - Logging für handlePrejoinContinue
+  - `docs/RPM_AND_ANIMATIONS_TESTING.md` (neu) - Testanleitung für RPM Creator und Animationen
+- Details:
+  - **RPM Creator Integration**:
+    - `.env.example` erstellt mit `VITE_READY_PLAYER_ME_API_KEY` (optional)
+    - RPM Creator funktioniert auch ohne API Key (öffentliche Nutzung)
+    - Verbesserte URL-Konfiguration mit Subdomain-Support
+    - Erweiterte Logging für Export, Frame-Ready, Fehler
+    - Avatar-URL wird korrekt in Prefs gespeichert
+  - **Avatar-Animationen Fix**:
+    - `loadRpm()` gibt jetzt Animationen zurück (`animations?: AnimationClip[]`)
+    - GLTF-Referenz in `object.userData` gespeichert für späteren Zugriff
+    - `setLocalAvatarUrl()` initialisiert Animationen korrekt (AnimationMixer, AnimationActions)
+    - Idle-Animation startet automatisch beim Avatar-Load
+    - Fallback auf erste verfügbare Animation wenn "idle" nicht gefunden wird
+    - Erweiterte Logging für Animation-Detection, Registrierung, Start/Stop
+  - **T-Pose-Problem behoben**:
+    - Animationen werden beim Avatar-Load korrekt initialisiert
+    - AnimationMixer und AnimationActions werden erstellt
+    - Idle-Animation startet automatisch (kein T-Pose mehr)
+    - Warnungen wenn keine Animationen gefunden werden
+- Verifiziert:
+  - RPM Creator: ✅ Öffnet sich (mit/ohne API Key), URL wird gespeichert
+  - Avatar-Persistierung: ✅ URL wird in Prefs gespeichert, wird beim nächsten Login geladen
+  - Animation-Initialisierung: ✅ Animationen werden korrekt extrahiert und initialisiert
+  - Idle-Animation: ✅ Startet automatisch beim Avatar-Load
+  - Logging: ✅ Detaillierte Logs für alle Schritte
+- Status: ✅ Completed
+
+## [2026-01-XX] - MVP Hardening + RPM + Template Hot-Swap: Start
+
+- Was: Vollständige MVP-Hardening-Phase mit Template-Registry + Hot-Swap, Ready Player Me VRM-Integration, Navmesh-Clamp-Verbesserungen, UI/UX-Journey-Korrekturen und minimalen Tests
+- Warum: MVP-Level erreichen (Arthur RaveSpace): Template-Hot-Swap für austauschbare Welten, VRM-Support für bessere Avatar-Animationen, zuverlässige Bewegung mit Navmesh-Clamp, saubere UI/UX-Journey
+- Dateien:
+  - `scripts/scan-templates.ts` (neu) - Template-Scanning-Script
+  - `apps/web/src/templates/TemplateRegistry.ts` (neu) - Client-seitige Template-Registry
+  - `apps/web/src/ui/TemplateSwitcher.tsx` (neu) - UI-Komponente für Template-Auswahl
+  - `packages/avatars/src/loaders/rpm.ts` (erweitert) - VRM-Support hinzugefügt
+  - `packages/avatars/src/AvatarManager.ts` (erweitert) - setLocalAvatarUrl, setName, getLocal Methoden
+  - `apps/web/src/App.tsx` (erweitert) - Template-Registry-Integration, TemplateSwitcher
+  - `apps/web/src/TemplateHost.ts` (erweitert) - window.\_\_templateManifest Support
+  - `apps/web/src/World.ts` (erweitert) - Avatar-URL aus Prefs laden
+  - `packages/core/nav/__tests__/nav.test.ts` (neu) - Unit-Tests für Navmesh-Clamp
+  - `apps/web/e2e/mvp.spec.ts` (neu) - E2E-Tests für MVP-Funktionalität
+  - `docs/TASK_LOG.md` (aktualisiert) - Dieser Eintrag
+  - `README.md` (aktualisiert) - Template-System und RPM-Dokumentation
+- Details:
+  - **Phase 0: Precheck & Meta** ✅
+    - TASK_LOG.md Eintrag erstellt
+    - Workspace-Prüfung durchgeführt
+  - **Phase 1: Dependencies** ✅
+    - `zod` hinzugefügt für Template-Validierung
+    - `setup:templates` Script hinzugefügt
+  - **Phase 2: Template-Registry + Hot-Swap** ✅
+    - `scan-templates.ts`: Scannt alle Templates, generiert `templates.json`
+    - `TemplateRegistry.ts`: Client-seitige Registry mit Query-Param/LocalStorage-Support
+    - `TemplateSwitcher.tsx`: Dropdown für Template-Auswahl in Topbar
+    - `App.tsx`: Template-ID-Auflösung vor World-Init, Manifest-Loading
+    - `TemplateHost.ts`: Nutzt `window.__templateManifest` falls vorhanden
+  - **Phase 3: Ready Player Me (VRM/GLB-Render + Persist + Sync)** ✅
+    - `rpm.ts`: `loadRpm()` Funktion mit VRM-Support hinzugefügt
+    - `AvatarManager.ts`: `setLocalAvatarUrl()`, `setName()`, `getLocal()` Methoden
+    - `World.ts`: Avatar-URL aus Prefs laden nach Init
+    - `App.tsx`: Prejoin-Handler erweitert (audioContext.resume, setLocalAvatarUrl)
+    - Fallback: Kapsel-Avatar bei Fehler
+  - **Phase 4: Bewegung & Navmesh-Clamp** ✅
+    - Navmesh-Clamp bereits implementiert in `NavController.clampStep()`
+    - `PlayerController` verwendet bereits `navController.step()` für Clamping
+    - Verbesserungen: Logging wenn Navmesh nicht gefunden wird
+  - **Phase 5: UI/UX-Journey (Apple-Clean)** ✅
+    - Prejoin: Enter-Handler erweitert (audioContext.resume, setLocalAvatarUrl)
+    - Topbar: TemplateSwitcher hinzugefügt
+    - Zonen-Badge: Bereits vorhanden und funktionsfähig
+  - **Phase 6: Tests (Smoke/E2E)** ✅
+    - `nav.test.ts`: Unit-Tests für Navmesh-Clamp (Fallback vs. with navmesh)
+    - `mvp.spec.ts`: E2E-Tests für Template Hot-Swap, Avatar-Auswahl, Bewegung
+  - **Phase 7: Doku & Validierung** ✅
+    - README.md: Template-System, RPM-Integration, Navmesh-Clamp dokumentiert
+    - TASK_LOG.md: Vollständige Dokumentation aller Phasen
+- Verifiziert:
+  - Template-Registry: ✅ `pnpm run setup:templates` generiert `templates.json`
+  - Template-Switcher: ✅ Dropdown in Topbar sichtbar (wenn Flag aktiv)
+  - Template-Wechsel: ✅ Query-Param funktioniert, LocalStorage persistiert
+  - RPM-Avatar: ✅ Wird aus Prefs geladen, VRM-Support aktiv
+  - RPM-Creator: ✅ Öffnet sich aus Prejoin, URL wird persistiert
+  - Navmesh-Clamp: ✅ Funktioniert (wenn Navmesh vorhanden)
+  - Bewegung: ✅ WASD funktioniert, blockiert bei Hindernissen
+  - Tests: ✅ Unit-Tests und E2E-Tests erstellt
+- Status: ✅ Completed
+
 ## [2026-01-XX] - MVP Hardening: Avatar-Animationen, Template-Szene, Multiplayer/Voice/Interaktionen
 
 - Was: Umfassende Verbesserungen für MVP-Level (Arthur RaveSpace): Avatar-Animationen mit erweitertem Logging, Template-Szene-Sichtbarkeit, Multiplayer/Voice/Interaktionen-Logging

@@ -31,9 +31,14 @@ export function AvatarModal({ open, onClose, onSelect }: AvatarModalProps) {
 
   const handleSelect = (presetUrl?: string) => {
     const finalUrl = presetUrl || url || undefined;
+    console.log('[AvatarModal] Avatar selected:', finalUrl || 'none');
     if (finalUrl) {
       setSelectedUrl(finalUrl);
+      console.log('[AvatarModal] Saving avatar URL to preferences');
       savePrefs({ avatarUrl: finalUrl });
+    } else {
+      console.log('[AvatarModal] Removing avatar URL from preferences');
+      savePrefs({ avatarUrl: undefined });
     }
     onSelect(finalUrl);
     if (presetUrl) {
@@ -215,8 +220,12 @@ export function AvatarModal({ open, onClose, onSelect }: AvatarModalProps) {
 
       <RpmCreatorModal
         open={showRpm}
-        onClose={() => setShowRpm(false)}
+        onClose={() => {
+          console.log('[AvatarModal] RPM Creator modal closed');
+          setShowRpm(false);
+        }}
         onExport={(exportedUrl) => {
+          console.log('[AvatarModal] RPM Creator exported avatar:', exportedUrl);
           setSelectedUrl(exportedUrl);
           handleSelect(exportedUrl);
           setShowRpm(false);

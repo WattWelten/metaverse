@@ -48,6 +48,15 @@ export class TemplateHost {
       this.loadingAbortController.abort();
     }
 
+    // Unmount current template before loading new one (for hot-swap)
+    if (this.currentTemplate) {
+      console.log(
+        `[TemplateHost] Unmounting current template: ${this.currentTemplate.manifest.id}`
+      );
+      this.currentTemplate.unmount();
+      this.currentTemplate = null;
+    }
+
     this.loadingAbortController = new AbortController();
     const signal = this.loadingAbortController.signal;
 
@@ -66,6 +75,23 @@ export class TemplateHost {
       }
 
       console.log(`[TemplateHost] Loading template: ${templateId}`);
+
+      // Check if manifest is already loaded via window.__templateManifest (from TemplateRegistry)
+      const windowManifest = (window as any).__templateManifest;
+      if (windowManifest && windowManifest.id === templateId) {
+        console.log(`[TemplateHost] Using pre-loaded manifest for ${templateId}`);
+        // Use the pre-loaded manifest by passing it directly to the loader
+        const loader = this.createDefaultTemplateLoader();
+        const instance = await loader(windowManifest);
+        await instance.mount(this.scene);
+        this.currentTemplate = instance;
+        this.loadingAbortController = null;
+        console.log(
+          `✅ [TemplateHost] Template "${templateId}" loaded successfully (from pre-loaded manifest)`
+        );
+        return;
+      }
+
       const instance = await templateRegistry.load(templateId, this.scene);
 
       // Check if aborted after loading

@@ -41,6 +41,7 @@
     "setup:template:watt-eco": "tsx scripts/setup-template-watt-eco.ts",
     "auto:setup:option-a": "tsx scripts/auto-setup-option-a.ts",
     "dev:eco": "cross-env VITE_TEMPLATE_ID=watt-eco pnpm -w dev",
+    "setup:templates": "tsx scripts/scan-templates.ts",
     "analyze:bundle": "tsx scripts/analyze-bundle.ts",
     "validate": "tsx scripts/validate-build.ts all",
     "validate:types": "tsx scripts/validate-build.ts types",
@@ -86,6 +87,7 @@
   "dependencies": {
     "@pixiv/three-vrm": "^3.4.4",
     "three-pathfinding": "^1.3.0",
-    "troika-three-text": "^0.52.4"
+    "troika-three-text": "^0.52.4",
+    "zod": "^4.3.5"
   }
 }

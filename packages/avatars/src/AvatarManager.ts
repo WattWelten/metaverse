@@ -17,7 +17,7 @@ import {
   LoopRepeat,
 } from 'three';
 
-import { loadReadyPlayerMeAvatar } from './loaders/rpm.js';
+import { loadReadyPlayerMeAvatar, loadRpm } from './loaders/rpm.js';
 import { createNameTag } from './NameTag.js';
 
 export interface Avatar {
@@ -41,6 +41,8 @@ export class AvatarManager {
   private avatars = new Map<string, Avatar>();
   private scene: Scene;
   private netClient: NetClientForAvatarManager | null = null;
+  private local: { object: Object3D; vrm?: any; url?: string } | null = null;
+  private localUserId: string = 'me';
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -137,11 +139,19 @@ export class AvatarManager {
 
       // Start idle animation by default if available
       if (animationMixer && animationActions && animationActions.size > 0) {
+        const availableAnimations = Array.from(animationActions.keys());
         console.log(`[AvatarManager] Starting default idle animation for avatar ${userId}`);
+        console.log(`[AvatarManager] Available animations: ${availableAnimations.join(', ')}`);
         this.playAnimation(avatar, 'idle');
       } else {
         console.warn(
-          `[AvatarManager] No animations available for avatar ${userId} - avatar will remain in T-Pose`
+          `[AvatarManager] ⚠️ No animations available for avatar ${userId} - avatar will remain in T-Pose`
+        );
+        console.warn(
+          `[AvatarManager] AnimationMixer: ${animationMixer ? 'initialized' : 'not initialized'}`
+        );
+        console.warn(
+          `[AvatarManager] AnimationActions: ${animationActions ? `${animationActions.size} actions` : 'not initialized'}`
         );
       }
 
@@ -346,7 +356,10 @@ export class AvatarManager {
   private playAnimation(avatar: Avatar, animationName: string): void {
     if (!avatar.animationMixer || !avatar.animationActions) {
       console.warn(
-        `[AvatarManager] Cannot play animation "${animationName}": No animationMixer or animationActions`
+        `[AvatarManager] ⚠️ Cannot play animation "${animationName}": No animationMixer or animationActions`
+      );
+      console.warn(
+        `[AvatarManager] Avatar ${avatar.userId} - AnimationMixer: ${avatar.animationMixer ? 'exists' : 'missing'}, AnimationActions: ${avatar.animationActions ? 'exists' : 'missing'}`
       );
       return;
     }
@@ -397,24 +410,47 @@ export class AvatarManager {
     if (action) {
       action.reset().fadeIn(0.2).play();
       avatar.currentAnimationAction = action;
+      console.log(`[AvatarManager] ✅ Animation "${animationName}" started successfully`);
+      // Verify animation is actually running
+      setTimeout(() => {
+        if (action && !action.isRunning()) {
+          console.warn(
+            `[AvatarManager] ⚠️ Animation "${animationName}" was started but is not running!`
+          );
+        }
+      }, 100);
     } else {
       // Log available animations for debugging
       const availableAnimations = Array.from(avatar.animationActions.keys());
       console.warn(
-        `[AvatarManager] Animation "${animationName}" not found. Available animations: ${availableAnimations.join(', ')}`
+        `[AvatarManager] ⚠️ Animation "${animationName}" not found. Available animations: ${availableAnimations.join(', ')}`
       );
 
       // Fallback: Try to play first available animation if it's idle-like
-      if (availableAnimations.length > 0) {
+      if (availableAnimations.length > 0 && avatar.animationActions) {
         const firstAnimation = availableAnimations[0];
-        const firstAction = avatar.animationActions.get(firstAnimation);
-        if (firstAction) {
-          console.log(
-            `[AvatarManager] Falling back to first available animation: "${firstAnimation}"`
-          );
-          firstAction.reset().fadeIn(0.2).play();
-          avatar.currentAnimationAction = firstAction;
+        if (firstAnimation) {
+          const firstAction = avatar.animationActions.get(firstAnimation);
+          if (firstAction) {
+            console.log(
+              `[AvatarManager] 🔄 Falling back to first available animation: "${firstAnimation}"`
+            );
+            firstAction.reset().fadeIn(0.2).play();
+            avatar.currentAnimationAction = firstAction;
+            // Verify fallback animation is running
+            setTimeout(() => {
+              if (firstAction && !firstAction.isRunning()) {
+                console.warn(
+                  `[AvatarManager] ⚠️ Fallback animation "${firstAnimation}" was started but is not running!`
+                );
+              }
+            }, 100);
+          }
         }
+      } else {
+        console.error(
+          `[AvatarManager] ❌ No animations available for fallback! Avatar ${avatar.userId} will remain in T-Pose.`
+        );
       }
     }
   }
@@ -560,6 +596,146 @@ export class AvatarManager {
         }
       }
     });
+  }
+
+  /**
+   * Setzt lokalen Avatar-URL (für lokalen Spieler)
+   * Initialisiert Animationen und startet idle-Animation automatisch
+   */
+  async setLocalAvatarUrl(url?: string): Promise<void> {
+    console.log(`[AvatarManager] setLocalAvatarUrl called with URL: ${url || 'undefined'}`);
+
+    // Entferne/verstecke existierenden lokalen Avatar
+    const existingAvatar = this.avatars.get(this.localUserId);
+    if (existingAvatar) {
+      console.log(`[AvatarManager] Removing existing local avatar: ${this.localUserId}`);
+      existingAvatar.object.visible = false;
+      // Cleanup animations
+      if (existingAvatar.animationMixer) {
+        existingAvatar.animationMixer.stopAllAction();
+      }
+      // Optional: Entfernen statt nur verstecken
+      // this.removeAvatar(this.localUserId);
+    }
+
+    if (!url) {
+      // Fallback zu Kapsel-Avatar
+      console.log('[AvatarManager] No avatar URL provided, creating capsule avatar');
+      const capsule = this.createCapsuleAvatar(this.localUserId, { x: 0, y: 0, z: 0 });
+      this.local = { object: capsule.object, url: undefined };
+      return;
+    }
+
+    try {
+      console.log(`[AvatarManager] Loading RPM avatar from URL: ${url}`);
+      // Lade Avatar mit VRM-Support (inkl. Animationen)
+      const { object, vrm, animations: gltfAnimations } = await loadRpm(url);
+
+      // Positioniere Avatar (falls Kamera-Position bekannt)
+      object.position.set(0, 0, 0);
+
+      // Hänge an Scene
+      this.scene.add(object);
+
+      // Initialisiere Animationen (wie in loadAvatar)
+      let animationMixer: AnimationMixer | undefined;
+      let animationActions: Map<string, AnimationAction> | undefined;
+
+      try {
+        // Use animations from loadRpm return value, or try to get from object userData
+        const animations =
+          gltfAnimations ||
+          (object as any).userData?.gltf?.animations ||
+          (object as any).animations ||
+          [];
+
+        if (animations.length > 0) {
+          console.log(`[AvatarManager] Found ${animations.length} animation(s) in avatar`);
+          animationMixer = new AnimationMixer(object);
+          animationActions = new Map<string, AnimationAction>();
+
+          animations.forEach((clip: AnimationClip) => {
+            console.log(
+              `[AvatarManager] Registering animation: "${clip.name}" (duration: ${clip.duration.toFixed(2)}s)`
+            );
+            // clipAction signature: clipAction(clip, optionalRoot)
+            interface AnimationMixerWithClipAction extends AnimationMixer {
+              clipAction: (clip: AnimationClip, root?: Object3D) => AnimationAction;
+            }
+            const action = (animationMixer as AnimationMixerWithClipAction).clipAction(
+              clip,
+              object
+            ) as AnimationAction;
+            if (action && animationActions) {
+              // setLoop signature: setLoop(mode: AnimationActionLoopStyles, repetitions?: number)
+              interface AnimationActionWithSetLoop extends AnimationAction {
+                setLoop: (mode: number, repetitions?: number) => AnimationAction;
+              }
+              (action as AnimationActionWithSetLoop).setLoop(LoopRepeat, Infinity);
+              animationActions.set(clip.name, action);
+            }
+          });
+          console.log(`[AvatarManager] Registered ${animationActions.size} animation action(s)`);
+        } else {
+          console.warn(`[AvatarManager] No animations found in avatar object`);
+          // Try to find animations in children
+          object.traverse((child: Object3D) => {
+            const childAnimations = (child as any).animations || [];
+            if (childAnimations.length > 0) {
+              console.log(
+                `[AvatarManager] Found ${childAnimations.length} animation(s) in child: ${child.name}`
+              );
+            }
+          });
+        }
+      } catch (error) {
+        // No animations available - continue without animations
+        console.warn(`[AvatarManager] Failed to load animations for local avatar:`, error);
+      }
+
+      // Speichere in local
+      this.local = { object, vrm, url };
+
+      // Erstelle Avatar-Eintrag für Konsistenz (mit Animationen!)
+      const avatar: Avatar = {
+        id: `avatar-${this.localUserId}`,
+        userId: this.localUserId,
+        object,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        animationMixer,
+        animationActions,
+      };
+
+      this.avatars.set(this.localUserId, avatar);
+
+      // Start idle animation by default if available
+      if (animationMixer && animationActions && animationActions.size > 0) {
+        console.log(`[AvatarManager] Starting default idle animation for local avatar`);
+        this.playAnimation(avatar, 'idle');
+      } else {
+        console.warn(
+          `[AvatarManager] ⚠️ No animations available for local avatar - avatar will remain in T-Pose`
+        );
+        console.warn(
+          `[AvatarManager] Available animation names: ${animationActions ? Array.from(animationActions.keys()).join(', ') : 'none'}`
+        );
+      }
+
+      console.log(`✅ [AvatarManager] Local avatar loaded from URL: ${url}`);
+    } catch (error) {
+      console.error('[AvatarManager] ❌ Failed to load local avatar, using capsule:', error);
+      // Fallback zu Kapsel
+      const capsule = this.createCapsuleAvatar(this.localUserId, { x: 0, y: 0, z: 0 });
+      this.local = { object: capsule.object, url: undefined };
+    }
+  }
+
+  /**
+   * Gibt lokalen Avatar zurück (für LipSync/Emotes)
+   */
+  getLocal(): { object: Object3D; vrm?: any; url?: string } | null {
+    return this.local;
   }
 
   setName(userId: string, name: string): void {

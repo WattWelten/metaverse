@@ -49,9 +49,14 @@ export function PrejoinPanel({ onContinue }: PrejoinPanelProps) {
   };
 
   const handleAvatarSelect = (url?: string) => {
+    console.log('[PrejoinPanel] Avatar selected:', url || 'none');
     setAvatarUrl(url);
     if (url) {
+      console.log('[PrejoinPanel] Saving avatar URL to preferences');
       savePrefs({ avatarUrl: url });
+    } else {
+      console.log('[PrejoinPanel] Removing avatar URL from preferences');
+      savePrefs({ avatarUrl: undefined });
     }
   };
 

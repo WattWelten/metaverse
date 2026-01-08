@@ -34,12 +34,14 @@ import { StageControls } from './ui/StageControls';
 import { VoicePanel } from './ui/VoicePanel';
 import { WhiteboardPanel } from './ui/WhiteboardPanel';
 import { ZoneIndicator } from './ui/ZoneIndicator';
+import { TemplateSwitcher } from './ui/TemplateSwitcher';
+import { loadManifest, resolveTemplateId } from './templates/TemplateRegistry';
 import { World } from './World';
 
 export function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<World | null>(null);
-  const [templateId, setTemplateId] = useState(() => getFeatureFlags().TEMPLATE_ID);
+  const [templateId, setTemplateId] = useState(() => resolveTemplateId());
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [playerCount, setPlayerCount] = useState(1);
   const [roomId, setRoomId] = useState(() => getRoomFromURL());
@@ -146,28 +148,44 @@ export function App() {
       return;
     }
 
-    console.log('[App] Initializing World (sessionId:', session.sessionId, ')');
-    const world = new World(containerRef.current);
-    world.setSessionId(session.sessionId);
-    worldRef.current = world;
+    // Load template manifest before World init
+    const initWorld = async () => {
+      try {
+        const resolvedTemplateId = resolveTemplateId();
+        console.log('[App] Resolved template ID:', resolvedTemplateId);
+        const manifest = await loadManifest(resolvedTemplateId);
+        (window as any).__templateManifest = manifest;
+        setTemplateId(resolvedTemplateId);
+      } catch (error) {
+        console.error('[App] Failed to load template manifest:', error);
+        // Continue with default template
+      }
 
-    let chatCleanup: (() => void) | undefined;
+      console.log('[App] Initializing World (sessionId:', session.sessionId, ')');
+      const world = new World(containerRef.current!);
+      world.setSessionId(session.sessionId);
+      worldRef.current = world;
 
-    world
-      .init()
-      .then(() => {
-        setReady(true);
-        // Chat message listener (after world is initialized)
-        if (getFeatureFlags().MULTIPLAYER_ENABLED && worldRef.current) {
-          chatCleanup = worldRef.current.onChatMessage((message) => {
-            setChatMessages((prev) => [...prev, message]);
-          });
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to initialize world:', error);
-        setReady(true); // Set ready even on error to show prejoin panel
-      });
+      let chatCleanup: (() => void) | undefined;
+
+      world
+        .init()
+        .then(() => {
+          setReady(true);
+          // Chat message listener (after world is initialized)
+          if (getFeatureFlags().MULTIPLAYER_ENABLED && worldRef.current) {
+            chatCleanup = worldRef.current.onChatMessage((message) => {
+              setChatMessages((prev) => [...prev, message]);
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to initialize world:', error);
+          setReady(true); // Set ready even on error to show prejoin panel
+        });
+    };
+
+    initWorld();
 
     // Keybinds: View toggle (V key), Settings (M/ESC)
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -421,17 +439,43 @@ export function App() {
 
   const handlePrejoinContinue = async () => {
     const prefs = loadPrefs();
+    console.log('[App] handlePrejoinContinue - Prefs:', {
+      username: prefs.username,
+      avatarUrl: prefs.avatarUrl ? 'set' : 'not set',
+      quality: prefs.quality,
+    });
+
+    // Resume audio context
+    try {
+      const { resumeContext } = await import('@metaverse/audio');
+      await resumeContext();
+      console.log('[App] ✅ Audio context resumed');
+    } catch (error) {
+      console.warn('[App] ⚠️ Failed to resume audio context:', error);
+    }
+
     // Avatar/Name an World durchreichen
     try {
       if (prefs.avatarUrl && worldRef.current) {
+        console.log('[App] Loading avatar from URL via World.loadAvatarFromUrl:', prefs.avatarUrl);
         await worldRef.current.loadAvatarFromUrl(prefs.avatarUrl);
       }
       const avatarManager = worldRef.current?.getAvatarManager();
       if (avatarManager) {
+        console.log('[App] Setting avatar name:', prefs.username);
         avatarManager.setName('me', prefs.username);
+        // Also set local avatar URL if not already set
+        if (prefs.avatarUrl) {
+          console.log('[App] Setting local avatar URL via AvatarManager:', prefs.avatarUrl);
+          await avatarManager.setLocalAvatarUrl(prefs.avatarUrl);
+        } else {
+          console.log('[App] No avatar URL in prefs, skipping avatar load');
+        }
+      } else {
+        console.warn('[App] ⚠️ AvatarManager not available');
       }
     } catch (error) {
-      console.error('Failed to apply prefs:', error);
+      console.error('[App] ❌ Failed to apply prefs:', error);
       journey.transition('error', 'Failed to apply preferences');
       return;
     }
@@ -685,6 +729,23 @@ export function App() {
                 </button>
               </>
             )}
+            <TemplateSwitcher
+              onTemplateChange={async (newTemplateId) => {
+                if (worldRef.current) {
+                  // Load new manifest
+                  try {
+                    const manifest = await loadManifest(newTemplateId);
+                    (window as any).__templateManifest = manifest;
+                    setTemplateId(newTemplateId);
+                    // Load template in World
+                    await worldRef.current.loadTemplate(newTemplateId);
+                  } catch (error) {
+                    console.error('[App] Failed to switch template:', error);
+                    throw error;
+                  }
+                }
+              }}
+            />
             <div style={{ opacity: 0.9, marginLeft: 'auto' }}>
               FPS: {fps} | Players: {playerCount}
             </div>

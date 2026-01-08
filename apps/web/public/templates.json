@@ -1,0 +1,15 @@
+{
+  "default": "watt-eco",
+  "items": [
+    {
+      "id": "watt-default",
+      "name": "watt-default",
+      "path": "/templates/watt-default/manifest.json"
+    },
+    {
+      "id": "watt-eco",
+      "name": "Watt Eco – Forest Sunset",
+      "path": "/templates/watt-eco/manifest.json"
+    }
+  ]
+}

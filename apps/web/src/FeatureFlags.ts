@@ -14,6 +14,7 @@ export interface FeatureFlags {
   WATTOS_TENANT?: string;
   SHARE_ENABLED: boolean;
   LIVEKIT_URL?: string;
+  TEMPLATE_SWITCH?: boolean;
 }
 
 const defaultFlags: FeatureFlags = {
@@ -32,6 +33,7 @@ const defaultFlags: FeatureFlags = {
   WATTOS_TENANT: import.meta.env.VITE_WATTOS_TENANT,
   SHARE_ENABLED: import.meta.env.VITE_SHARE_ENABLED === 'true',
   LIVEKIT_URL: import.meta.env.VITE_LIVEKIT_URL,
+  TEMPLATE_SWITCH: import.meta.env.VITE_TEMPLATE_SWITCH !== 'false', // Default: true
 };
 
 // Check if flags are already set in window (for E2E tests)

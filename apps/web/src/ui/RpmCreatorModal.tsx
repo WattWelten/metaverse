@@ -33,20 +33,31 @@ export function RpmCreatorModal({ open, onClose, onExport }: RpmCreatorModalProp
       if (e.data?.eventName === 'v1.avatar.exported') {
         const url = e.data?.avatarUrl;
         if (url) {
+          console.log('[RpmCreatorModal] ✅ Avatar exported successfully:', url);
           setExported(true);
           setLoading(false);
           // Auto-close after short delay to show success message
           setTimeout(() => {
+            console.log('[RpmCreatorModal] Saving avatar URL to preferences');
             onExport(url);
             onClose();
           }, 1500);
+        } else {
+          console.error('[RpmCreatorModal] ⚠️ Avatar exported but no URL provided');
+          setError('Avatar wurde exportiert, aber die URL fehlt. Bitte versuche es erneut.');
+          setLoading(false);
         }
       } else if (e.data?.eventName === 'v1.frame.ready') {
+        console.log('[RpmCreatorModal] ✅ Ready Player Me frame is ready');
         setLoading(false);
         setError(null);
       } else if (e.data?.eventName === 'v1.avatar.exportFailed') {
+        console.error('[RpmCreatorModal] ❌ Avatar export failed');
         setError('Avatar konnte nicht exportiert werden. Bitte versuche es erneut.');
         setLoading(false);
+      } else {
+        // Log other events for debugging
+        console.log('[RpmCreatorModal] Received message event:', e.data?.eventName, e.data);
       }
     };
 
@@ -78,11 +89,37 @@ export function RpmCreatorModal({ open, onClose, onExport }: RpmCreatorModalProp
     };
   }, [open, loading, onClose, onExport]);
 
-  if (!flags.READY_PLAYER_ME_API_KEY) {
-    return null;
+  // Ready Player Me Frame API: https://docs.readyplayer.me/ready-player-me/integration-guides/web-integration/frame-api
+  // The Frame API works without an API key for public usage, but API key enables better integration
+  // API key is optional - if not set, we still allow usage but log a warning
+  const apiKey = flags.READY_PLAYER_ME_API_KEY;
+  if (!apiKey) {
+    console.warn(
+      '[RpmCreatorModal] ⚠️ READY_PLAYER_ME_API_KEY not set - RPM Creator will work but with limited features'
+    );
+    console.warn(
+      '[RpmCreatorModal] To enable full features, set VITE_READY_PLAYER_ME_API_KEY in .env.local'
+    );
+    // Allow usage even without API key (public Ready Player Me usage)
+  } else {
+    console.log('[RpmCreatorModal] ✅ READY_PLAYER_ME_API_KEY is set');
   }
 
-  const rpmUrl = `https://readyplayer.me/avatar?frameApi&clearCache=true`;
+  // Build RPM URL
+  // Ready Player Me Frame API format: https://readyplayer.me/avatar?frameApi
+  // Optional parameters: clearCache, subdomain (for custom subdomain setup)
+  // Note: API key is typically used server-side, not in the URL
+  // The subdomain parameter is only needed if you have a custom subdomain setup
+  let rpmUrl = 'https://readyplayer.me/avatar?frameApi&clearCache=true';
+
+  // If API key is provided and looks like a subdomain (contains '.'), use it as subdomain
+  // Most RPM integrations don't need this - API key is used server-side
+  if (apiKey && apiKey.includes('.')) {
+    rpmUrl += `&subdomain=${encodeURIComponent(apiKey)}`;
+    console.log('[RpmCreatorModal] Using subdomain parameter in URL');
+  }
+
+  console.log('[RpmCreatorModal] RPM Creator URL:', rpmUrl.replace(apiKey || '', '***'));
 
   return (
     <AppleModal

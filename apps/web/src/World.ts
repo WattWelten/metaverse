@@ -741,6 +741,24 @@ export class World {
       }
     }
 
+    // Load avatar from prefs (after all initialization)
+    if (this.avatarManager) {
+      try {
+        const { loadPrefs } = await import('./state/prefs');
+        const prefs = loadPrefs();
+        if (prefs.avatarUrl) {
+          await this.avatarManager.setLocalAvatarUrl(prefs.avatarUrl);
+          console.log('[World] ✅ Local avatar loaded from prefs:', prefs.avatarUrl);
+        }
+        if (prefs.username) {
+          this.avatarManager.setName('me', prefs.username);
+          console.log('[World] ✅ Avatar name set:', prefs.username);
+        }
+      } catch (error) {
+        console.warn('[World] Failed to load avatar from prefs:', error);
+      }
+    }
+
     // Start render loop
     this.animate();
     console.log('[World] ready – pointer lock via EnterOverlay');
@@ -798,6 +816,60 @@ export class World {
     };
     window.addEventListener('keydown', handleKeyDown);
     // Cleanup wird in dispose() gemacht
+  }
+
+  private cleanupTemplateFeatures(): void {
+    console.log('[World] Cleaning up template features...');
+
+    // Cleanup Props
+    this.props.forEach((prop) => {
+      this.scene.remove(prop.object);
+      interface Disposable {
+        dispose?: () => void;
+      }
+      prop.object.traverse((obj) => {
+        const disposable = obj as Object3D & Disposable;
+        if (disposable.dispose) {
+          disposable.dispose();
+        }
+      });
+    });
+    this.props = [];
+
+    // Cleanup Screens
+    this.screens.forEach((screen) => {
+      screen.detach();
+      this.scene.remove(screen.mesh);
+    });
+    this.screens = [];
+
+    // Cleanup Ambience3D
+    if (this.ambience3D) {
+      this.ambience3D.dispose();
+      this.ambience3D = null;
+    }
+
+    // Cleanup ZoneSystem and ZoneVisualizer
+    if (this.zoneVisualizer) {
+      this.zoneVisualizer.dispose();
+      this.zoneVisualizer = null;
+    }
+    this.zoneSystem = null;
+
+    // Cleanup Navmesh
+    if (this.navMeshSystem) {
+      this.navMeshSystem.dispose();
+      this.navMeshSystem = null;
+    }
+    this.navController = null;
+
+    // Cleanup SeatingSystem
+    if (this.seatingSystem) {
+      // SeatingSystem doesn't have a dispose method, just reset it
+      this.seatingSystem = null;
+    }
+
+    console.log('[World] Template features cleaned up');
   }
 
   private async initTemplateFeatures(template: TemplateInstance | null): Promise<void> {
@@ -1506,6 +1578,12 @@ export class World {
   }
 
   async loadTemplate(templateId: string): Promise<void> {
+    console.log(`[World] Switching to template: ${templateId}`);
+
+    // Cleanup old template features before loading new template
+    this.cleanupTemplateFeatures();
+
+    // Load new template
     await this.templateHost.loadTemplate(templateId);
 
     // Rebuild Eco environment if needed (after template load/unmount might have cleared scene)
@@ -1528,6 +1606,12 @@ export class World {
     const template = this.templateHost.getCurrentTemplate();
     if (template) {
       await this.applyTemplateLighting(template);
+
+      // Reinitialize template features (Props, Zones, Screens, Ambience3D)
+      await this.initTemplateFeatures(template);
+
+      // Reinitialize navigation mesh for new template
+      await this.initNavigation();
 
       // Set camera to spawn position from manifest (even if PlayerController not yet created)
       if (template.manifest?.spawn) {
@@ -1766,20 +1850,18 @@ export class World {
       return;
     }
 
-    // Position aus aktueller Kamera-Position oder Spawn-Position
-    const spawnPos = this.camera.position;
-    const position = {
-      x: spawnPos.x,
-      y: spawnPos.y - 1.6, // Avatar steht auf dem Boden
-      z: spawnPos.z,
-    };
-
     try {
-      await this.avatarManager.loadAvatar(this.userId, url, position);
+      await this.avatarManager.setLocalAvatarUrl(url);
       console.log('✅ Avatar loaded from URL:', url);
     } catch (error) {
       console.error('Failed to load avatar from URL:', error);
       // Fallback: Capsule Avatar
+      const spawnPos = this.camera.position;
+      const position = {
+        x: spawnPos.x,
+        y: spawnPos.y - 1.6,
+        z: spawnPos.z,
+      };
       this.avatarManager.createCapsuleAvatar(this.userId, position);
     }
   }
