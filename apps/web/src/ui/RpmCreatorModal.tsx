@@ -91,15 +91,19 @@ export function RpmCreatorModal({ open, onClose, onExport }: RpmCreatorModalProp
 
   // Ready Player Me Frame API: https://docs.readyplayer.me/ready-player-me/integration-guides/web-integration/frame-api
   // The Frame API works without an API key for public usage, but API key enables better integration
-  // API key is optional - if not set, we still allow usage but log a warning
+  // API key is optional - if not set, we still allow usage but log a warning (only once per session)
   const apiKey = flags.READY_PLAYER_ME_API_KEY;
   if (!apiKey) {
-    console.warn(
-      '[RpmCreatorModal] ⚠️ READY_PLAYER_ME_API_KEY not set - RPM Creator will work but with limited features'
-    );
-    console.warn(
-      '[RpmCreatorModal] To enable full features, set VITE_READY_PLAYER_ME_API_KEY in .env.local'
-    );
+    const w = window as any;
+    if (!w.__rpmWarned) {
+      console.warn(
+        '[RpmCreatorModal] ⚠️ READY_PLAYER_ME_API_KEY not set - RPM Creator will work but with limited features'
+      );
+      console.warn(
+        '[RpmCreatorModal] To enable full features, set VITE_READY_PLAYER_ME_API_KEY in .env.local'
+      );
+      w.__rpmWarned = true;
+    }
     // Allow usage even without API key (public Ready Player Me usage)
   } else {
     console.log('[RpmCreatorModal] ✅ READY_PLAYER_ME_API_KEY is set');

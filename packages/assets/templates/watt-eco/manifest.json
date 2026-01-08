@@ -85,20 +85,20 @@
       "reverb": "hall"
     },
     {
-      "id": "groupA",
-      "label": "Treffpunkt A",
+      "id": "breakoutA",
+      "label": "Breakout A",
       "shape": "sphere",
       "pos": [-8, 0, -4],
       "r": 4,
-      "gain": 1
+      "gain": 1.0
     },
     {
-      "id": "groupB",
-      "label": "Treffpunkt B",
+      "id": "breakoutB",
+      "label": "Breakout B",
       "shape": "sphere",
       "pos": [7, 0, -4],
       "r": 4,
-      "gain": 1
+      "gain": 1.0
     },
     {
       "id": "quiet",
@@ -130,6 +130,13 @@
       "pos": [-12, 0, -10],
       "url": "/assets/watt-eco/audio/silence.wav",
       "maxDist": 26
+    }
+  ],
+  "bounds": [
+    {
+      "shape": "circle",
+      "pos": [0, 0, 0],
+      "r": 42
     }
   ]
 }

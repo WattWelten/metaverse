@@ -6,6 +6,8 @@ import { loadPrefs, savePrefs } from '../state/prefs';
 
 import { AvatarGallery } from './AvatarGallery';
 import { AvatarPreview } from './AvatarPreview';
+import { AvatarPresetPicker } from './AvatarPresetPicker';
+import { AvaturnModal } from './AvaturnModal';
 import { RpmCreatorModal } from './RpmCreatorModal';
 
 interface AvatarModalProps {
@@ -17,6 +19,7 @@ interface AvatarModalProps {
 export function AvatarModal({ open, onClose, onSelect }: AvatarModalProps) {
   const [url, setUrl] = useState('');
   const [showRpm, setShowRpm] = useState(false);
+  const [showAvaturn, setShowAvaturn] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState<string | undefined>();
   const flags = getFeatureFlags();
 
@@ -54,27 +57,27 @@ export function AvatarModal({ open, onClose, onSelect }: AvatarModalProps) {
 
   const tabs = [
     {
+      id: 'presets',
+      label: 'Presets',
+      content: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <AvatarPresetPicker onSelect={handleSelect} selectedUrl={selectedUrl} />
+        </div>
+      ),
+    },
+    {
       id: 'gallery',
       label: 'Galerie',
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <AvatarGallery onSelect={handleSelect} selectedUrl={selectedUrl} />
-          {flags.READY_PLAYER_ME_API_KEY && (
-            <AppleButton
-              onClick={() => setShowRpm(true)}
-              variant="secondary"
-              style={{ width: '100%', marginTop: '8px' }}
-            >
-              ✨ Neuen Avatar mit Ready Player Me erstellen
-            </AppleButton>
-          )}
         </div>
       ),
     },
     {
       id: 'create',
       label: 'Erstellen',
-      content: flags.READY_PLAYER_ME_API_KEY ? (
+      content: (
         <div
           style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}
         >
@@ -89,32 +92,42 @@ export function AvatarModal({ open, onClose, onSelect }: AvatarModalProps) {
             <p className="text-body" style={{ marginBottom: '8px' }}>
               Erstelle deinen eigenen Avatar
             </p>
-            <p className="text-footnote" style={{ opacity: 0.7 }}>
-              Mit Ready Player Me kannst du einen personalisierten Avatar erstellen
+            <p className="text-footnote" style={{ opacity: 0.7, marginBottom: '24px' }}>
+              Wähle einen Avatar-Ersteller
             </p>
           </div>
-          <AppleButton
-            onClick={() => setShowRpm(true)}
-            style={{ width: '100%', maxWidth: '300px' }}
-          >
-            Avatar erstellen
-          </AppleButton>
-        </div>
-      ) : (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '40px 20px',
-            color: 'var(--color-label-secondary)',
-          }}
-        >
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
-          <p className="text-body" style={{ marginBottom: '8px' }}>
-            Ready Player Me nicht verfügbar
-          </p>
-          <p className="text-footnote" style={{ opacity: 0.7 }}>
-            Bitte verwende die Galerie oder URL-Eingabe
-          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+            {flags.READY_PLAYER_ME_API_KEY && (
+              <AppleButton
+                onClick={() => setShowRpm(true)}
+                style={{ width: '100%', maxWidth: '300px', margin: '0 auto' }}
+              >
+                ✨ Ready Player Me
+              </AppleButton>
+            )}
+            {flags.AVATURN_ENABLED && (
+              <AppleButton
+                onClick={() => setShowAvaturn(true)}
+                variant="secondary"
+                style={{ width: '100%', maxWidth: '300px', margin: '0 auto' }}
+              >
+                🎭 Avaturn
+              </AppleButton>
+            )}
+            {!flags.READY_PLAYER_ME_API_KEY && !flags.AVATURN_ENABLED && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '20px',
+                  color: 'var(--color-label-secondary)',
+                }}
+              >
+                <p className="text-footnote" style={{ opacity: 0.7 }}>
+                  Keine Avatar-Ersteller verfügbar. Bitte verwende Presets oder URL-Eingabe.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       ),
     },
@@ -229,6 +242,20 @@ export function AvatarModal({ open, onClose, onSelect }: AvatarModalProps) {
           setSelectedUrl(exportedUrl);
           handleSelect(exportedUrl);
           setShowRpm(false);
+        }}
+      />
+
+      <AvaturnModal
+        open={showAvaturn}
+        onClose={() => {
+          console.log('[AvatarModal] Avaturn modal closed');
+          setShowAvaturn(false);
+        }}
+        onExport={(exportedUrl) => {
+          console.log('[AvatarModal] Avaturn exported avatar:', exportedUrl);
+          setSelectedUrl(exportedUrl);
+          handleSelect(exportedUrl);
+          setShowAvaturn(false);
         }}
       />
     </>

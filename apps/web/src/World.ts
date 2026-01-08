@@ -148,7 +148,13 @@ export class World {
       powerPreference: 'high-performance',
     });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Mobile: Clamp pixelRatio to 1.5 for better performance
+    // Desktop: Max 2 for performance
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      window.innerWidth < 768;
+    const maxPixelRatio = isMobile ? 1.5 : 2;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
@@ -1239,7 +1245,19 @@ export class World {
             // Ensure avatar is visible
             localAvatar.object.visible = true;
 
-            // Update avatar animation based on movement
+            // Calculate kinematics for locomotion
+            const velocity = this.playerController.getVelocity();
+            const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z); // m/s
+            const yawDelta = this.playerController.getAngularVelocityY(); // rad/s
+
+            // Expose kinematics to window for debugging
+            (window as any).__world ||= {};
+            (window as any).__world.kine = { speed, yawDelta };
+
+            // Set kinematics for locomotion controller
+            this.avatarManager.setKinematics(speed, yawDelta);
+
+            // Update avatar animation based on movement (fallback if no locomotion)
             const animation = this.playerController.isMoving() ? 'walk' : 'idle';
             this.avatarManager.updateAvatar(
               this.userId,
@@ -1307,6 +1325,8 @@ export class World {
       this.avatarManager.updateInterpolation(delta);
       // Update avatar animations
       this.avatarManager.updateAnimations(delta);
+      // Update locomotion controller
+      this.avatarManager.update(delta);
 
       // Update procedural idle fallback if no animations available
       const local = this.avatarManager.getLocal();

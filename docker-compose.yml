@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - VITE_TEMPLATE_ID=watt-eco
+      - VITE_MULTIPLAYER_ENABLED=false
+      - VITE_VOICE_ENABLED=false
+      - VITE_XR_ENABLED=true
+      - VITE_WHITEBOARD_ENABLED=true
+    volumes:
+      # For development, mount source
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+    # For production, use built files from Stage 1
+    # For development, override command:
+    # command: pnpm dev --filter=@metaverse/web

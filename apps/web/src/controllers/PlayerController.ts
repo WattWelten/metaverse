@@ -36,6 +36,8 @@ export class PlayerController {
   private baseY = 1.6;
   private mouseInvert = false;
   private lastRotationX = 0;
+  private lastRotationY = 0;
+  private angularVelocityY = 0;
 
   constructor(
     private camera: THREE.PerspectiveCamera,
@@ -87,6 +89,18 @@ export class PlayerController {
   isMoving(): boolean {
     // Check if player is moving horizontally (x or z velocity)
     return Math.abs(this.velocity.x) > 0.01 || Math.abs(this.velocity.z) > 0.01;
+  }
+
+  getVelocity(): THREE.Vector3 {
+    return this.velocity.clone();
+  }
+
+  getAngularVelocityY(): number {
+    // Calculate angular velocity from camera rotation change
+    // This is a simplified version - in a real implementation, you'd track previous rotation
+    // For now, we'll use mouse movement or return 0
+    // TODO: Track previous rotation to calculate actual angular velocity
+    return 0; // Placeholder - will be improved with mouse delta tracking
   }
 
   private onKey(e: KeyboardEvent, down: boolean): void {
@@ -196,5 +210,22 @@ export class PlayerController {
     } else {
       this.lastRotationX = this.camera.rotation.x;
     }
+
+    // Calculate angular velocity Y (yaw)
+    // Only calculate if dt is valid to avoid division by zero
+    if (dt > 0) {
+      const currentRotationY = this.camera.rotation.y;
+      const deltaY = currentRotationY - this.lastRotationY;
+      // Normalize delta to [-PI, PI] range
+      let normalizedDelta = deltaY;
+      while (normalizedDelta > Math.PI) normalizedDelta -= 2 * Math.PI;
+      while (normalizedDelta < -Math.PI) normalizedDelta += 2 * Math.PI;
+      this.angularVelocityY = normalizedDelta / dt; // rad/s
+      this.lastRotationY = currentRotationY;
+    }
+  }
+
+  getAngularVelocityY(): number {
+    return this.angularVelocityY;
   }
 }

@@ -1,5 +1,6 @@
 import type { EmoteId } from '@metaverse/avatars';
 import {
+  AppleButton,
   ChatUI,
   ConsentModal,
   EmoteUI,
@@ -35,6 +36,8 @@ import { VoicePanel } from './ui/VoicePanel';
 import { WhiteboardPanel } from './ui/WhiteboardPanel';
 import { ZoneIndicator } from './ui/ZoneIndicator';
 import { TemplateSwitcher } from './ui/TemplateSwitcher';
+import { MobileControls } from './ui/MobileControls';
+import { LocoDebug } from './ui/LocoDebug';
 import { loadManifest, resolveTemplateId } from './templates/TemplateRegistry';
 import { World } from './World';
 
@@ -638,6 +641,15 @@ export function App() {
           />
         )}
 
+        {/* Mobile Controls - Only visible when in metaverse and on touch device */}
+        {journey.state === 'metaverse' && worldRef.current && (
+          <MobileControls
+            onJump={() => {
+              // Jump is handled via synthetic keyboard events in MobileControls
+            }}
+          />
+        )}
+
         {/* Settings Modal */}
         <SettingsModal
           open={settingsOpen}
@@ -720,60 +732,13 @@ export function App() {
               fontSize: '14px',
             }}
           >
-            <button
+            <AppleButton
               onClick={handleCopyLink}
-              className="btn-apple"
-              style={{
-                padding: '6px 12px',
-                fontSize: '13px',
-                background: 'var(--color-fill-primary)',
-                color: 'var(--color-label)',
-              }}
+              variant="secondary"
+              style={{ fontSize: '13px', padding: '6px 12px' }}
             >
-              Copy Link
-            </button>
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="btn-apple"
-              style={{
-                padding: '6px 12px',
-                fontSize: '13px',
-                background: 'var(--color-fill-primary)',
-                color: 'var(--color-label)',
-              }}
-            >
-              Menü
-            </button>
-            <ShareButton world={worldRef.current} />
-            {getFeatureFlags().VOICE_ENABLED && (
-              <>
-                <MicRing world={worldRef.current} />
-                <button
-                  onClick={() => setShowParticipants(true)}
-                  className="btn-apple"
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '13px',
-                    background: 'var(--color-fill-primary)',
-                    color: 'var(--color-label)',
-                  }}
-                >
-                  Teilnehmer
-                </button>
-                <button
-                  onClick={() => setShowDevicePicker(true)}
-                  className="btn-apple"
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '13px',
-                    background: 'var(--color-fill-primary)',
-                    color: 'var(--color-label)',
-                  }}
-                >
-                  Geräte
-                </button>
-              </>
-            )}
+              Link kopieren
+            </AppleButton>
             <TemplateSwitcher
               onTemplateChange={async (newTemplateId) => {
                 if (worldRef.current) {
@@ -791,8 +756,65 @@ export function App() {
                 }
               }}
             />
-            <div style={{ opacity: 0.9, marginLeft: 'auto' }}>
-              FPS: {fps} | Players: {playerCount}
+            <div
+              style={{
+                opacity: 0.9,
+                marginLeft: 'auto',
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ fontSize: '12px', color: 'var(--color-label-secondary)' }}>
+                FPS: {fps}
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--color-label-secondary)' }}>
+                Spieler: {playerCount}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginLeft: '12px' }}>
+              {getFeatureFlags().WHITEBOARD_ENABLED && (
+                <AppleButton
+                  onClick={handleWhiteboardToggle}
+                  variant={showWhiteboard ? 'primary' : 'secondary'}
+                  style={{ fontSize: '13px', padding: '6px 12px' }}
+                >
+                  Whiteboard
+                </AppleButton>
+              )}
+              <AppleButton
+                onClick={handlePinboardToggle}
+                variant={showPinboard ? 'primary' : 'secondary'}
+                style={{ fontSize: '13px', padding: '6px 12px' }}
+              >
+                Pinboard
+              </AppleButton>
+              {getFeatureFlags().VOICE_ENABLED && (
+                <>
+                  <MicRing world={worldRef.current} />
+                  <AppleButton
+                    onClick={() => setShowParticipants(true)}
+                    variant="secondary"
+                    style={{ fontSize: '13px', padding: '6px 12px' }}
+                  >
+                    Teilnehmer
+                  </AppleButton>
+                  <AppleButton
+                    onClick={() => setShowDevicePicker(true)}
+                    variant="secondary"
+                    style={{ fontSize: '13px', padding: '6px 12px' }}
+                  >
+                    Geräte
+                  </AppleButton>
+                </>
+              )}
+              <AppleButton
+                onClick={() => setSettingsOpen(true)}
+                variant="secondary"
+                style={{ fontSize: '13px', padding: '6px 12px' }}
+              >
+                Einstellungen
+              </AppleButton>
             </div>
           </div>
         )}

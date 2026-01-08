@@ -7,6 +7,7 @@ import {
   AvatarSelectionStep,
   UsernameQualityStep,
   ControlsInfoStep,
+  DeviceCheckStep,
   ProgressIndicator,
 } from './PrejoinSteps';
 
@@ -14,9 +15,9 @@ interface PrejoinPanelProps {
   onContinue: () => void;
 }
 
-type Step = 'avatar' | 'username' | 'controls';
+type Step = 'avatar' | 'username' | 'controls' | 'devices';
 
-const STEPS: Step[] = ['avatar', 'username', 'controls'];
+const STEPS: Step[] = ['avatar', 'username', 'controls', 'devices'];
 
 export function PrejoinPanel({ onContinue }: PrejoinPanelProps) {
   const init = loadPrefs();
@@ -27,8 +28,20 @@ export function PrejoinPanel({ onContinue }: PrejoinPanelProps) {
   const flags = getFeatureFlags();
 
   const step = STEPS[currentStep];
+  const shouldSkipDevices = !flags.VOICE_ENABLED;
 
   const handleNext = () => {
+    // Skip devices step if voice is disabled
+    if (step === 'devices' && shouldSkipDevices) {
+      savePrefs({
+        username: name.trim() || 'Gast',
+        quality,
+        avatarUrl,
+      });
+      onContinue();
+      return;
+    }
+
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -133,6 +146,14 @@ export function PrejoinPanel({ onContinue }: PrejoinPanelProps) {
             )}
 
             {step === 'controls' && <ControlsInfoStep onNext={handleNext} onBack={handleBack} />}
+
+            {step === 'devices' && (
+              <DeviceCheckStep
+                onNext={handleNext}
+                onBack={handleBack}
+                skip={!flags.VOICE_ENABLED}
+              />
+            )}
           </div>
         </div>
       </div>

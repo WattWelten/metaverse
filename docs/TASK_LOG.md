@@ -1,5 +1,82 @@
 # TASK LOG - MVP Hardening
 
+## [2026-01-XX] - Mixamo Locomotion + Retarget + Tests ✅
+
+- Was: Vollständige Locomotion-Implementierung (Idle/Walk/Run/Turn) für VRM-Avatare mit Mixamo-Retargeting, sanften Crossfades, prozeduralem Fallback, Debug-UI und E2E-Tests
+- Warum: Avatare sollen lebendig wirken mit realistischen Bewegungen
+- Status: Abgeschlossen (inkl. Fehleranalyse & Code-Optimierung)
+- Phasen:
+  - Phase 0-1: Struktur & Dependencies ✅
+  - Phase 2: Retarget-Pipeline (Mixamo → VRM) ✅
+  - Phase 3: LocomotionController State-Machine ✅
+  - Phase 4: AvatarManager Integration ✅
+  - Phase 5: PlayerController → Kinematik ✅
+  - Phase 6: Optional Multiplayer State Sync (vorbereitet, nicht aktiv)
+  - Phase 7: Fallback (prozedurales Idle) ✅
+  - Phase 8: Debug-UI ✅
+  - Phase 9: E2E-Tests ✅
+  - Phase 10: Dokumentation ✅
+- Dateien:
+  - `packages/avatars/src/retarget/mixamo.ts` (neu) - Mixamo-Retargeting auf VRM
+  - `packages/avatars/src/retarget/library.ts` (neu) - Clip-Konfiguration
+  - `packages/avatars/src/Locomotion.ts` (neu) - LocomotionController State-Machine
+  - `packages/avatars/src/AvatarManager.ts` (erweitert) - LocomotionController-Integration, setKinematics, update-Methode
+  - `apps/web/src/controllers/PlayerController.ts` (erweitert) - getVelocity, getAngularVelocityY
+  - `apps/web/src/World.ts` (erweitert) - Kinematik-Berechnung und -Übergabe
+  - `apps/web/src/ui/LocoDebug.tsx` (neu) - Debug-Panel für Locomotion
+  - `apps/web/e2e/locomotion.spec.ts` (neu) - E2E-Tests für Locomotion
+  - `apps/web/.env.example` (erweitert) - VITE_LOCO_DEBUG Flag
+  - `apps/web/public/animations/` (neu) - Ordner für Mixamo-GLB-Clips
+- Optimierungen:
+  - Retargeting-Fallback wenn SkeletonUtils.retargetClip nicht verfügbar
+  - Paralleles Laden aller Animation-Clips mit Promise.allSettled
+  - Korrektes Cleanup von Event-Listenern (Memory-Leak-Schutz)
+  - Turn-Animationen werden nicht unterbrochen
+  - Division-by-Zero-Schutz in PlayerController
+  - Debug-UI nutzt requestAnimationFrame statt setInterval
+  - dispose()-Methode für LocomotionController
+  - Verbesserte Type-Safety und Error-Handling
+
+## [2026-01-XX] - Meeting-MVP Hardening v2 (Breakouts, Spatial Audio, Presets, Mobile, CI) ✅
+
+- Was: Vollständige Umsetzung des Meeting-MVP mit 5-15 TN, Breakout-Zonen, deutschem UI, Apple-clean Design, Spatial-Audio, Mobile-Support, CI
+- Warum: Projekt auf Meeting-MVP trimmen nach exakten Vorgaben
+- Status: Abgeschlossen (Kern-Features implementiert)
+- Phasen:
+  - Phase 0: Basis & Flags ✅
+  - Phase 1: Deps & DX ✅
+  - Phase 2: Template "Watt Eco" finalisieren ✅
+  - Phase 3: Avatare (RPM + Presets + Avaturn-Stub) ✅
+  - Phase 4: Steuerung, Pointer-Lock, Mobile ✅
+  - Phase 5: Voice lokal + Spatial Audio + Zonen-Gain ✅
+  - Phase 6: Whiteboard Lite ✅ (bereits vorhanden, funktional)
+  - Phase 7: UI/UX Apple-clean, Deutsch ✅ (Device-Check-Step, Topbar verbessert, Zone-Indicator mit 2s Fade)
+  - Phase 8: E2E-Tests (Journey, Seating, Zonen-Gain, Mobile) ✅
+  - Phase 9: CI & Deploy (GitHub Actions, Docker) ✅
+  - Phase 10: Dokumentation & Validierung ✅
+- Dateien:
+  - `apps/web/src/ui/AvatarPresetPicker.tsx` (neu) - 3 Preset-Avatare
+  - `apps/web/src/ui/AvaturnModal.tsx` (neu) - Avaturn iframe-Integration
+  - `apps/web/src/ui/MobileControls.tsx` (neu) - On-screen Joystick für Touch
+  - `apps/web/src/ui/AvatarModal.tsx` (erweitert) - Tabs für Presets/RPM/Avaturn
+  - `apps/web/src/FeatureFlags.ts` (erweitert) - AVATURN_ENABLED Flag
+  - `packages/voice/src/positional/AudioGraph.ts` (erweitert) - MediaStream-Support, HRTF Panner
+  - `packages/voice/src/spatial/SpatialAudioManager.ts` (erweitert) - ZoneSystem-Integration, Listener-Orientation
+  - `packages/voice/src/providers/TestToneProvider.ts` (neu) - Test-Tone für E2E
+  - `apps/web/src/World.ts` (erweitert) - PixelRatio-Clamp für Mobile
+  - `apps/web/e2e/seating.spec.ts` (neu) - Seating-Tests
+  - `apps/web/e2e/zone-gain.spec.ts` (neu) - Zonen-Gain-Tests
+  - `apps/web/e2e/mobile.spec.ts` (neu) - Mobile-Smoke-Tests
+  - `apps/web/playwright.config.ts` (erweitert) - Mobile Chrome Projekt
+  - `.github/workflows/e2e.yml` (neu) - GitHub Actions Workflow
+  - `Dockerfile` (neu) - Multi-stage Build für Production
+  - `docker-compose.yml` (neu) - Docker Compose Setup
+  - `packages/assets/templates/watt-eco/manifest.json` (aktualisiert) - Zonen umbenannt, bounds hinzugefügt
+  - `apps/web/src/ui/PrejoinSteps.tsx` (erweitert) - DeviceCheckStep mit Mic-Level-Meter, Test-Ton, automatisches Skip wenn Voice disabled
+  - `apps/web/src/ui/PrejoinPanel.tsx` (erweitert) - Device-Step in Journey integriert
+  - `apps/web/src/ui/ZoneIndicator.tsx` (verbessert) - 2s Fade-Out nach Anzeige
+  - `apps/web/src/App.tsx` (verbessert) - Topbar mit AppleButton-Komponenten, Whiteboard/Pinboard-Toggle, deutsche Labels
+
 ## [2026-01-XX] - E2E Optimizer + Journey Hardening ✅
 
 - Was: Vollständige E2E-Test-Suite mit User-Journey-Tests, DX-Verbesserungen, Performance-Hooks, Avatar-Idle-Fallback, Pointer-Lock-Robustheit

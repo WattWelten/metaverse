@@ -19,6 +19,7 @@ import {
 
 import { loadReadyPlayerMeAvatar, loadRpm } from './loaders/rpm.js';
 import { createNameTag } from './NameTag.js';
+import { LocomotionController } from './Locomotion';
 
 export interface Avatar {
   id: string;
@@ -43,6 +44,8 @@ export class AvatarManager {
   private netClient: NetClientForAvatarManager | null = null;
   private local: { object: Object3D; vrm?: any; url?: string } | null = null;
   private localUserId: string = 'me';
+  private loco?: LocomotionController;
+  private tickCallbacks: Map<string, (dt: number) => void> = new Map();
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -568,6 +571,39 @@ export class AvatarManager {
     }
   }
 
+  /**
+   * Set kinematics (speed, yawDelta) for locomotion controller
+   */
+  setKinematics(speed: number, yawDelta: number): void {
+    this.loco?.setVelocity(speed, yawDelta);
+  }
+
+  /**
+   * Register a tick callback (called every frame with delta time)
+   */
+  registerTick(name: string, callback: (dt: number) => void): void {
+    this.tickCallbacks.set(name, callback);
+  }
+
+  /**
+   * Unregister a tick callback
+   */
+  unregisterTick(name: string): void {
+    this.tickCallbacks.delete(name);
+  }
+
+  /**
+   * Update all registered tick callbacks (should be called from World.animate)
+   */
+  update(dt: number): void {
+    // Update procedural idle if no locomotion clips
+    if (this.local && (this.local as any).proceduralIdle && !this.loco?.hasClips()) {
+      (this.local as any).proceduralIdle(dt);
+    }
+    // Update all tick callbacks
+    this.tickCallbacks.forEach((callback) => callback(dt));
+  }
+
   getAvatar(userId: string): Avatar | undefined {
     return this.avatars.get(userId);
   }
@@ -708,6 +744,22 @@ export class AvatarManager {
       };
 
       this.avatars.set(this.localUserId, avatar);
+
+      // Initialize LocomotionController if VRM is available
+      if (vrm) {
+        this.loco = new LocomotionController(vrm);
+        try {
+          await this.loco.loadSet(vrm);
+          console.log('[AvatarManager] ✅ LocomotionController initialized');
+          // Register tick callback for locomotion updates
+          this.registerTick('locoUpdate', (dt) => this.loco?.update(dt));
+        } catch (e) {
+          console.warn('[AvatarManager] LocomotionController load failed:', e);
+        }
+      } else if (object) {
+        // Fallback: try with object3D (non-VRM)
+        this.loco = new LocomotionController(undefined, object);
+      }
 
       // Start idle animation by default if available
       if (animationMixer && animationActions && animationActions.size > 0) {

@@ -13,8 +13,13 @@ export function ZoneIndicator({ zoneLabel, zoneId }: ZoneIndicatorProps) {
     if (zoneLabel) {
       setIsVisible(true);
       setIsAnimating(true);
-      const timer = setTimeout(() => setIsAnimating(false), 500);
-      return () => clearTimeout(timer);
+      const timer1 = setTimeout(() => setIsAnimating(false), 500);
+      // Fade out after 2 seconds
+      const timer2 = setTimeout(() => setIsVisible(false), 2000);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
     } else {
       setIsVisible(false);
       return undefined;

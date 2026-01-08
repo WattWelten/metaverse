@@ -8,6 +8,7 @@ export interface FeatureFlags {
   AMBIENT_AUDIO_ENABLED: boolean;
   WHITEBOARD_ENABLED: boolean;
   READY_PLAYER_ME_API_KEY?: string;
+  AVATURN_ENABLED: boolean;
   WATTOS_BASE_URL?: string;
   WATTOS_WS_URL?: string;
   WATTOS_API_KEY?: string;
@@ -27,6 +28,7 @@ const defaultFlags: FeatureFlags = {
   AMBIENT_AUDIO_ENABLED: import.meta.env.VITE_AMBIENT_AUDIO_ENABLED === 'true',
   WHITEBOARD_ENABLED: import.meta.env.VITE_WHITEBOARD_ENABLED === 'true',
   READY_PLAYER_ME_API_KEY: import.meta.env.VITE_READY_PLAYER_ME_API_KEY,
+  AVATURN_ENABLED: import.meta.env.VITE_AVATURN_ENABLED === 'true',
   WATTOS_BASE_URL: import.meta.env.VITE_WATTOS_BASE_URL,
   WATTOS_WS_URL: import.meta.env.VITE_WATTOS_WS_URL,
   WATTOS_API_KEY: import.meta.env.VITE_WATTOS_API_KEY,
