@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   define: {
     global: 'globalThis', // Fix für "global is not defined" Fehler
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   },
   resolve: {
     alias: {

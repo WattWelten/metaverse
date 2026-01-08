@@ -14,10 +14,11 @@ Das MVP umfasst eine production-ready Three.js WebXR Multiplayer Metaverse Platf
 - **Rendering**: Physically Correct Lights, ACES Tone Mapping, sRGB Color Space, Exposure Control
 - **Template-System**: Manifest-gesteuert, Hot-Swap-fähig, robuster Fallback (kein schwarzer Screen)
 - **Auto-Assets**: PolyHaven HDRI Download, prozedurale GLB-Generierung (watt-eco Template)
-- **Enter & Walk**: PointerLock+WASD Controller, EnterOverlay mit Audio-Aktivierung, Jump/Sprint
+- **Enter & Walk**: PointerLock+WASD Controller, EnterOverlay mit Audio-Aktivierung, Jump/Sprint, Navmesh-Clamp, Character-Kollisionen
+- **Camera**: First-Person ↔ Third-Person Toggle (V-Key), sanfte Dämpfung, Anti-Clipping via Raycasting
 - **Multiplayer**: Socket.io-basiert, flag-gesteuert, Solo-Modus ohne Fehler
-- **Avatare**: Ready Player Me Integration, VRM Loader, Basis-Synchronisation
-- **Voice**: WebRTC Spatial Audio, Consent-Modal, flag-gesteuert
+- **Avatare**: Ready Player Me Integration, VRM Loader, Nametags (troika-three-text), Basis-Synchronisation, setLocalVisibleHead() für FP-Mode
+- **Voice**: WebRTC Spatial Audio, Consent-Modal, Spatial-Panner an Peer-Positionen, flag-gesteuert
 - **Whiteboard**: Excalidraw+Yjs kollaboratives Whiteboard, flag-gesteuert
 - **Ambient Audio**: Template-basiert, Autoplay-Policy-konform (User-Interaction erforderlich)
 - **XR**: Three.js WebXR Adapter, VerseEngine Stub (kein Vendor Lock-in)
@@ -72,6 +73,7 @@ Alle Features sind flag-gesteuert über `.env.local`:
 - `VITE_TEMPLATE_ID` - Standard-Template (`watt-default` | `watt-eco`, Default: `watt-default`)
 - `VITE_AMBIENT_AUDIO_ENABLED` - Ambient Audio aktivieren (Default: `false`)
 - `VITE_DEBUG_ENABLED` - Debug-Overlay aktivieren (Default: `false` in Production, `true` in Dev)
+- `VITE_NAV_DEBUG` - Navmesh-Overlay aktivieren (Default: `false`)
 - `VITE_VE_ENABLED` - VerseEngine aktivieren (Default: `false`, Stub vorhanden)
 
 ### Datenflüsse

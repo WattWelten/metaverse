@@ -6,4 +6,6 @@ export * from './TemplateSwitcher.js';
 export * from './OverlayHost.js';
 export * from './ChatUI.js';
 export * from './MediaUploadUI.js';
+export * from './FileUploadUI.js';
 export * from './EmoteUI.js';
+export * from './apple/index.js';

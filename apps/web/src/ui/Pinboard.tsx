@@ -1,5 +1,5 @@
-import { useState, useRef, DragEvent } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { useState, useRef, DragEvent } from 'react';
 
 // PDF.js Worker Setup
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;

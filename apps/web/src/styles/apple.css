@@ -1,0 +1,83 @@
+/* Apple Design System - Additional Utilities */
+
+:root {
+  /* Background & Panel Colors */
+  --bg: var(--color-background);
+  --bg-secondary: var(--color-background-secondary);
+  --bg-tertiary: var(--color-background-tertiary);
+  --panel: var(--glass-background);
+  --accent: var(--color-system-blue);
+  --accent-hover: #1a8fff;
+
+  /* Text Colors */
+  --text-primary: var(--color-label);
+  --text-secondary: var(--color-label-secondary);
+  --text-tertiary: var(--color-label-tertiary);
+}
+
+/* Panel Utility */
+.panel {
+  background: var(--panel);
+  backdrop-filter: var(--glass-backdrop-blur);
+  -webkit-backdrop-filter: var(--glass-backdrop-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--text-primary);
+}
+
+/* Button Utility */
+.btn {
+  background: var(--color-fill-primary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-system);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.btn:hover {
+  background: var(--color-fill-secondary);
+  transform: scale(1.02);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+/* Badge Utility */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--color-fill-primary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Toolbar Utility */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  background: var(--panel);
+  backdrop-filter: var(--glass-backdrop-blur);
+  -webkit-backdrop-filter: var(--glass-backdrop-blur);
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+}

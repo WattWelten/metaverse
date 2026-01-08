@@ -1,4 +1,3 @@
-
 export interface MenuProps {
   visible: boolean;
   onClose: () => void;
@@ -111,4 +110,3 @@ export function Menu({
     </div>
   );
 }
-

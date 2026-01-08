@@ -66,4 +66,3 @@ export class KIAdapter {
     // Lipsync logic would go here
   }
 }
-

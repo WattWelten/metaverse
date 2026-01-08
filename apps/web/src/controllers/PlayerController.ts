@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
+
 import { NavController } from '../navigation/NavController';
 
 type Keys = {
@@ -20,6 +21,7 @@ export class PlayerController {
   private navController: NavController | null = null;
   private remotePeers: THREE.Vector3[] = [];
   public controls: PointerLockControls;
+  private dom: HTMLElement;
   private keys: Keys = {
     w: false,
     a: false,
@@ -32,12 +34,15 @@ export class PlayerController {
   private dir = new THREE.Vector3();
   private onGround = true;
   private baseY = 1.6;
+  private mouseInvert = false;
+  private lastRotationX = 0;
 
   constructor(
     private camera: THREE.PerspectiveCamera,
     dom: HTMLElement,
     spawn?: SpawnConfig
   ) {
+    this.dom = dom;
     this.controls = new PointerLockControls(camera, dom);
     addEventListener('keydown', (e: KeyboardEvent) => this.onKey(e, true));
     addEventListener('keyup', (e: KeyboardEvent) => this.onKey(e, false));
@@ -56,6 +61,8 @@ export class PlayerController {
 
   lock(): void {
     this.controls.lock();
+    // Focus auf Canvas setzen für Keyboard-Events
+    (this.dom as HTMLCanvasElement)?.focus?.();
   }
 
   unlock(): void {
@@ -68,6 +75,18 @@ export class PlayerController {
 
   setRemotePeers(peers: THREE.Vector3[]): void {
     this.remotePeers = peers;
+  }
+
+  setMouseInvert(invert: boolean): void {
+    this.mouseInvert = invert;
+    if (invert) {
+      this.lastRotationX = this.camera.rotation.x;
+    }
+  }
+
+  isMoving(): boolean {
+    // Check if player is moving horizontally (x or z velocity)
+    return Math.abs(this.velocity.x) > 0.01 || Math.abs(this.velocity.z) > 0.01;
   }
 
   private onKey(e: KeyboardEvent, down: boolean): void {
@@ -87,6 +106,19 @@ export class PlayerController {
   }
 
   update(dt: number): void {
+    // Debug: Log key presses (only in dev mode, throttled)
+    if (
+      import.meta.env.DEV &&
+      Math.random() < 0.01 &&
+      (this.keys.w || this.keys.a || this.keys.s || this.keys.d)
+    ) {
+      console.debug('[PlayerController] Keys:', {
+        w: this.keys.w,
+        a: this.keys.a,
+        s: this.keys.s,
+        d: this.keys.d,
+      });
+    }
     const accel = this.keys.shift ? 10 : 6;
     this.dir.set(0, 0, 0);
 
@@ -152,6 +184,17 @@ export class PlayerController {
     if (this.keys.space && this.onGround) {
       this.velocity.y = 4.5;
       this.onGround = false;
+    }
+
+    // Mouse Invert: Pitch-Rotation (X-Achse) invertieren wenn aktiviert
+    if (this.mouseInvert && this.controls.isLocked) {
+      const currentRotationX = this.camera.rotation.x;
+      const deltaX = currentRotationX - this.lastRotationX;
+      // Invertiere die Änderung
+      this.camera.rotation.x = this.lastRotationX - deltaX;
+      this.lastRotationX = this.camera.rotation.x;
+    } else {
+      this.lastRotationX = this.camera.rotation.x;
     }
   }
 }

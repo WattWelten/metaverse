@@ -1,5 +1,5 @@
-import * as THREE from 'three';
 import { NavMeshSystem } from '@metaverse/navigation';
+import * as THREE from 'three';
 
 export class NavController {
   constructor(
@@ -10,7 +10,7 @@ export class NavController {
   /** wendet Navmesh-Klemme + "Push-Apart" gegen Avatare an */
   step(oldPos: THREE.Vector3, intended: THREE.Vector3, peers: THREE.Vector3[] = []): THREE.Vector3 {
     // clamp to navmesh
-    let clamped = this.nav.clampStep(oldPos, intended);
+    const clamped = this.nav.clampStep(oldPos, intended);
 
     // simple character-character collision
     for (const p of peers) {

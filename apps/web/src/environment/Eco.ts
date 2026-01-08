@@ -13,11 +13,21 @@ export function buildEco(scene: THREE.Scene): void {
   const phi = THREE.MathUtils.degToRad(90 - 5); // Elevation angle
   const theta = THREE.MathUtils.degToRad(180); // Azimuth angle
   sun.setFromSphericalCoords(1, phi, theta);
-  (sky.material as any).sunPosition = sun;
-  (sky.material as any).turbidity = 10;
-  (sky.material as any).rayleigh = 2;
-  (sky.material as any).mieCoefficient = 0.005;
-  (sky.material as any).mieDirectionalG = 0.8;
+  interface SkyMaterial {
+    sunPosition?: THREE.Vector3;
+    turbidity?: number;
+    rayleigh?: number;
+    mieCoefficient?: number;
+    mieDirectionalG?: number;
+  }
+  const skyMat = sky.material as SkyMaterial;
+  if (skyMat) {
+    skyMat.sunPosition = sun;
+    skyMat.turbidity = 10;
+    skyMat.rayleigh = 2;
+    skyMat.mieCoefficient = 0.005;
+    skyMat.mieDirectionalG = 0.8;
+  }
 
   // Water plane (lake)
   const waterGeometry = new THREE.CircleGeometry(20, 64);
@@ -34,7 +44,16 @@ export function buildEco(scene: THREE.Scene): void {
   });
   // Set material properties after creation (Water2 uses uniforms)
   if (water.material && 'uniforms' in water.material) {
-    const uniforms = (water.material as any).uniforms;
+    interface WaterMaterial {
+      uniforms?: {
+        sunDirection?: { value: THREE.Vector3 };
+        sunColor?: { value: THREE.Color };
+        waterColor?: { value: THREE.Color };
+        transmission?: { value: number };
+        ior?: { value: number };
+      };
+    }
+    const uniforms = (water.material as WaterMaterial).uniforms;
     if (uniforms) {
       if (uniforms.sunDirection) uniforms.sunDirection.value = sun.clone();
       if (uniforms.sunColor) uniforms.sunColor.value = new THREE.Color(0xffffff);
@@ -47,7 +66,7 @@ export function buildEco(scene: THREE.Scene): void {
 
   // Tagging für Navmesh
   water.name = 'Lake';
-  (water as any).userData = { isLake: true, radius: 20 };
+  water.userData = { isLake: true, radius: 20 };
 
   // Ground grid (fallback, falls kein GLB-Ground)
   const gridHelper = new THREE.GridHelper(100, 100, 0x334444, 0x223333);

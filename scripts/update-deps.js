@@ -61,6 +61,3 @@ try {
   console.error('\n❌ Fehler beim Update:', error.message);
   process.exit(1);
 }
-
-
-

@@ -59,60 +59,59 @@ async function loadTemplateOverlay(
   shadowRoot: ShadowRoot,
   onAction?: (action: { type: string; payload?: unknown }) => void
 ): Promise<void> {
+  // Manifest laden
+  const manifestResponse = await fetch(`/templates/${templateId}/manifest.json`);
+  if (!manifestResponse.ok) {
+    throw new Error(`Failed to load manifest: ${manifestResponse.statusText}`);
+  }
+
+  // Check Content-Type before parsing JSON
+  const contentType = manifestResponse.headers.get('content-type');
+  if (contentType && !contentType.includes('application/json')) {
+    throw new Error(`Expected JSON but got ${contentType}`);
+  }
+
+  const manifest = await manifestResponse.json();
+
+  // UI-Skin CSS laden
+  let cssText = '';
   try {
-    // Manifest laden
-    const manifestResponse = await fetch(`/templates/${templateId}/manifest.json`);
-    if (!manifestResponse.ok) {
-      throw new Error(`Failed to load manifest: ${manifestResponse.statusText}`);
+    const cssResponse = await fetch(`/templates/${templateId}/ui-skin.css`);
+    if (cssResponse.ok) {
+      cssText = await cssResponse.text();
     }
+  } catch {
+    // CSS optional
+  }
 
-    // Check Content-Type before parsing JSON
-    const contentType = manifestResponse.headers.get('content-type');
-    if (contentType && !contentType.includes('application/json')) {
-      throw new Error(`Expected JSON but got ${contentType}`);
-    }
-
-    const manifest = await manifestResponse.json();
-
-    // UI-Skin CSS laden
-    let cssText = '';
-    try {
-      const cssResponse = await fetch(`/templates/${templateId}/ui-skin.css`);
-      if (cssResponse.ok) {
-        cssText = await cssResponse.text();
-      }
-    } catch {
-      // CSS optional
-    }
-
-    // HTML-Partials laden
-    let htmlText = '';
-    try {
-      const htmlResponse = await fetch(`/templates/${templateId}/partials/main.html`);
-      if (htmlResponse.ok) {
-        const htmlContentType = htmlResponse.headers.get('content-type');
-        // Only use response if it's actually HTML, not a 404 page
-        if (htmlContentType && htmlContentType.includes('text/html')) {
-          htmlText = await htmlResponse.text();
-          // Check if response is actually HTML (not a 404 page)
-          if (htmlText.trim().startsWith('<!DOCTYPE') && htmlText.includes('404')) {
-            // This is a 404 page, use fallback
-            htmlText = generateMinimalHTML(manifest);
-          }
-        } else {
+  // HTML-Partials laden
+  let htmlText = '';
+  try {
+    const htmlResponse = await fetch(`/templates/${templateId}/partials/main.html`);
+    if (htmlResponse.ok) {
+      const htmlContentType = htmlResponse.headers.get('content-type');
+      // Only use response if it's actually HTML, not a 404 page
+      if (htmlContentType && htmlContentType.includes('text/html')) {
+        htmlText = await htmlResponse.text();
+        // Check if response is actually HTML (not a 404 page)
+        if (htmlText.trim().startsWith('<!DOCTYPE') && htmlText.includes('404')) {
+          // This is a 404 page, use fallback
           htmlText = generateMinimalHTML(manifest);
         }
       } else {
-        // Fallback: Generiere minimales HTML
         htmlText = generateMinimalHTML(manifest);
       }
-    } catch (error) {
-      // Silently fallback to minimal HTML
+    } else {
+      // Fallback: Generiere minimales HTML
       htmlText = generateMinimalHTML(manifest);
     }
+  } catch {
+    // Silently fallback to minimal HTML
+    htmlText = generateMinimalHTML(manifest);
+  }
 
-    // In Shadow DOM einfügen
-    shadowRoot.innerHTML = `
+  // In Shadow DOM einfügen
+  shadowRoot.innerHTML = `
       <style>
         ${cssText}
         :host {
@@ -122,31 +121,26 @@ async function loadTemplateOverlay(
       ${htmlText}
     `;
 
-    // Event-Listener für Buttons
-    shadowRoot.querySelectorAll('[data-action]').forEach((button) => {
-      button.addEventListener('click', (e) => {
-        e.preventDefault();
-        const action = (e.target as HTMLElement).dataset.action;
-        const payload = (e.target as HTMLElement).dataset.payload;
-        try {
-          onAction?.({
-            type: action || 'unknown',
-            payload: payload ? JSON.parse(payload) : undefined,
-          });
-        } catch (parseError) {
-          // Silently handle JSON parse errors
-          console.warn('Failed to parse action payload:', parseError);
-        }
-      });
+  // Event-Listener für Buttons
+  shadowRoot.querySelectorAll('[data-action]').forEach((button) => {
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+      const action = (e.target as HTMLElement).dataset.action;
+      const payload = (e.target as HTMLElement).dataset.payload;
+      try {
+        onAction?.({
+          type: action || 'unknown',
+          payload: payload ? JSON.parse(payload) : undefined,
+        });
+      } catch (parseError) {
+        // Silently handle JSON parse errors
+        console.warn('Failed to parse action payload:', parseError);
+      }
     });
+  });
 
-    // Focus-Trap für Accessibility
-    setupFocusTrap(shadowRoot);
-  } catch (error) {
-    // Don't log as error - this is expected when partials don't exist
-    // Fallback will be handled by caller
-    throw error;
-  }
+  // Focus-Trap für Accessibility
+  setupFocusTrap(shadowRoot);
 }
 
 function generateMinimalHTML(manifest: { name?: string }): string {

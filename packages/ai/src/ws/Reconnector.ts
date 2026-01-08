@@ -21,7 +21,7 @@ export class Reconnector {
     if (this.reconnectAttempts < this.maxAttempts) {
       this.reconnectAttempts++;
       const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-      
+
       this.reconnectTimer = window.setTimeout(() => {
         if (!this.isStopped) {
           this.connectFn().catch((error) => {
@@ -46,6 +46,3 @@ export class Reconnector {
     }
   }
 }
-
-
-

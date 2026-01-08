@@ -9,12 +9,14 @@ export interface NetClientEventEmitter {
 }
 
 export interface NetClientReplicator {
-  onAvatarUpdate(callback: (update: {
-    userId: string;
-    position: { x: number; y: number; z: number };
-    rotation: { x: number; y: number; z: number };
-    animation?: string;
-  }) => void): () => void;
+  onAvatarUpdate(
+    callback: (update: {
+      userId: string;
+      position: { x: number; y: number; z: number };
+      rotation: { x: number; y: number; z: number };
+      animation?: string;
+    }) => void
+  ): () => void;
 }
 
 export interface NetClientForAvatarManager {
@@ -31,4 +33,3 @@ export interface NetClientForVoice {
   off?: (event: string, callback?: (...args: unknown[]) => void) => void;
   emit?: (event: string, data: unknown) => void;
 }
-

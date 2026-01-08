@@ -1,4 +1,3 @@
-
 export interface ConsentModalProps {
   visible: boolean;
   onAccept: () => void;
@@ -40,9 +39,7 @@ export function ConsentModal({
           maxWidth: '500px',
         }}
       >
-        <h2 style={{ color: '#fff', marginTop: 0, marginBottom: '16px' }}>
-          {title}
-        </h2>
+        <h2 style={{ color: '#fff', marginTop: 0, marginBottom: '16px' }}>{title}</h2>
         <p style={{ color: '#94a3b8', marginBottom: '24px' }}>{message}</p>
         <div
           style={{
@@ -82,4 +79,3 @@ export function ConsentModal({
     </div>
   );
 }
-

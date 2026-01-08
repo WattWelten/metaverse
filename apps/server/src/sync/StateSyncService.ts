@@ -14,7 +14,7 @@ export class StateSyncService {
 
   updateState(roomId: string, userId: string, state: unknown): void {
     let roomState = this.roomStates.get(roomId);
-    
+
     if (!roomState) {
       roomState = {
         roomId,
@@ -44,6 +44,3 @@ export class StateSyncService {
     this.roomStates.delete(roomId);
   }
 }
-
-
-

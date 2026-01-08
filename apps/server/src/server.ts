@@ -7,8 +7,11 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { Server } from 'socket.io';
 
+import { AuthService } from './auth/AuthService.js';
+import { createAuthMiddleware, createOptionalAuthMiddleware } from './middleware/auth.js';
 import { PresenceService } from './presence/PresenceService.js';
 import { RoomManager } from './rooms/RoomManager.js';
+import uploadRouter from './routes/upload.js';
 import { StateSyncService } from './sync/StateSyncService.js';
 
 const app = express();
@@ -75,6 +78,69 @@ if (logLevel !== 'silent') {
 }
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Initialize auth service
+const authService = new AuthService();
+
+// Clean up expired sessions every hour
+setInterval(
+  () => {
+    authService.cleanupExpiredSessions();
+  },
+  60 * 60 * 1000
+);
+
+// Auth routes
+app.post('/api/auth/login', express.json(), (req, res): void => {
+  const { username } = req.body;
+
+  if (!username || typeof username !== 'string' || username.trim().length === 0) {
+    res.status(400).json({ error: 'Username is required' });
+    return;
+  }
+
+  if (username.trim().length < 2 || username.trim().length > 50) {
+    res.status(400).json({ error: 'Username must be between 2 and 50 characters' });
+    return;
+  }
+
+  const { sessionId, user } = authService.createSession(username.trim());
+
+  res.json({
+    success: true,
+    sessionId,
+    user: {
+      userId: user.userId,
+      username: user.username,
+    },
+  });
+});
+
+app.post('/api/auth/logout', createAuthMiddleware(authService), (req, res) => {
+  if (req.session) {
+    authService.deleteSession(req.session.sessionId);
+  }
+
+  res.json({ success: true });
+});
+
+app.get('/api/auth/me', createAuthMiddleware(authService), (req, res): void => {
+  if (!req.session) {
+    res.status(401).json({ error: 'Not authenticated' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    user: req.session.user,
+  });
+});
+
+// File upload routes (require auth)
+const authMiddleware = createAuthMiddleware(authService);
+app.use('/api/upload', authMiddleware, uploadRouter);
+app.use('/api/files', createOptionalAuthMiddleware(authService), uploadRouter);
 
 // Health check endpoint
 app.get('/', (_req, res) => {
@@ -130,12 +196,57 @@ const io = new Server(httpServer, {
   },
 });
 
+// Auth middleware for Socket.io
+io.use((socket, next) => {
+  const sessionId =
+    socket.handshake.auth?.sessionId ||
+    socket.handshake.headers?.authorization?.replace('Bearer ', '');
+
+  if (!sessionId) {
+    return next(new Error('No session ID provided'));
+  }
+
+  const session = authService.getSession(sessionId as string);
+  if (!session) {
+    return next(new Error('Invalid or expired session'));
+  }
+
+  // Attach session to handshake
+  (
+    socket.handshake as {
+      data?: { sessionId?: string; user?: { userId: string; username: string } };
+    }
+  ).data = {
+    sessionId: sessionId as string,
+    user: session,
+  };
+
+  next();
+});
+
 const roomManager = new RoomManager();
 const presenceService = new PresenceService();
 const stateSyncService = new StateSyncService();
 
 io.on('connection', (socket) => {
-  console.log(`Client connected: ${socket.id}`);
+  const handshakeData = (
+    socket.handshake as {
+      data?: { sessionId?: string; user?: { userId: string; username: string } };
+    }
+  ).data;
+  const sessionId = handshakeData?.sessionId;
+  const user = handshakeData?.user;
+
+  if (!sessionId || !user) {
+    console.error('Socket connection rejected: missing session');
+    socket.disconnect();
+    return;
+  }
+
+  // Update socket ID in session
+  authService.updateSocketId(sessionId, socket.id);
+
+  console.log(`Client connected: ${socket.id} (User: ${user.username})`);
 
   socket.on('join-room', async (data: { roomId: string; userId: string; avatar?: unknown }) => {
     const { roomId, userId, avatar } = data;
@@ -243,8 +354,44 @@ io.on('connection', (socket) => {
     }
   );
 
+  // File Sharing
+  socket.on(
+    'file-share',
+    (data: {
+      roomId: string;
+      userId: string;
+      fileId: string;
+      url: string;
+      mimeType: string;
+      originalName: string;
+      position?: { x: number; y: number; z: number };
+      timestamp: number;
+    }) => {
+      const { roomId, userId, fileId, url, mimeType, originalName, position, timestamp } = data;
+      const userInfo = presenceService.getUserInfo(socket.id);
+      if (!userInfo || userInfo.roomId !== roomId) return;
+
+      // Broadcast to all users in room
+      io.to(roomId).emit('file-share', {
+        userId,
+        fileId,
+        url,
+        mimeType,
+        originalName,
+        position,
+        timestamp,
+      });
+    }
+  );
+
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
+
+    // Remove socket ID from session
+    if (sessionId) {
+      authService.removeSocketId(socket.id);
+    }
+
     const userInfo = presenceService.getUserInfo(socket.id);
     if (userInfo) {
       roomManager.leaveRoom(socket.id, userInfo.roomId, userInfo.userId);

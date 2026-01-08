@@ -39,6 +39,3 @@ export class ToolApi {
     return response.json() as Promise<unknown[]>;
   }
 }
-
-
-

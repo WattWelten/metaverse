@@ -8,10 +8,17 @@ vi.mock('three', () => {
     background: null,
     add: vi.fn(),
     remove: vi.fn(),
+    traverse: vi.fn(),
   };
 
   const mockCamera = {
-    position: { set: vi.fn(), x: 0, y: 5, z: 10 },
+    position: {
+      set: vi.fn(),
+      x: 0,
+      y: 5,
+      z: 10,
+      clone: vi.fn(() => ({ x: 0, y: 5, z: 10, set: vi.fn() })),
+    },
     rotation: { x: 0, y: 0, z: 0 },
     aspect: 1,
     updateProjectionMatrix: vi.fn(),
@@ -33,6 +40,7 @@ vi.mock('three', () => {
     PerspectiveCamera: vi.fn(() => mockCamera),
     WebGLRenderer: vi.fn(() => mockRenderer),
     ACESFilmicToneMapping: 1,
+    SRGBColorSpace: 'srgb',
     Color: vi.fn(),
     Clock: vi.fn(() => ({
       getDelta: () => 0.016,
@@ -54,8 +62,88 @@ vi.mock('three', () => {
         getCenter: vi.fn(() => ({ x: 0, y: 0, z: 0 })),
       })),
     })),
+    PMREMGenerator: vi.fn(() => ({
+      compileEquirectangularShader: vi.fn(),
+      fromScene: vi.fn(),
+      dispose: vi.fn(),
+    })),
+    HemisphereLight: vi.fn(() => ({
+      position: { set: vi.fn(), x: 0, y: 0, z: 0 },
+      color: { set: vi.fn() },
+      intensity: 1,
+      dispose: vi.fn(),
+    })),
+    DirectionalLight: vi.fn(() => ({
+      position: { set: vi.fn(), x: 0, y: 0, z: 0 },
+      color: { set: vi.fn() },
+      intensity: 1,
+      castShadow: false,
+      shadow: { mapSize: { width: 2048, height: 2048 } },
+      dispose: vi.fn(),
+    })),
+    AmbientLight: vi.fn(() => ({
+      color: { set: vi.fn() },
+      intensity: 1,
+    })),
+    PointLight: vi.fn(() => ({
+      position: { set: vi.fn(), x: 0, y: 0, z: 0 },
+      color: { set: vi.fn() },
+      intensity: 1,
+    })),
+    Mesh: vi.fn(() => ({
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
+      add: vi.fn(),
+      remove: vi.fn(),
+    })),
+    Group: vi.fn(() => ({
+      add: vi.fn(),
+      remove: vi.fn(),
+      traverse: vi.fn(),
+      position: { x: 0, y: 0, z: 0 },
+    })),
+    GridHelper: vi.fn(),
+    AxesHelper: vi.fn(),
+    Shape: vi.fn(() => ({
+      absarc: vi.fn(),
+      holes: [],
+    })),
+    Path: vi.fn(() => ({
+      absarc: vi.fn(),
+    })),
+    ShapeGeometry: vi.fn(() => ({
+      rotateX: vi.fn(),
+      translate: vi.fn(),
+      clone: vi.fn(() => ({
+        rotateX: vi.fn(),
+      })),
+      dispose: vi.fn(),
+    })),
+    BufferGeometry: vi.fn(() => ({
+      clone: vi.fn(() => ({
+        rotateX: vi.fn(),
+      })),
+      rotateX: vi.fn(),
+      dispose: vi.fn(),
+    })),
+    MeshBasicMaterial: vi.fn(() => ({
+      dispose: vi.fn(),
+    })),
   };
 });
+
+// Mock three/examples/jsm modules
+vi.mock('three/examples/jsm/loaders/RGBELoader.js', () => ({
+  RGBELoader: vi.fn(() => ({
+    load: vi.fn((_url, onLoad) => {
+      if (onLoad) {
+        onLoad({ isDataTexture: true });
+      }
+      return { isDataTexture: true };
+    }),
+  })),
+}));
 
 // Mock other dependencies
 vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
@@ -78,6 +166,21 @@ vi.mock('../TemplateHost', () => ({
     update: vi.fn(),
     dispose: vi.fn(),
   })),
+}));
+
+vi.mock('@metaverse/navigation', () => ({
+  NavMeshSystem: vi.fn(() => ({
+    load: vi.fn().mockResolvedValue(undefined),
+    buildProcedural: vi.fn(),
+    findPath: vi.fn(() => []),
+    getRandomPoint: vi.fn(() => ({ x: 0, y: 0, z: 0 })),
+    clampStep: vi.fn((_from, to) => to),
+    initAt: vi.fn(),
+    toggleVisible: vi.fn(),
+    setVisible: vi.fn(),
+    dispose: vi.fn(),
+  })),
+  extractHolesFromScene: vi.fn(() => ({ holes: [], radius: 50 })),
 }));
 
 vi.mock('../xr/XRSetup', () => ({
@@ -119,8 +222,23 @@ vi.mock('@metaverse/avatars', () => ({
   AvatarManager: vi.fn(() => ({
     setNetClient: vi.fn(),
     getAllAvatars: vi.fn(() => []),
+    getAvatar: vi.fn(() => null),
+    createCapsuleAvatar: vi.fn(() => ({
+      userId: 'test-user',
+      object: {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { y: 0 },
+      },
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+    })),
+    loadAvatar: vi.fn().mockResolvedValue(undefined),
+    updateAvatar: vi.fn(),
     updateInterpolation: vi.fn(),
     updateAnimations: vi.fn(),
+    removeAvatar: vi.fn(),
+    setName: vi.fn(),
+    setLocalVisibleHead: vi.fn(),
   })),
 }));
 
@@ -141,6 +259,35 @@ vi.mock('@metaverse/voice', () => ({
   })),
 }));
 
+vi.mock('../controllers/CameraRig', () => ({
+  CameraRig: vi.fn(() => ({
+    switch: vi.fn(),
+    update: vi.fn(),
+    get mode() {
+      return 'fp';
+    },
+  })),
+}));
+
+vi.mock('../controllers/PlayerController', () => ({
+  PlayerController: vi.fn(() => ({
+    lock: vi.fn(),
+    unlock: vi.fn(),
+    update: vi.fn(),
+    dispose: vi.fn(),
+    isLocked: false,
+    dom: document.createElement('canvas'),
+  })),
+}));
+
+vi.mock('../environment/Eco', () => ({
+  buildEco: vi.fn(),
+}));
+
+vi.mock('../environment/EcoAuto', () => ({
+  buildEcoAuto: vi.fn(),
+}));
+
 vi.mock('../FeatureFlags', () => ({
   getFeatureFlags: vi.fn(() => ({
     MULTIPLAYER_ENABLED: true,
@@ -148,6 +295,9 @@ vi.mock('../FeatureFlags', () => ({
     XR_ENABLED: false,
     AMBIENT_AUDIO_ENABLED: true,
     TEMPLATE_ID: 'watt-default',
+    AI_ENABLED: false,
+    NAV_DEBUG: false,
+    ECO_AUTO_ENABLED: false,
   })),
 }));
 

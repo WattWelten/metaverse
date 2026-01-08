@@ -1,12 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import request from 'supertest';
-import { io as ClientIO } from 'socket.io-client';
 import { createServer } from 'http';
-import express from 'express';
-import { Server } from 'socket.io';
+
 import cors from 'cors';
+import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import { Server } from 'socket.io';
+import { io as ClientIO } from 'socket.io-client';
+import request from 'supertest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { PresenceService } from '../presence/PresenceService.js';
 import { RoomManager } from '../rooms/RoomManager.js';
 import { StateSyncService } from '../sync/StateSyncService.js';

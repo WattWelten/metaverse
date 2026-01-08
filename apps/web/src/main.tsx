@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
 import './index.css';
+import './styles/design-system.css';
+import './styles/apple.css';
 
 // Test hooks for E2E tests (only in development/test environment)
 if (import.meta.env.DEV || import.meta.env.MODE === 'test') {

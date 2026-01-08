@@ -14,9 +14,14 @@ interface Room {
 export class RoomManager {
   private rooms = new Map<string, Room>();
 
-  async joinRoom(socketId: string, roomId: string, userId: string, avatar?: unknown): Promise<void> {
+  async joinRoom(
+    socketId: string,
+    roomId: string,
+    userId: string,
+    avatar?: unknown
+  ): Promise<void> {
     let room = this.rooms.get(roomId);
-    
+
     if (!room) {
       room = {
         id: roomId,
@@ -73,4 +78,3 @@ export class RoomManager {
     return Array.from(this.rooms.keys());
   }
 }
-

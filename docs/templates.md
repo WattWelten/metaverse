@@ -72,6 +72,3 @@ Templates können zur Laufzeit gewechselt werden:
 ```typescript
 await templateRegistry.load('another-template', scene);
 ```
-
-
-

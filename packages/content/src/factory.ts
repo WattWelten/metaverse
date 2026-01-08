@@ -20,6 +20,3 @@ export function createContentProvider(
       throw new Error(`Unknown provider type: ${type}`);
   }
 }
-
-
-

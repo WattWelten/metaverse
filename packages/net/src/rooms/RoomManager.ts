@@ -52,6 +52,3 @@ export class RoomManager {
     return this.roomState?.users.length || 0;
   }
 }
-
-
-

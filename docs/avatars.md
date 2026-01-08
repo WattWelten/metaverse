@@ -20,12 +20,7 @@ const avatar = await avatarManager.loadAvatar('user-123', avatarUrl);
 ### Avatar aktualisieren
 
 ```typescript
-avatarManager.updateAvatar(
-  'user-123',
-  new Vector3(0, 0, 0),
-  new Vector3(0, 0, 0),
-  'walk'
-);
+avatarManager.updateAvatar('user-123', new Vector3(0, 0, 0), new Vector3(0, 0, 0), 'walk');
 ```
 
 ### Multiplayer-Integration
@@ -40,6 +35,3 @@ const netClient = new NetClient({
 
 avatarManager.setNetClient(netClient);
 ```
-
-
-

@@ -8,6 +8,12 @@ export interface FeatureFlags {
   AMBIENT_AUDIO_ENABLED: boolean;
   WHITEBOARD_ENABLED: boolean;
   READY_PLAYER_ME_API_KEY?: string;
+  WATTOS_BASE_URL?: string;
+  WATTOS_WS_URL?: string;
+  WATTOS_API_KEY?: string;
+  WATTOS_TENANT?: string;
+  SHARE_ENABLED: boolean;
+  LIVEKIT_URL?: string;
 }
 
 const defaultFlags: FeatureFlags = {
@@ -20,16 +26,28 @@ const defaultFlags: FeatureFlags = {
   AMBIENT_AUDIO_ENABLED: import.meta.env.VITE_AMBIENT_AUDIO_ENABLED === 'true',
   WHITEBOARD_ENABLED: import.meta.env.VITE_WHITEBOARD_ENABLED === 'true',
   READY_PLAYER_ME_API_KEY: import.meta.env.VITE_READY_PLAYER_ME_API_KEY,
+  WATTOS_BASE_URL: import.meta.env.VITE_WATTOS_BASE_URL,
+  WATTOS_WS_URL: import.meta.env.VITE_WATTOS_WS_URL,
+  WATTOS_API_KEY: import.meta.env.VITE_WATTOS_API_KEY,
+  WATTOS_TENANT: import.meta.env.VITE_WATTOS_TENANT,
+  SHARE_ENABLED: import.meta.env.VITE_SHARE_ENABLED === 'true',
+  LIVEKIT_URL: import.meta.env.VITE_LIVEKIT_URL,
 };
 
 // Check if flags are already set in window (for E2E tests)
 // This allows E2E tests to set flags via page.addInitScript before the module loads
+interface WindowWithFeatureFlags {
+  __featureFlags?: Partial<FeatureFlags>;
+}
 const getWindowFlags = (): Partial<FeatureFlags> | null => {
-  if (typeof window !== 'undefined' && (window as any).__featureFlags) {
-    const windowFlags = (window as any).__featureFlags;
-    // Only use window flags if they are a valid FeatureFlags object
-    if (typeof windowFlags === 'object' && windowFlags !== null) {
-      return windowFlags;
+  if (typeof window !== 'undefined') {
+    const windowWithFlags = window as typeof window & WindowWithFeatureFlags;
+    if (windowWithFlags.__featureFlags) {
+      const windowFlags = windowWithFlags.__featureFlags;
+      // Only use window flags if they are a valid FeatureFlags object
+      if (typeof windowFlags === 'object' && windowFlags !== null) {
+        return windowFlags;
+      }
     }
   }
   return null;

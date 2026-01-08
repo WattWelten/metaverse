@@ -27,11 +27,13 @@ export class AudioEffects {
   }
 
   private getOrCreateGain(userId: string): GainNode {
-    if (!this.gainNodes.has(userId)) {
-      const gain = this.audioContext.createGain();
-      this.gainNodes.set(userId, gain);
+    const existing = this.gainNodes.get(userId);
+    if (existing) {
+      return existing;
     }
-    return this.gainNodes.get(userId)!;
+    const gain = this.audioContext.createGain();
+    this.gainNodes.set(userId, gain);
+    return gain;
   }
 
   private applyReverb(userId: string): void {
@@ -53,6 +55,25 @@ export class AudioEffects {
     }
   }
 
+  /**
+   * Apply zone-specific gain
+   */
+  applyZoneGain(userId: string, gain: number): void {
+    const gainNode = this.getOrCreateGain(userId);
+    gainNode.gain.value = gain;
+  }
+
+  /**
+   * Apply zone-specific reverb
+   */
+  applyZoneReverb(userId: string, reverbType: 'none' | 'hall'): void {
+    if (reverbType === 'none') {
+      this.removeReverb(userId);
+    } else if (reverbType === 'hall') {
+      this.applyReverb(userId);
+    }
+  }
+
   applyDopplerEffect(_userId: string, _velocity: { x: number; y: number; z: number }): void {
     // Doppler effect implementation
     // This would adjust playback rate based on relative velocity
@@ -67,4 +88,3 @@ export class AudioEffects {
     this.gainNodes.clear();
   }
 }
-

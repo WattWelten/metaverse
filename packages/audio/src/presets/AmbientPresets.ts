@@ -59,6 +59,3 @@ export const ambientPresets: Record<string, AmbientPreset> = {
   urban: urbanPreset,
   indoor: indoorPreset,
 };
-
-
-

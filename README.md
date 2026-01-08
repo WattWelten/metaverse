@@ -1,181 +1,59 @@
-> 🧭 **Cursor Global Playbook aktiv** · Diesen Leitfaden nutzen wir als Source of Truth.
-> Datei: `docs/CURSOR_GLOBAL_PLAYBOOK.md` (oder zentral: `WattWelten/cursor.ai`).
-
 # WattWelten Metaverse
 
-Three.js WebXR Multiplayer Metaverse Platform mit Ready Player Me Integration, Spatial Audio, Ambient-Sound-System und AI-Bridge zu wattos_plattform.
+Eine professionelle WebXR-Multiplayer-Plattform mit hochwertigen 3D-Umgebungen, Echtzeit-Kommunikation und immersiven Erlebnissen.
 
-## Quickstart
-
-### Voraussetzungen
-
-- Node.js 20.11.1 (siehe `.nvmrc`)
-- pnpm 8.15.0+
-
-### Installation & Setup
+## 🚀 Quick Start
 
 ```bash
-# 1. Dependencies installieren
+# Installation
 pnpm install
 
-# 2. Environment-Variablen einrichten (erstellt .env.local aus .env.example)
-pnpm setup:env
-
-# 3. Decoder-Dateien herunterladen (Draco/KTX2)
-pnpm setup:decoders
-
-# 4. Development Server starten (Client + Server)
+# Development
 pnpm dev
+
+# Assets & Templates herunterladen
+pnpm pipeline:full
+
+# Testing
+pnpm test
+pnpm e2e
 ```
 
-Die Anwendung läuft dann auf:
+## 📚 Dokumentation
 
-- Client: http://localhost:5173
-- Server: http://localhost:3001
+- [Projekt-Dokumentation](docs/PROJECT_DOCUMENTATION.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Nächste Schritte](docs/NEXT_STEPS.md)
+- [Professionelle Assets](docs/PROFESSIONAL_ASSETS.md)
+- [Template-Katalog](docs/TEMPLATE_CATALOG.md)
 
-### Navigation & Kollisionen
+## 🎨 Features
 
-### Navmesh-System
-
-Das Metaverse nutzt ein Navmesh-System für realistische Bewegung:
-
-- **Hotkey H**: Toggelt das Navmesh-Debug-Overlay (nur sichtbar wenn `VITE_NAV_DEBUG=true`)
-- **Template-Navmesh**: Templates können ein `navmesh.glb` definieren (Mesh-Name: **NavMesh**)
-  - Im Manifest: `assets.navmesh = "navmesh.glb"`
-- **Prozedurale Generierung**: Falls kein Navmesh-GLB vorhanden, wird es aus der Szene generiert
-  - Eco-Szene taggt Objekte: `Lake` (`userData.isLake`) und `Tree_*` (`userData.isTree`)
-  - Holes werden automatisch erkannt und aus der Navmesh ausgeschnitten
-
-### Character-Kollisionen
-
-- **Mindestabstand**: 0.8 Einheiten (2x Kapselradius)
-- **Push-Apart**: Avatare schieben sich sanft auseinander bei zu nahem Kontakt
-- **Remote-Avatare**: Multiplayer-Avatare werden als Kollisions-Peers berücksichtigt
-
-## Lokaler Start in 60s (Auto-Setup)
-
-Vollautomatisiertes Setup mit HDRI-Download und Demo-GLB-Generierung:
-
-```bash
-# 1. Install & Setup
-pnpm install
-pnpm run setup:decoders
-pnpm run auto:setup:option-a  # Lädt HDRI von PolyHaven, generiert Demo-GLB
-
-# 2. Dev Start
-pnpm -w dev
-
-# 3. Erwartung
-# - Szene rendert (watt-eco Template)
-# - "Enter Metaverse" Overlay sichtbar
-# - Click aktiviert Audio + PointerLock
-# - WASD+Maus funktioniert (Shift=Sprint, Space=Jump)
-# - Keine unhandled errors
-```
-
-**Hinweis:** Erste Interaktion aktiviert AudioContext (Autoplay-Policy).
-
-### Lokaler Start (Solo-Modus)
-
-Für lokalen Start ohne Server:
-
-```bash
-# .env.local anpassen:
-VITE_MULTIPLAYER_ENABLED=false
-
-# Nur Client starten:
-pnpm dev:client
-```
-
-Die App funktioniert auch ohne Server (Solo-Modus, keine Fehler).
-
-## Umgebungsvariablen
-
-Erstelle eine `.env.local` Datei im Root-Verzeichnis:
-
-```env
-# Feature Flags
-VITE_AI_ENABLED=false
-VITE_VOICE_ENABLED=true
-VITE_XR_ENABLED=true
-VITE_CMS_PROVIDER=local
-VITE_TEMPLATE_ID=watt-default
-VITE_MULTIPLAYER_ENABLED=true
-VITE_AMBIENT_AUDIO_ENABLED=true
-
-# Ready Player Me (optional)
-VITE_READY_PLAYER_ME_API_KEY=
-
-# wattos_plattform
-VITE_WATTOS_BASE_URL=https://api.wattos.local
-VITE_WATTOS_WS_URL=wss://api.wattos.local/realtime
-VITE_WATTOS_API_KEY=dev-xxxx
-
-# Strapi (optional)
-VITE_CMS_BASE_URL=https://cms.example.com
-VITE_CMS_TOKEN=
-
-# Server
-PORT=3001
-CLIENT_URL=http://localhost:5173
-```
-
-## Projektstruktur
-
-```
-metaverse/
-├── apps/
-│   ├── web/          # Vite + Three.js Client
-│   └── server/       # Socket.io Multiplayer Server
-├── packages/
-│   ├── core/         # Engine, Template-System, Theme
-│   ├── ui/           # React UI Components
-│   ├── avatars/      # Ready Player Me Integration
-│   ├── voice/        # Spatial Audio, WebRTC
-│   ├── audio/        # Ambient-Sound-System
-│   ├── net/          # Multiplayer Client
-│   ├── ai/           # AI-Bridge zu wattos_plattform
-│   └── content/      # Content Provider (Local/Strapi)
-└── docs/             # Docusaurus Dokumentation
-```
-
-## Features
-
-- ✅ Multiplayer (Socket.io, standardmäßig aktiv)
-- ✅ Ready Player Me Avatar-Integration
-- ✅ Spatial Audio mit räumlichen Effekten
-- ✅ Ambient-Audio-System (Hintergrundgeräusche)
-- ✅ Template-System (austauschbar)
+- ✅ Multiplayer (Socket.io)
+- ✅ Authentication (Username-basiert)
+- ✅ File Upload (S3)
+- ✅ Professional Assets (PolyHaven)
+- ✅ Landscape Templates
+- ✅ Zone System
 - ✅ WebXR Support
-- ✅ AI-Bridge zu wattos_plattform
-- ✅ Content Provider (Local/Strapi)
 
-## Scripts
+## 🔧 Scripts
 
-### Setup
+```bash
+# Assets
+pnpm assets:professional      # Professionelle Assets herunterladen
+pnpm templates:download       # Landschafts-Templates herunterladen
+pnpm optimize:all             # Alle Templates optimieren
+pnpm pipeline:full            # Komplette Pipeline (Download + Optimierung)
 
-- `pnpm setup:env` - Erstellt `.env.local` aus `.env.example`
-- `pnpm setup:decoders` - Lädt Draco/KTX2 Decoder-Dateien herunter
+# Development
+pnpm dev                      # Dev-Server starten
+pnpm dev:eco                  # Dev-Server mit watt-eco Template
+pnpm build                    # Production Build
+pnpm test                     # Unit Tests
+pnpm e2e                      # E2E Tests
+```
 
-### Development
+## 📖 Weitere Informationen
 
-- `pnpm dev` - Startet alle Development-Server
-- `pnpm dev:client` - Startet nur Client (Port 5173)
-- `pnpm dev:server` - Startet nur Server (Port 3001)
-
-### Build & Test
-
-- `pnpm build` - Baut alle Packages
-- `pnpm lint` - Lintet alle Packages
-- `pnpm typecheck` - TypeScript Type-Check
-- `pnpm test` - Führt Tests aus
-- `pnpm e2e` - E2E Tests (Playwright)
-
-### Assets
-
-- `pnpm assets:import` - Importiert Assets (HDRI/GLB/Audio)
-- `pnpm assets:attr` - Generiert Attribution aus Manifesten
-
-## Lizenz
-
-Private - WattWelten
+Siehe [PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md) für Details.

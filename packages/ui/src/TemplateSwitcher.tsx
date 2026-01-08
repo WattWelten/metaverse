@@ -61,8 +61,7 @@ export function TemplateSwitcher({
               style={{
                 display: 'block',
                 width: '100%',
-                background:
-                  templateId === currentTemplate ? '#3b82f6' : 'transparent',
+                background: templateId === currentTemplate ? '#3b82f6' : 'transparent',
                 color: '#fff',
                 border: 'none',
                 padding: '8px 12px',
@@ -80,4 +79,3 @@ export function TemplateSwitcher({
     </div>
   );
 }
-

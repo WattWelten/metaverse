@@ -24,22 +24,15 @@ export function AvatarPanel({ onSetUrl }: AvatarPanelProps) {
     <div
       className="avatar-panel"
       style={{
-        position: 'fixed',
-        top: '80px',
-        right: '20px',
-        background: 'rgba(0, 0, 0, 0.7)',
-        padding: '16px',
-        borderRadius: '8px',
-        color: '#fff',
-        zIndex: 1000,
-        minWidth: '320px',
+        display: 'inline-flex',
+        gap: 6,
+        alignItems: 'center',
       }}
       data-testid="avatar-panel"
     >
-      <h3 style={{ margin: '0 0 12px 0', fontSize: '16px' }}>Avatar URL</h3>
       <input
         type="text"
-        placeholder="Ready Player Me / GLB / VRM URL"
+        placeholder="Avatar-URL (RPM/VRM/GLB)"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
         onKeyDown={(e) => {
@@ -48,32 +41,30 @@ export function AvatarPanel({ onSetUrl }: AvatarPanelProps) {
           }
         }}
         style={{
-          width: '100%',
-          padding: '8px',
-          marginBottom: '8px',
+          width: 320,
+          padding: '4px 8px',
           borderRadius: '4px',
           border: '1px solid rgba(255, 255, 255, 0.3)',
           background: 'rgba(255, 255, 255, 0.1)',
           color: '#fff',
-          fontSize: '14px',
+          fontSize: '12px',
         }}
       />
       <button
         onClick={handleSpawn}
         disabled={!url.trim() || loading}
         style={{
-          width: '100%',
-          padding: '8px 16px',
+          padding: '4px 12px',
           borderRadius: '4px',
           border: 'none',
           background: url.trim() && !loading ? 'rgba(0, 200, 0, 0.7)' : 'rgba(100, 100, 100, 0.5)',
           color: '#fff',
           cursor: url.trim() && !loading ? 'pointer' : 'not-allowed',
-          fontSize: '14px',
+          fontSize: '12px',
           fontWeight: 'bold',
         }}
       >
-        {loading ? 'Loading...' : 'Spawn Avatar'}
+        {loading ? 'Loading...' : 'Spawn/Update'}
       </button>
     </div>
   );

@@ -20,12 +20,14 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "howler": "^2.2.4"
+    "howler": "^2.2.4",
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "@metaverse/eslint-config": "workspace:*",
     "@metaverse/tsconfig": "workspace:*",
     "@types/howler": "^2.2.11",
+    "@types/three": "^0.170.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
   }

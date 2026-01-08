@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Excalidraw, convertToExcalidrawElements } from '@excalidraw/excalidraw';
 import { WhiteboardClient } from '@metaverse/whiteboard';
+import { useEffect, useMemo, useState } from 'react';
 
 const ENABLED = import.meta.env.VITE_WHITEBOARD_ENABLED === 'true';
 

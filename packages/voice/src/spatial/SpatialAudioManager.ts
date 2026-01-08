@@ -62,6 +62,27 @@ export class SpatialAudioManager {
     }
   }
 
+  /**
+   * Apply zone-specific audio settings (gain, reverb)
+   */
+  applyZoneSettings(userId: string, gain: number, reverb?: 'none' | 'hall'): void {
+    if (this.enabled) {
+      this.audioEffects.applyZoneGain(userId, gain);
+      if (reverb) {
+        this.audioEffects.applyZoneReverb(userId, reverb);
+      }
+    }
+  }
+
+  /**
+   * Apply zone settings to all speakers
+   */
+  applyZoneSettingsToAll(gain: number, reverb?: 'none' | 'hall'): void {
+    for (const userId of this.speakerPositions.keys()) {
+      this.applyZoneSettings(userId, gain, reverb);
+    }
+  }
+
   getAudioGraph(): AudioGraph {
     return this.audioGraph;
   }

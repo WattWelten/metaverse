@@ -33,6 +33,3 @@ node scripts/update-deps.js
 ### Peer-Dependency-Warnungen
 
 Einige Packages (z.B. `@readyplayerme/web-3d-viewer`) haben spezifische Peer-Dependency-Anforderungen. Diese Warnungen sind normalerweise unkritisch, solange die Hauptversionen kompatibel sind.
-
-
-

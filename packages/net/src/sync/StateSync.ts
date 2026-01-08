@@ -27,6 +27,3 @@ export class StateSync {
     this.states.clear();
   }
 }
-
-
-

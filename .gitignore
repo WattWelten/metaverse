@@ -21,6 +21,9 @@ build/
 coverage/
 .nyc_output/
 *.log
+playwright-report/
+test-results/
+*.spec.ts.snap
 
 # IDE
 .vscode/

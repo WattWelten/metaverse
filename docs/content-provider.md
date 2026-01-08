@@ -59,6 +59,3 @@ const provider = createContentProvider('strapi', {
   token: 'your-token',
 });
 ```
-
-
-

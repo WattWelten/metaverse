@@ -5,6 +5,3 @@ export interface ContentProvider {
   update<T = unknown>(type: string, id: string, data: Partial<T>): Promise<T>;
   uploadAsset(file: File | Blob, path?: string): Promise<{ url: string; id: string }>;
 }
-
-
-

@@ -13,7 +13,7 @@ export class Replicator {
 
   handleAvatarUpdate(userId: string, update: AvatarUpdate): void {
     this.avatarUpdates.set(userId, update);
-    
+
     this.callbacks.forEach((callback) => {
       callback(update);
     });
@@ -38,6 +38,3 @@ export class Replicator {
     this.avatarUpdates.clear();
   }
 }
-
-
-

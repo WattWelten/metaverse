@@ -74,4 +74,3 @@ export const indoorLightingPreset: LightingPreset = {
     position: { x: -3, y: 3, z: -3 },
   },
 };
-

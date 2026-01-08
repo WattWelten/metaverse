@@ -105,4 +105,11 @@ export class VoiceClient {
   getSpatialAudioManager(): SpatialAudioManager {
     return this.spatialAudioManager;
   }
+
+  /**
+   * Apply zone-specific audio settings
+   */
+  applyZoneSettings(gain: number, reverb?: 'none' | 'hall'): void {
+    this.spatialAudioManager.applyZoneSettingsToAll(gain, reverb);
+  }
 }

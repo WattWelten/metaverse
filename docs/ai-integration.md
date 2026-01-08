@@ -54,6 +54,3 @@ Wenn `AI_ENABLED=false`, wird eine No-Op-Implementierung verwendet:
 ```typescript
 const bridge = AgentBridge.createNoOp();
 ```
-
-
-

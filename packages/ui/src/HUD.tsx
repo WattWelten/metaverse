@@ -25,13 +25,24 @@ export function HUD({
   roomId,
   onCopyLink,
 }: HUDProps) {
+  interface WindowWithFeatureFlags extends Window {
+    __featureFlags?: {
+      WHITEBOARD_ENABLED?: boolean;
+      VOICE_ENABLED?: boolean;
+      MULTIPLAYER_ENABLED?: boolean;
+    };
+  }
+
   // Dynamically check feature flags (will be passed from App.tsx)
   const whiteboardEnabled =
-    typeof window !== 'undefined' && (window as any).__featureFlags?.WHITEBOARD_ENABLED;
+    typeof window !== 'undefined' &&
+    (window as WindowWithFeatureFlags).__featureFlags?.WHITEBOARD_ENABLED;
   const voiceEnabledFlag =
-    typeof window !== 'undefined' && (window as any).__featureFlags?.VOICE_ENABLED;
+    typeof window !== 'undefined' &&
+    (window as WindowWithFeatureFlags).__featureFlags?.VOICE_ENABLED;
   const multiplayerEnabled =
-    typeof window !== 'undefined' && (window as any).__featureFlags?.MULTIPLAYER_ENABLED;
+    typeof window !== 'undefined' &&
+    (window as WindowWithFeatureFlags).__featureFlags?.MULTIPLAYER_ENABLED;
   return (
     <div
       style={{

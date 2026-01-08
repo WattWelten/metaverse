@@ -6,6 +6,3 @@ export class LiveKitAdapter {
   // LiveKit SDK integration would go here
   // This is a placeholder for future implementation
 }
-
-
-

@@ -44,6 +44,3 @@ export class Presence {
     this.users.clear();
   }
 }
-
-
-

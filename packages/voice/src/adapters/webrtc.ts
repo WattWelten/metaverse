@@ -88,8 +88,9 @@ export class WebRTCAdapter {
       }
 
       // Check if peer already exists
-      if (this.peers.has(userId)) {
-        resolve(this.peers.get(userId)!);
+      const existingPeer = this.peers.get(userId);
+      if (existingPeer) {
+        resolve(existingPeer);
         return;
       }
 

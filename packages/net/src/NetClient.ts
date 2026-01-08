@@ -11,6 +11,7 @@ export interface NetClientConfig {
   userId: string;
   roomId?: string;
   autoConnect?: boolean;
+  sessionId?: string;
 }
 
 export class NetClient {
@@ -46,6 +47,14 @@ export class NetClient {
       reconnectionAttempts: 2, // Reduziert auf 2 Retries (insgesamt 3 Versuche: initial + 2 retries)
       reconnectionDelayMax: 3000, // Max 3 Sekunden zwischen Versuchen
       timeout: 3000, // Connection timeout (3 Sekunden)
+      auth: {
+        sessionId: this.config.sessionId,
+      },
+      extraHeaders: this.config.sessionId
+        ? {
+            Authorization: `Bearer ${this.config.sessionId}`,
+          }
+        : undefined,
     });
 
     this.setupEventHandlers();
@@ -234,6 +243,41 @@ export class NetClient {
     }) => void
   ): void {
     this.socket?.on('media-share', (data) => {
+      callback(data);
+    });
+  }
+
+  shareFile(data: {
+    fileId: string;
+    url: string;
+    mimeType: string;
+    originalName: string;
+    position?: { x: number; y: number; z: number };
+  }): void {
+    if (!this.socket?.connected || !this.config.roomId) {
+      return;
+    }
+
+    this.socket.emit('file-share', {
+      roomId: this.config.roomId,
+      userId: this.config.userId,
+      ...data,
+      timestamp: Date.now(),
+    });
+  }
+
+  onFileShare(
+    callback: (data: {
+      userId: string;
+      fileId: string;
+      url: string;
+      mimeType: string;
+      originalName: string;
+      position?: { x: number; y: number; z: number };
+      timestamp: number;
+    }) => void
+  ): void {
+    this.socket?.on('file-share', (data) => {
       callback(data);
     });
   }

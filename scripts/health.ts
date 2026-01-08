@@ -49,6 +49,12 @@ interface HealthReport {
     dracoFiles: boolean;
     ktx2Files: boolean;
   };
+  buildValidation?: {
+    typescript: { status: 'ok' | 'error' | 'unknown'; errors?: number };
+    eslint: { status: 'ok' | 'error' | 'unknown'; errors?: number };
+    build: { status: 'ok' | 'error' | 'unknown'; packages?: number };
+    tests: { status: 'ok' | 'error' | 'unknown'; passed?: number; failed?: number };
+  };
 }
 
 function getPackageVersion(packageJson: Record<string, unknown>, name: string): string {
@@ -217,6 +223,20 @@ function checkFlags(): Record<string, boolean | string> {
     }
   }
 
+  // Explicitly check for new feature flags
+  const featureFlags = [
+    'TEMPLATE_ID',
+    'MULTIPLAYER_ENABLED',
+    'NAV_DEBUG',
+    'VOICE_ENABLED',
+    'DEBUG_ENABLED',
+  ];
+  for (const flag of featureFlags) {
+    if (!(flag in flags)) {
+      flags[flag] = flag === 'TEMPLATE_ID' ? 'watt-eco' : false;
+    }
+  }
+
   return flags;
 }
 
@@ -382,6 +402,99 @@ function checkDecoderFiles(): {
   };
 }
 
+function checkBuildValidation(): {
+  typescript: { status: 'ok' | 'error' | 'unknown'; errors?: number };
+  eslint: { status: 'ok' | 'error' | 'unknown'; errors?: number };
+  build: { status: 'ok' | 'error' | 'unknown'; packages?: number };
+  tests: { status: 'ok' | 'error' | 'unknown'; passed?: number; failed?: number };
+} {
+  // Check TypeScript config
+  const baseConfigPath = join(rootDir, 'tsconfig.base.json');
+  let typescriptStatus: 'ok' | 'error' | 'unknown' = 'unknown';
+  if (existsSync(baseConfigPath)) {
+    try {
+      const baseConfig = JSON.parse(readFileSync(baseConfigPath, 'utf-8'));
+      const hasStrict = baseConfig.compilerOptions?.strict === true;
+      const hasNoUnusedLocals = baseConfig.compilerOptions?.noUnusedLocals === true;
+      const hasNoUnusedParameters = baseConfig.compilerOptions?.noUnusedParameters === true;
+      typescriptStatus = hasStrict && hasNoUnusedLocals && hasNoUnusedParameters ? 'ok' : 'error';
+    } catch {
+      typescriptStatus = 'error';
+    }
+  }
+
+  // Check ESLint config
+  const eslintConfigPath = join(rootDir, 'packages/eslint-config/eslint.config.js');
+  const eslintStatus: 'ok' | 'error' | 'unknown' = existsSync(eslintConfigPath) ? 'ok' : 'error';
+
+  // Check build outputs
+  const packages = [
+    'packages/core',
+    'packages/ui',
+    'packages/avatars',
+    'packages/voice',
+    'packages/audio',
+    'packages/net',
+    'packages/ai',
+    'packages/content',
+    'packages/xr',
+    'packages/environment',
+    'packages/interactions',
+    'packages/moderation',
+    'packages/navigation',
+    'packages/whiteboard',
+    'packages/collab',
+  ];
+
+  let buildStatus: 'ok' | 'error' | 'unknown' = 'unknown';
+  let builtPackages = 0;
+  for (const pkg of packages) {
+    const distPath = join(rootDir, pkg, 'dist');
+    if (existsSync(distPath)) {
+      const files = readdirSync(distPath);
+      if (files.length > 0) {
+        builtPackages++;
+      }
+    }
+  }
+
+  const webDistPath = join(rootDir, 'apps/web/dist');
+  const serverDistPath = join(rootDir, 'apps/server/dist');
+  if (existsSync(webDistPath) && existsSync(serverDistPath)) {
+    builtPackages += 2;
+  }
+
+  buildStatus = builtPackages >= packages.length ? 'ok' : 'error';
+
+  // Check test files exist
+  const testStatus: 'ok' | 'error' | 'unknown' = 'unknown';
+  const testFiles = [
+    'apps/web/src/__tests__',
+    'apps/server/src/__tests__',
+    'packages/core/src/__tests__',
+    'packages/audio/src/__tests__',
+    'packages/avatars/src/__tests__',
+  ];
+  let hasTests = false;
+  for (const testPath of testFiles) {
+    const fullPath = join(rootDir, testPath);
+    if (existsSync(fullPath)) {
+      const files = readdirSync(fullPath);
+      if (files.some((f) => f.endsWith('.test.ts') || f.endsWith('.spec.ts'))) {
+        hasTests = true;
+        break;
+      }
+    }
+  }
+
+  return {
+    typescript: { status: typescriptStatus },
+    eslint: { status: eslintStatus },
+    build: { status: buildStatus, packages: builtPackages },
+    tests: { status: hasTests ? 'ok' : 'unknown' },
+  };
+}
+
 async function main(): Promise<void> {
   const rootPackageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
   const webPackageJson = JSON.parse(readFileSync(join(rootDir, 'apps/web/package.json'), 'utf-8'));
@@ -519,6 +632,9 @@ ${
   // Check decoder files
   report.decoders = checkDecoderFiles();
 
+  // Check build validation
+  report.buildValidation = checkBuildValidation();
+
   // Update report content with new sections
   const updatedReportContent =
     reportContent +
@@ -559,6 +675,12 @@ ${
 ## Decoder Files
 - Draco Files: ${report.decoders?.dracoFiles ? '✅' : '❌'}
 - KTX2 Files: ${report.decoders?.ktx2Files ? '✅' : '❌'}
+
+## Build Validation
+- TypeScript Config: ${report.buildValidation?.typescript.status === 'ok' ? '✅' : report.buildValidation?.typescript.status === 'error' ? '❌' : '⚠️'}
+- ESLint Config: ${report.buildValidation?.eslint.status === 'ok' ? '✅' : '❌'}
+- Build Outputs: ${report.buildValidation?.build.status === 'ok' ? `✅ (${report.buildValidation.build.packages} packages)` : '❌'}
+- Tests: ${report.buildValidation?.tests.status === 'ok' ? '✅' : '⚠️'}
 `;
 
   writeFileSync(reportPath, updatedReportContent, 'utf-8');

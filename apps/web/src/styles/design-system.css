@@ -1,0 +1,241 @@
+/* SF Pro Font Stack */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* Apple System Colors */
+  --color-system-blue: #0a84ff;
+  --color-system-green: #30d158;
+  --color-system-indigo: #5e5ce6;
+  --color-system-orange: #ff9f0a;
+  --color-system-pink: #ff375f;
+  --color-system-purple: #bf5af2;
+  --color-system-red: #ff453a;
+  --color-system-teal: #40c8e0;
+  --color-system-yellow: #ffd60a;
+
+  /* Label Colors (Dark Mode) */
+  --color-label: rgba(255, 255, 255, 0.9);
+  --color-label-secondary: rgba(255, 255, 255, 0.6);
+  --color-label-tertiary: rgba(255, 255, 255, 0.4);
+  --color-label-quaternary: rgba(255, 255, 255, 0.18);
+
+  /* Fill Colors */
+  --color-fill-primary: rgba(120, 120, 128, 0.36);
+  --color-fill-secondary: rgba(120, 120, 128, 0.32);
+  --color-fill-tertiary: rgba(120, 120, 128, 0.24);
+  --color-fill-quaternary: rgba(120, 120, 128, 0.18);
+
+  /* Background Colors */
+  --color-background: #000000;
+  --color-background-secondary: #1c1c1e;
+  --color-background-tertiary: #2c2c2e;
+
+  /* Glassmorphism */
+  --glass-background: rgba(28, 28, 30, 0.8);
+  --glass-backdrop-blur: blur(20px);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  /* Typography */
+  --font-system:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Menlo', monospace;
+
+  /* Animation */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+
+  /* Spacing Scale (Apple-inspired 4px base) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+  --spacing-4xl: 40px;
+  --spacing-5xl: 48px;
+
+  /* Border Radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.25);
+
+  /* Z-Index Scale */
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-fixed: 1200;
+  --z-modal-backdrop: 1300;
+  --z-modal: 1400;
+  --z-popover: 1500;
+  --z-tooltip: 1600;
+  --z-overlay: 10000;
+}
+
+/* Glassmorphism Utility Class */
+.glass {
+  background: var(--glass-background);
+  backdrop-filter: var(--glass-backdrop-blur);
+  -webkit-backdrop-filter: var(--glass-backdrop-blur);
+  border: 1px solid var(--glass-border);
+}
+
+/* Apple Button Style */
+.btn-apple {
+  font-family: var(--font-system);
+  font-weight: 600;
+  font-size: 17px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-system-blue);
+  color: white;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn-apple:hover {
+  background: #0071e3;
+  transform: scale(1.02);
+}
+
+.btn-apple:active {
+  transform: scale(0.98);
+}
+
+.btn-apple:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Apple Input Style */
+.input-apple {
+  font-family: var(--font-system);
+  font-size: 17px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--color-fill-primary);
+  background: var(--color-background-secondary);
+  color: var(--color-label);
+  transition: all var(--duration-fast) var(--ease-out);
+  -webkit-font-smoothing: antialiased;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input-apple:focus {
+  outline: none;
+  border-color: var(--color-system-blue);
+  background: var(--color-background-tertiary);
+}
+
+.input-apple::placeholder {
+  color: var(--color-label-tertiary);
+}
+
+/* Apple Typography */
+.text-large-title {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-title1 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-title2 {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-title3 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-headline {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-body {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.4;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-callout {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-subheadline {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.4;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-footnote {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-caption1 {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-caption2 {
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}

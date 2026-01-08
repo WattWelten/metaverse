@@ -8,4 +8,3 @@ export async function loadAvaturnAvatar(_avaturnUrl: string): Promise<Object3D> 
   // For MVP, we'll provide a stub that can be extended
   throw new Error('Avaturn loader not yet implemented. Use Ready Player Me for MVP.');
 }
-

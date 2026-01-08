@@ -63,6 +63,3 @@ Vordefinierte Presets:
 - `nature`: Vogelgezwitscher, Wasserrauschen
 - `urban`: Verkehr, Stadtgeräusche
 - `indoor`: Innenraum-Ambient
-
-
-

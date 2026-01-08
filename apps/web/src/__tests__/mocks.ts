@@ -146,17 +146,37 @@ export function mockAvatarManager() {
   return {
     AvatarManager: vi.fn(() => ({
       setNetClient: vi.fn(),
-      loadAvatar: vi.fn().mockResolvedValue({}),
+      loadAvatar: vi.fn().mockResolvedValue({
+        userId: 'test-user',
+        object: {
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { y: 0 },
+        },
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+      }),
       updateAvatar: vi.fn(),
       updateInterpolation: vi.fn(),
       updateAnimations: vi.fn(),
       getAllAvatars: vi.fn(() => []),
-      getAvatar: vi.fn(() => null),
+      getAvatar: vi.fn(() => ({
+        userId: 'test-user',
+        object: {
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { y: 0 },
+        },
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+      })),
       removeAvatar: vi.fn(),
       createCapsuleAvatar: vi.fn(() => ({
         userId: 'test-user',
-        object: {},
+        object: {
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { y: 0 },
+        },
         position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
       })),
       setName: vi.fn(),
       setLocalVisibleHead: vi.fn(),

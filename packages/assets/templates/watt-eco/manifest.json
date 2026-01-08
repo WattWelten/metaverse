@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "assets": {
     "scene": "scene.glb",
-    "hdri": "hdri.hdr"
+    "hdri": "/assets/watt-eco/forest_slope_2k.hdr"
   },
   "lighting": {
     "exposure": 1,
-    "hdri": "hdri.hdr",
+    "hdri": "/assets/watt-eco/forest_slope_2k.hdr",
     "ambient": {
       "color": "#ffaa66",
       "intensity": 0.3
@@ -43,5 +43,93 @@
         "loop": true
       }
     ]
-  }
+  },
+  "props": [
+    {
+      "id": "bench-main",
+      "type": "bench",
+      "pos": [1, 0, -5],
+      "rotY": 30,
+      "seats": 3
+    },
+    {
+      "id": "bench-lake",
+      "type": "bench",
+      "pos": [-6, 0, -12],
+      "rotY": -35,
+      "seats": 2
+    },
+    {
+      "id": "firepit",
+      "type": "firepit",
+      "pos": [-2, 0, -9],
+      "rotY": 0,
+      "radius": 2.2
+    },
+    {
+      "id": "sign-welcome",
+      "type": "sign",
+      "pos": [0, 0, -3.2],
+      "rotY": 0,
+      "text": "Willkommen im WattWelten Metaverse"
+    }
+  ],
+  "zones": [
+    {
+      "id": "stage",
+      "label": "Bühne",
+      "shape": "sphere",
+      "pos": [0, 0, -8],
+      "r": 6,
+      "gain": 1.2,
+      "reverb": "hall"
+    },
+    {
+      "id": "groupA",
+      "label": "Treffpunkt A",
+      "shape": "sphere",
+      "pos": [-8, 0, -4],
+      "r": 4,
+      "gain": 1
+    },
+    {
+      "id": "groupB",
+      "label": "Treffpunkt B",
+      "shape": "sphere",
+      "pos": [7, 0, -4],
+      "r": 4,
+      "gain": 1
+    },
+    {
+      "id": "quiet",
+      "label": "Ruhezone",
+      "shape": "sphere",
+      "pos": [12, 0, 5],
+      "r": 3,
+      "gain": 0.7
+    }
+  ],
+  "screens": [
+    {
+      "id": "main",
+      "pos": [0, 2.2, -10],
+      "size": [4, 2.25]
+    }
+  ],
+  "ambience": [
+    {
+      "id": "fire",
+      "type": "loop",
+      "pos": [-2, 0, -9],
+      "url": "/assets/watt-eco/audio/silence.wav",
+      "maxDist": 20
+    },
+    {
+      "id": "water",
+      "type": "loop",
+      "pos": [-12, 0, -10],
+      "url": "/assets/watt-eco/audio/silence.wav",
+      "maxDist": 26
+    }
+  ]
 }

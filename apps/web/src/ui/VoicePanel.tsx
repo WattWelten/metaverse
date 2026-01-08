@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
 import { LiveKitProvider } from '@metaverse/voice';
+import { useEffect, useMemo, useState } from 'react';
 
 const ENABLED = import.meta.env.VITE_VOICE_ENABLED === 'true';
 

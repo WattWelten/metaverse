@@ -29,7 +29,21 @@ export interface TemplateManifest {
     scene?: string;
     hdri?: string;
     navmesh?: string;
+    models?: string[];
+    textures?: {
+      ground?: string;
+      path?: string;
+      [key: string]: string | undefined;
+    };
   };
+  placedAssets?: Array<{
+    id: string;
+    model: string;
+    position: [number, number, number];
+    rotation?: [number, number, number];
+    scale?: number;
+    variant?: number;
+  }>;
   portals?: Array<{
     id: string;
     position: { x: number; y: number; z: number };
@@ -49,6 +63,51 @@ export interface TemplateManifest {
     type: 'portal' | 'panel' | 'poll' | 'custom';
     position: { x: number; y: number; z: number };
     data?: Record<string, unknown>;
+  }>;
+  props?: Array<
+    | {
+        id: string;
+        type: 'bench';
+        pos: [number, number, number];
+        rotY: number;
+        seats?: number;
+      }
+    | {
+        id: string;
+        type: 'firepit';
+        pos: [number, number, number];
+        rotY: number;
+        radius?: number;
+      }
+    | {
+        id: string;
+        type: 'sign';
+        pos: [number, number, number];
+        rotY: number;
+        text?: string;
+      }
+  >;
+  zones?: Array<{
+    id: string;
+    label?: string;
+    shape: 'sphere' | 'box';
+    pos: [number, number, number];
+    r?: number;
+    size?: [number, number, number];
+    gain: number;
+    reverb?: 'none' | 'hall';
+  }>;
+  screens?: Array<{
+    id: string;
+    pos: [number, number, number];
+    size: [number, number];
+  }>;
+  ambience?: Array<{
+    id: string;
+    type: 'loop';
+    pos: [number, number, number];
+    url: string;
+    maxDist?: number;
   }>;
 }
 
