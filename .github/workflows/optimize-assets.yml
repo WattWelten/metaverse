@@ -1,0 +1,44 @@
+name: Optimize Assets
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/web/public/templates/**/*.glb'
+      - 'apps/web/public/assets/**/*.glb'
+      - 'apps/web/public/**/*.{jpg,jpeg,png,webp}'
+      - 'scripts/optimize-assets.ts'
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile
+      
+      - name: Install gltf-transform
+        run: npm install -g @gltf-transform/cli
+      
+      - name: Optimize assets
+        run: pnpm assets:optimize
+      
+      - name: Commit optimized assets
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add apps/web/public/templates/**/*.glb
+          git add apps/web/public/assets/**/*.glb
+          git add apps/web/public/**/*.ktx2
+          git diff --staged --quiet || git commit -m "chore: optimize assets [skip ci]"
+          git push

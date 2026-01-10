@@ -3,17 +3,19 @@ interface UserInfo {
   userId: string;
   roomId: string;
   lastSeen: Date;
+  displayName?: string;
 }
 
 export class PresenceService {
   private users = new Map<string, UserInfo>();
 
-  addUser(socketId: string, userId: string, roomId: string): void {
+  addUser(socketId: string, userId: string, roomId: string, displayName?: string): void {
     this.users.set(socketId, {
       socketId,
       userId,
       roomId,
       lastSeen: new Date(),
+      displayName,
     });
   }
 

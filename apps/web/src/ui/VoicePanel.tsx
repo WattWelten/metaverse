@@ -1,70 +1,138 @@
-import { LiveKitProvider } from '@metaverse/voice';
+import { RTCClient } from '@metaverse/rtc-sfu';
+import { getFeatureFlags } from '../FeatureFlags';
+import { loadPrefs } from '../state/prefs';
+import { logger } from '../utils/logger';
 import { useEffect, useMemo, useState } from 'react';
 
 const ENABLED = import.meta.env.VITE_VOICE_ENABLED === 'true';
 
 interface VoicePanelProps {
   room: string;
+  userId?: string;
+  displayName?: string;
+  role?: 'host' | 'moderator' | 'speaker' | 'guest';
 }
 
-export function VoicePanel({ room }: VoicePanelProps) {
+export function VoicePanel({ room, userId, displayName, role = 'guest' }: VoicePanelProps) {
   const [state, setState] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
-  const [devices, setDevices] = useState<{ id: string; label: string }[]>([]);
+  const [devices, setDevices] = useState<
+    { id: string; label: string; kind: 'audioinput' | 'audiooutput' }[]
+  >([]);
   const [joined, setJoined] = useState(false);
-  const prov = useMemo(() => new LiveKitProvider(), []);
+  const [muted, setMuted] = useState(false);
+  const flags = getFeatureFlags();
+  const prefs = loadPrefs();
+
+  const rtcClient = useMemo(() => new RTCClient(), []);
 
   useEffect(() => {
-    prov.onState?.((s) => setState(s));
-  }, [prov]);
+    // Load devices on mount
+    navigator.mediaDevices.enumerateDevices().then((deviceList) => {
+      setDevices(
+        deviceList
+          .filter((d) => d.kind === 'audioinput' || d.kind === 'audiooutput')
+          .map((d) => ({
+            id: d.deviceId,
+            label: d.label || d.kind,
+            kind: d.kind as 'audioinput' | 'audiooutput',
+          }))
+      );
+    });
+  }, []);
 
   if (!ENABLED) return null;
 
+  const effectiveUserId = userId || `user-${Date.now()}`;
+  const effectiveDisplayName = displayName || prefs.username || 'Guest';
+
   async function join() {
-    const url = import.meta.env.VITE_LIVEKIT_URL || '';
-    const base = import.meta.env.VITE_WATTOS_BASE_URL || '';
-    const tokenUrl = `${base}/voice/token?room=${encodeURIComponent(room)}`;
+    if (!flags.RTC_TOKEN_ENDPOINT) {
+      logger.error('[VoicePanel] RTC_TOKEN_ENDPOINT nicht konfiguriert');
+      setState('error');
+      return;
+    }
+
+    setState('connecting');
     try {
-      const response = await fetch(tokenUrl);
-      // DEV: erwartet raw token (oder JSON.token)
-      const tokenData = await response.text();
-      const token = tokenData.startsWith('{') ? JSON.parse(tokenData).token : tokenData;
-      await prov.join({ url, token, room });
+      await rtcClient.connect({
+        tokenEndpoint: flags.RTC_TOKEN_ENDPOINT,
+        roomId: room,
+        userId: effectiveUserId,
+        displayName: effectiveDisplayName,
+        role,
+      });
+
+      await rtcClient.publishMic();
       setJoined(true);
-      const deviceList = await prov.listDevices();
-      setDevices(deviceList.map((d) => ({ id: d.id, label: d.label || d.id })));
+      setState('connected');
     } catch (error) {
-      console.error('Failed to join voice room:', error);
+      logger.error('[VoicePanel] Failed to join voice room:', error);
       setState('error');
     }
   }
 
   async function leave() {
-    await prov.leave();
+    rtcClient.stopMic();
+    rtcClient.disconnect();
     setJoined(false);
+    setState('idle');
   }
 
-  async function mute(m: boolean) {
-    await prov.mute(m);
+  async function toggleMute() {
+    if (muted) {
+      await rtcClient.publishMic();
+      setMuted(false);
+    } else {
+      rtcClient.stopMic();
+      setMuted(true);
+    }
   }
 
   return (
-    <div className="voice-panel" data-testid="voice-panel">
-      <div>Voice: {state}</div>
+    <div
+      className="voice-panel"
+      data-testid="voice-panel"
+      style={{
+        padding: '1rem',
+        background: 'rgba(0,0,0,0.8)',
+        borderRadius: '8px',
+        color: 'white',
+      }}
+    >
+      <div style={{ marginBottom: '0.5rem' }}>
+        <strong>Voice:</strong> {state}
+        {joined && (
+          <span style={{ marginLeft: '0.5rem', color: muted ? '#f00' : '#0f0' }}>
+            {muted ? '🔇 Muted' : '🎤 Active'}
+          </span>
+        )}
+      </div>
       {!joined ? (
-        <button onClick={join}>Join</button>
+        <button onClick={join} disabled={state === 'connecting'}>
+          {state === 'connecting' ? 'Connecting...' : 'Join Voice'}
+        </button>
       ) : (
-        <>
-          <button onClick={leave}>Leave</button>
-          <button onClick={() => mute(true)}>Mute</button>
-          <button onClick={() => mute(false)}>Unmute</button>
-          <select onChange={(e) => prov.setInputDevice(e.target.value)}>
-            {devices.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.label}
-              </option>
-            ))}
+        <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={toggleMute}>{muted ? 'Unmute' : 'Mute'}</button>
+            <button onClick={leave}>Leave</button>
+          </div>
+          <select
+            onChange={(e) => {
+              rtcClient.publishMic(e.target.value || undefined);
+            }}
+            style={{ marginTop: '0.5rem' }}
+          >
+            <option value="">Default Device</option>
+            {devices
+              .filter((d) => d.kind === 'audioinput')
+              .map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.label}
+                </option>
+              ))}
           </select>
-        </>
+        </div>
       )}
     </div>
   );

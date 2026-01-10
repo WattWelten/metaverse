@@ -9,7 +9,9 @@ interface WhiteboardPanelProps {
 }
 
 export function WhiteboardPanel({ room }: WhiteboardPanelProps) {
-  const wsUrl = import.meta.env.VITE_YWS_URL || 'ws://localhost:1234';
+  // Y-WebSocket ist jetzt in apps/server integriert
+  const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+  const wsUrl = serverUrl.replace(/^http/, 'ws') + '/yws?room=' + encodeURIComponent(room);
   const [ready, setReady] = useState(false);
   const y = useMemo(() => new WhiteboardClient(wsUrl, room), [wsUrl, room]);
 

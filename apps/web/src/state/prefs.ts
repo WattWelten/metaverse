@@ -10,6 +10,7 @@ export interface Prefs {
   mouseLockEnabled?: boolean;
   audioVolume?: number;
   recentAvatars?: string[];
+  role?: 'host' | 'moderator' | 'speaker' | 'guest';
 }
 
 const KEY = 'ww_prefs_v1';

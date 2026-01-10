@@ -29,8 +29,33 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'desktop-1',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'desktop-2',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'desktop-3',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['iPhone 12'] },
+    },
+    // Legacy projects for other tests
+    {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
     },
     {
       name: 'Mobile Chrome',

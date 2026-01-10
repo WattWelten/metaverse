@@ -1,0 +1,29 @@
+{
+  "name": "@metaverse/rtc-sfu",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "lint": "eslint src --fix",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "livekit-client": "^2.5.0"
+  },
+  "devDependencies": {
+    "@metaverse/eslint-config": "workspace:*",
+    "@metaverse/tsconfig": "workspace:*",
+    "typescript": "^5.9.3"
+  }
+}

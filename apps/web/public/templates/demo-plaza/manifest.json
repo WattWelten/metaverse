@@ -1,0 +1,64 @@
+{
+  "id": "demo-plaza",
+  "name": "Demo Plaza",
+  "version": "1.0.0",
+  "description": "Demo-Szene mit Stage + 2 Breakout-Zonen",
+  "assets": {
+    "scene": "scene.glb",
+    "hdri": "env.hdr",
+    "navmesh": "navmesh.glb"
+  },
+  "spawn": {
+    "x": 0,
+    "y": 1.6,
+    "z": 0
+  },
+  "zones": [
+    {
+      "id": "stage",
+      "label": "Stage",
+      "shape": "circle",
+      "center": [0, 0],
+      "radius": 5,
+      "isStage": true,
+      "maxParticipants": 10
+    },
+    {
+      "id": "breakout-1",
+      "label": "Breakout 1",
+      "shape": "circle",
+      "center": [-10, -5],
+      "radius": 4,
+      "isStage": false,
+      "maxParticipants": 5
+    },
+    {
+      "id": "breakout-2",
+      "label": "Breakout 2",
+      "shape": "circle",
+      "center": [10, -5],
+      "radius": 4,
+      "isStage": false,
+      "maxParticipants": 5
+    }
+  ],
+  "audioBeacons": [
+    {
+      "id": "ambient-1",
+      "pos": [0, 1.6, 0],
+      "url": "/audio/ambient-plaza.mp3",
+      "radius": 15,
+      "loop": true,
+      "volume": 0.3
+    }
+  ],
+  "portals": [],
+  "lighting": {
+    "env": "env.hdr",
+    "toneMapping": "ACESFilmic"
+  },
+  "ui": {
+    "showMinimap": true,
+    "showZoneLabels": true
+  }
+}

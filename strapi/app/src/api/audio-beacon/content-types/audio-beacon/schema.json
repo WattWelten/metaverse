@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "audio_beacons",
+  "info": {
+    "singularName": "audio-beacon",
+    "pluralName": "audio-beacons",
+    "displayName": "Audio Beacon"
+  },
+  "attributes": {
+    "idStr": {
+      "type": "string",
+      "required": true
+    },
+    "pos": {
+      "type": "json",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    },
+    "radius": {
+      "type": "decimal",
+      "default": 8
+    }
+  }
+}

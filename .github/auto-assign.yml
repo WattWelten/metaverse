@@ -1,0 +1,9 @@
+addReviewers: true
+addAssignees: false
+reviewers:
+  - WattWelten/maintainers
+  - WattWelten/realtime
+requiredApprovals: 1
+skipKeywords:
+  - WIP
+  - draft

@@ -8,3 +8,4 @@ export * from './effects/AudioEffects.js';
 export * from './providers/IVoiceProvider.js';
 export * from './providers/LiveKitProvider.js';
 export * from './lipsync/index.js';
+export * from './zone-engine.js';

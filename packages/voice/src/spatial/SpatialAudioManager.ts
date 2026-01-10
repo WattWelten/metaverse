@@ -6,10 +6,6 @@ export class SpatialAudioManager {
   private audioGraph: AudioGraph;
   private audioEffects: AudioEffects;
   private listenerPosition: { x: number; y: number; z: number };
-  private listenerOrientation: {
-    forward: { x: number; y: number; z: number };
-    up: { x: number; y: number; z: number };
-  };
   private speakerPositions = new Map<string, { x: number; y: number; z: number }>();
   private enabled: boolean;
   private zoneSystem: ZoneSystem | null = null;
@@ -19,10 +15,6 @@ export class SpatialAudioManager {
     this.audioGraph = new AudioGraph();
     this.audioEffects = new AudioEffects(this.audioGraph.getAudioContext());
     this.listenerPosition = { x: 0, y: 0, z: 0 };
-    this.listenerOrientation = {
-      forward: { x: 0, y: 0, z: -1 },
-      up: { x: 0, y: 1, z: 0 },
-    };
     this.zoneSystem = zoneSystem || null;
   }
 
@@ -52,7 +44,6 @@ export class SpatialAudioManager {
     forward: { x: number; y: number; z: number },
     up: { x: number; y: number; z: number } = { x: 0, y: 1, z: 0 }
   ): void {
-    this.listenerOrientation = { forward, up };
     if (this.enabled) {
       this.audioGraph.setListenerOrientation(forward.x, forward.y, forward.z, up.x, up.y, up.z);
     }

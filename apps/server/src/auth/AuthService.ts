@@ -3,6 +3,8 @@ import { randomUUID } from 'crypto';
 export interface UserSession {
   userId: string;
   username: string;
+  role: 'host' | 'moderator' | 'speaker' | 'guest';
+  email?: string;
   socketId?: string;
   createdAt: Date;
   lastSeen: Date;
@@ -19,13 +21,17 @@ export class AuthService {
   /**
    * Create a new session for a user
    */
-  createSession(username: string): { sessionId: string; user: UserSession } {
+  createSession(
+    username: string,
+    role: 'host' | 'moderator' | 'speaker' | 'guest' = 'guest'
+  ): { sessionId: string; user: UserSession } {
     const userId = randomUUID();
     const sessionId = randomUUID();
 
     const user: UserSession = {
       userId,
       username: username.trim(),
+      role,
       createdAt: new Date(),
       lastSeen: new Date(),
     };

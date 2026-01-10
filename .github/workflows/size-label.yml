@@ -1,0 +1,22 @@
+name: Size Labels
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+permissions:
+  pull-requests: write
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_max_size: '50'
+          s_max_size: '200'
+          m_max_size: '500'
+          l_max_size: '1000'
+          label_xs: 'size:XS'
+          label_s: 'size:S'
+          label_m: 'size:M'
+          label_l: 'size:L'
+          label_xl: 'size:XL'

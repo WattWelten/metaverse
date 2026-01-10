@@ -1,0 +1,25 @@
+name-template: "v$NEXT_PATCH_VERSION"
+tag-template: "v$NEXT_PATCH_VERSION"
+categories:
+  - title: "🚀 Features"
+    labels: ["feat", "feature"]
+  - title: "🐛 Fixes"
+    labels: ["fix", "bug"]
+  - title: "🧰 Wartung"
+    labels: ["chore", "infra", "ci"]
+  - title: "📝 Doku"
+    labels: ["docs"]
+  - title: "🎨 UX"
+    labels: ["ux"]
+  - title: "⚡️ Performance"
+    labels: ["perf"]
+  - title: "🧪 Tests"
+    labels: ["test"]
+change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
+exclude-labels: ["skip-changelog"]
+template: |
+  ## Änderungen
+  $CHANGES
+
+  ## Hinweise
+  - Automatisch generiert via Release Drafter

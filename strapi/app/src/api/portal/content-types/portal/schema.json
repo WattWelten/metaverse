@@ -1,0 +1,19 @@
+{
+  "kind": "collectionType",
+  "collectionName": "portals",
+  "info": {
+    "singularName": "portal",
+    "pluralName": "portals",
+    "displayName": "Portal"
+  },
+  "attributes": {
+    "to": {
+      "type": "string",
+      "required": true
+    },
+    "position": {
+      "type": "json",
+      "required": true
+    }
+  }
+}

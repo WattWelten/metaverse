@@ -31,14 +31,16 @@ export function ParticipantsPanel({ open, onClose, world, stageManager }: Partic
     const initialParticipants = provider.getParticipants?.();
     if (initialParticipants) {
       // Map to ParticipantInfo format
-      const mappedParticipants: ParticipantInfo[] = initialParticipants.map((p) => ({
-        id: p.id,
-        identity: p.identity,
-        name: p.name,
-        isSpeaking: false, // Will be updated by onActiveSpeakers
-        isMuted: p.isMuted ?? false,
-        role: p.role as 'host' | 'participant' | undefined,
-      }));
+      const mappedParticipants: ParticipantInfo[] = initialParticipants.map(
+        (p: ParticipantInfo) => ({
+          id: p.id,
+          identity: p.identity,
+          name: p.name,
+          isSpeaking: false, // Will be updated by onActiveSpeakers
+          isMuted: p.isMuted ?? false,
+          role: p.role as 'host' | 'participant' | undefined,
+        })
+      );
       setParticipants(mappedParticipants);
     }
 
@@ -48,7 +50,7 @@ export function ParticipantsPanel({ open, onClose, world, stageManager }: Partic
       provider.onParticipantUpdate(() => {
         const updated = provider.getParticipants?.();
         if (updated) {
-          const mapped: ParticipantInfo[] = updated.map((p) => ({
+          const mapped: ParticipantInfo[] = updated.map((p: ParticipantInfo) => ({
             id: p.id,
             identity: p.identity,
             name: p.name,

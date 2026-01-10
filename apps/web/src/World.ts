@@ -16,7 +16,13 @@ import { StageManager, parseStageMessage } from '@metaverse/moderation';
 import { NavMeshSystem } from '@metaverse/navigation';
 import { extractHolesFromScene } from '@metaverse/navigation';
 import { NetClient } from '@metaverse/net';
-import { VoiceClient, MicAnalyser } from '@metaverse/voice';
+import {
+  VoiceClient,
+  MicAnalyser,
+  updateZoneMembership,
+  volumeFor,
+  type Zone,
+} from '@metaverse/voice';
 import type { IXRAdapter } from '@metaverse/xr';
 import { createXRAdapter } from '@metaverse/xr';
 import {
@@ -47,8 +53,7 @@ import { NavController } from './navigation/NavController';
 import { PostProcessing } from './render/Post';
 import { TemplateHost } from './TemplateHost';
 import type { VoiceClientWithProvider } from './types/voiceProvider';
-
-// import { buildEcoProfessional } from './environment/EcoProfessional'; // Not used yet
+import { logger } from './utils/logger';
 
 export class World {
   private scene: Scene;
@@ -106,6 +111,8 @@ export class World {
   private seatingSystem: SeatingSystem | null = null;
   private props: BuiltProp[] = [];
   private zoneSystem: ZoneSystem | null = null;
+  private audioZones: Zone[] = []; // Zones from template manifest for audio isolation
+  private currentZoneId: string | null = null; // Current zone membership for audio
   private zoneVisualizer: ZoneVisualizer | null = null;
   private ambience3D: Ambience3D | null = null;
   private screens: ScreenSurface[] = [];
@@ -178,11 +185,11 @@ export class World {
     // WebGL Context Lost Handler
     this.renderer.domElement.addEventListener('webglcontextlost', (event) => {
       event.preventDefault();
-      console.warn('WebGL context lost - attempting to restore...');
+      logger.warn('WebGL context lost - attempting to restore...');
     });
 
     this.renderer.domElement.addEventListener('webglcontextrestored', () => {
-      console.log('WebGL context restored');
+      logger.log('WebGL context restored');
       // Re-initialize renderer settings
       this.renderer.outputColorSpace = SRGBColorSpace;
       this.renderer.toneMapping = ACESFilmicToneMapping;
@@ -351,14 +358,14 @@ export class World {
     }
 
     if (!flags.MULTIPLAYER_ENABLED) {
-      console.log('[World] Multiplayer disabled via feature flag');
+      logger.log('[World] Multiplayer disabled via feature flag');
       return;
     }
 
-    console.log('[World] Initializing Multiplayer...');
+    logger.log('[World] Initializing Multiplayer...');
     const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
     const roomId = this.getRoomIdFromURL();
-    console.log(
+    logger.log(
       `[World] Multiplayer config: serverUrl=${serverUrl}, roomId=${roomId}, userId=${this.userId}`
     );
 
@@ -369,7 +376,7 @@ export class World {
       autoConnect: false, // Manuell verbinden nach Template-Load
       sessionId: this.sessionId || undefined,
     });
-    console.log('[World] ✅ NetClient created');
+    logger.log('[World] ✅ NetClient created');
 
     // Stoppe Reconnection-Versuche nach Timeout
     // Note: connectionTimeout and stopReconnection are reserved for future use
@@ -385,19 +392,19 @@ export class World {
       connectionErrorCount++;
       if (connectionErrorCount === 1) {
         // Nur einmal loggen, nicht bei jedem Reconnection-Versuch
-        console.warn('Server nicht erreichbar - Fallback zu Solo-Modus');
+        logger.warn('Server nicht erreichbar - Fallback zu Solo-Modus');
       }
       this.soloMode = true;
 
       // Stoppe Reconnection nach 3 Fehlern (entspricht reconnectionAttempts: 3)
       if (connectionErrorCount >= 3 && this.netClient) {
-        console.log('Stopping reconnection attempts after multiple failures');
+        logger.log('Stopping reconnection attempts after multiple failures');
         this.netClient.disconnect();
       }
     };
 
     const onConnect = () => {
-      console.log('✅ Connected to multiplayer server');
+      logger.log('✅ Connected to multiplayer server');
       this.soloMode = false;
     };
 
@@ -413,7 +420,7 @@ export class World {
 
   private initAgentBridge(flags: FeatureFlags): void {
     if (!flags.AI_ENABLED) {
-      console.log('[AI] AgentBridge disabled via feature flag');
+      logger.log('[AI] AgentBridge disabled via feature flag');
       return;
     }
 
@@ -428,55 +435,55 @@ export class World {
       });
 
       this.agentBridge.connect().catch((error) => {
-        console.error('[AI] Failed to connect AgentBridge:', error);
+        logger.error('[AI] Failed to connect AgentBridge:', error);
       });
 
       // Event-Handler für AI-Events
       this.agentBridge.on('agent_speech', (data) => {
-        console.log('[AI] Agent speech:', data);
+        logger.log('[AI] Agent speech:', data);
         // Optional: Zeige AI-Nachricht in UI
       });
 
       this.agentBridge.on('tool_call', (data) => {
-        console.log('[AI] Tool call:', data);
+        logger.log('[AI] Tool call:', data);
         // Optional: Führe Aktion aus (z.B. Objekt platzieren)
       });
 
       this.agentBridge.on('connected', () => {
-        console.log('[AI] AgentBridge connected');
+        logger.log('[AI] AgentBridge connected');
       });
 
       this.agentBridge.on('disconnected', () => {
-        console.log('[AI] AgentBridge disconnected');
+        logger.log('[AI] AgentBridge disconnected');
       });
 
       this.agentBridge.on('error', (error) => {
-        console.error('[AI] AgentBridge error:', error);
+        logger.error('[AI] AgentBridge error:', error);
       });
     } catch (error) {
-      console.error('[AI] Failed to initialize AgentBridge:', error);
+      logger.error('[AI] Failed to initialize AgentBridge:', error);
     }
   }
 
   private initAudio(flags: FeatureFlags): void {
     // Ambient Audio
     if (flags.AMBIENT_AUDIO_ENABLED) {
-      console.log('[World] Initializing Ambient Audio...');
+      logger.log('[World] Initializing Ambient Audio...');
       this.ambientManager = new AmbientManager();
-      console.log('[World] ✅ AmbientManager created');
+      logger.log('[World] ✅ AmbientManager created');
     } else {
-      console.log('[World] Ambient Audio disabled via feature flag');
+      logger.log('[World] Ambient Audio disabled via feature flag');
     }
 
     // Voice Client
     if (flags.VOICE_ENABLED) {
       if (!this.netClient) {
-        console.warn(
+        logger.warn(
           '[World] Voice enabled but NetClient not available. Voice requires Multiplayer.'
         );
         return;
       }
-      console.log('[World] Initializing Voice Client...');
+      logger.log('[World] Initializing Voice Client...');
       const roomId = this.getRoomIdFromURL();
       this.voiceClient = new VoiceClient({
         userId: this.userId,
@@ -484,17 +491,17 @@ export class World {
         enableSpatialAudio: true,
         netClient: this.netClient.asVoiceClient(),
       });
-      console.log(`[World] ✅ VoiceClient created (roomId=${roomId}, spatialAudio=true)`);
+      logger.log(`[World] ✅ VoiceClient created (roomId=${roomId}, spatialAudio=true)`);
 
       // Initialize StageManager for moderation features
       if (import.meta.env.VITE_STAGE_ENABLED === 'true') {
-        console.log('[World] Initializing StageManager...');
+        logger.log('[World] Initializing StageManager...');
         this.stageManager = new StageManager();
         this.setupStageModeration();
-        console.log('[World] ✅ StageManager created');
+        logger.log('[World] ✅ StageManager created');
       }
     } else {
-      console.log('[World] Voice disabled via feature flag');
+      logger.log('[World] Voice disabled via feature flag');
     }
   }
 
@@ -560,6 +567,14 @@ export class World {
     return this.zoneSystem;
   }
 
+  getCurrentZoneId(): string | null {
+    return this.currentZoneId;
+  }
+
+  getAudioZones(): Zone[] {
+    return [...this.audioZones];
+  }
+
   private async initXR(): Promise<void> {
     // Verhindere Mehrfach-Initialisierung
     if (this.xrAdapter) {
@@ -588,10 +603,10 @@ export class World {
           this.renderer.toneMappingExposure = 1.0;
         });
       } else {
-        console.warn('XR is not supported on this device');
+        logger.warn('XR is not supported on this device');
       }
     } catch (error) {
-      console.error('Failed to initialize XR:', error);
+      logger.error('Failed to initialize XR:', error);
     }
   }
 
@@ -624,7 +639,7 @@ export class World {
       this.ambientManager.loadFromTemplate(template.manifest);
       // playAll() is async and handles context resume automatically
       this.ambientManager.playAll().catch((error) => {
-        console.warn('Failed to play ambient audio:', error);
+        logger.warn('Failed to play ambient audio:', error);
       });
     }
 
@@ -654,7 +669,7 @@ export class World {
 
     // Multiplayer verbinden (nach Template-Load)
     if (this.netClient && flags.MULTIPLAYER_ENABLED) {
-      console.log('[World] Connecting to multiplayer server...');
+      logger.log('[World] Connecting to multiplayer server...');
       try {
         this.netClient.connect();
 
@@ -683,7 +698,7 @@ export class World {
           };
 
           timeout = setTimeout(() => {
-            console.warn('Connection timeout - continuing in solo mode');
+            logger.warn('Connection timeout - continuing in solo mode');
             this.soloMode = true;
             // Stoppe Reconnection-Versuche nach Timeout
             if (this.netClient) {
@@ -707,17 +722,17 @@ export class World {
         });
 
         if (this.netClient.isConnected() && !this.soloMode) {
-          console.log('[World] ✅ Connected to multiplayer server');
+          logger.log('[World] ✅ Connected to multiplayer server');
           const roomId = this.getRoomIdFromURL();
-          console.log(`[World] Joining room: ${roomId}`);
+          logger.log(`[World] Joining room: ${roomId}`);
           this.netClient.joinRoom(roomId);
           // Lokalen Avatar erstellen
           await this.createLocalAvatar();
           // Chat-Events setzen
           this.setupChat();
-          console.log('[World] ✅ Multiplayer fully initialized');
+          logger.log('[World] ✅ Multiplayer fully initialized');
         } else {
-          console.log('[World] Running in solo mode (server not reachable or connection failed)');
+          logger.log('[World] Running in solo mode (server not reachable or connection failed)');
           // Create avatar even in solo mode for WASD controls
           if (this.avatarManager) {
             const existingAvatar = this.avatarManager.getAvatar(this.userId);
@@ -727,7 +742,7 @@ export class World {
           }
         }
       } catch (error) {
-        console.warn('Multiplayer-Verbindung fehlgeschlagen:', error);
+        logger.warn('Multiplayer-Verbindung fehlgeschlagen:', error);
         this.soloMode = true;
         // Create avatar even if multiplayer fails
         if (this.avatarManager) {
@@ -754,20 +769,20 @@ export class World {
         const prefs = loadPrefs();
         if (prefs.avatarUrl) {
           await this.avatarManager.setLocalAvatarUrl(prefs.avatarUrl);
-          console.log('[World] ✅ Local avatar loaded from prefs:', prefs.avatarUrl);
+          logger.log('[World] ✅ Local avatar loaded from prefs:', prefs.avatarUrl);
         }
         if (prefs.username) {
           this.avatarManager.setName('me', prefs.username);
-          console.log('[World] ✅ Avatar name set:', prefs.username);
+          logger.log('[World] ✅ Avatar name set:', prefs.username);
         }
       } catch (error) {
-        console.warn('[World] Failed to load avatar from prefs:', error);
+        logger.warn('[World] Failed to load avatar from prefs:', error);
       }
     }
 
     // Start render loop
     this.animate();
-    console.log('[World] ready – pointer lock via EnterOverlay');
+    logger.log('[World] ready – pointer lock via EnterOverlay');
   }
 
   async initNavigation(): Promise<void> {
@@ -784,9 +799,9 @@ export class World {
     if (navUrl) {
       try {
         await this.navMeshSystem.loadFromGLB(navUrl, this.scene);
-        console.log('✅ Navmesh loaded from GLB:', navUrl);
+        logger.log('✅ Navmesh loaded from GLB:', navUrl);
       } catch (error) {
-        console.warn('⚠️ Failed to load navmesh GLB, using procedural:', error);
+        logger.warn('⚠️ Failed to load navmesh GLB, using procedural:', error);
         // Fallback auf prozedural
         const { holes, radius } = extractHolesFromScene(this.scene);
         this.navMeshSystem.buildProcedural(this.scene, { radius, holes, y: 0 });
@@ -795,7 +810,7 @@ export class World {
       // 2) Prozedural aus Szene
       const { holes, radius } = extractHolesFromScene(this.scene);
       this.navMeshSystem.buildProcedural(this.scene, { radius, holes, y: 0 });
-      console.log('✅ Procedural navmesh built with', holes.length, 'holes');
+      logger.log('✅ Procedural navmesh built with', holes.length, 'holes');
     }
 
     // Startknoten bestimmen
@@ -825,7 +840,7 @@ export class World {
   }
 
   private cleanupTemplateFeatures(): void {
-    console.log('[World] Cleaning up template features...');
+    logger.log('[World] Cleaning up template features...');
 
     // Cleanup Props
     this.props.forEach((prop) => {
@@ -861,6 +876,8 @@ export class World {
       this.zoneVisualizer = null;
     }
     this.zoneSystem = null;
+    this.audioZones = [];
+    this.currentZoneId = null;
 
     // Cleanup Navmesh
     if (this.navMeshSystem) {
@@ -875,7 +892,7 @@ export class World {
       this.seatingSystem = null;
     }
 
-    console.log('[World] Template features cleaned up');
+    logger.log('[World] Template features cleaned up');
   }
 
   private async initTemplateFeatures(template: TemplateInstance | null): Promise<void> {
@@ -893,31 +910,77 @@ export class World {
           if (prop.seatAnchors && prop.seatAnchors.length > 0) {
             if (!this.seatingSystem) {
               this.seatingSystem = new SeatingSystem();
-              console.log('[World] SeatingSystem created');
+              logger.log('[World] SeatingSystem created');
             }
             this.seatingSystem.registerAnchors(prop.seatAnchors);
-            console.log(
+            logger.log(
               `[World] Registered ${prop.seatAnchors.length} seat anchors from prop ${propDef.id}`
             );
           }
         } catch (error) {
-          console.warn(`Failed to build prop ${propDef.id}:`, error);
+          logger.warn(`Failed to build prop ${propDef.id}:`, error);
         }
       });
-      console.log(`✅ Built ${this.props.length} props`);
+      logger.log(`✅ Built ${this.props.length} props`);
     }
 
     // 2. Zones initialisieren
     if (manifest.zones) {
-      this.zoneSystem = new ZoneSystem(manifest.zones);
-      console.log(`✅ Initialized ${manifest.zones.length} zones`);
+      // manifest.zones are already in ZoneSystem format (sphere/box)
+      const zoneDefs = manifest.zones.map((z) => ({
+        id: z.id,
+        label: z.label,
+        shape: z.shape,
+        pos: z.pos,
+        r: z.r,
+        size: z.size,
+        gain: z.gain,
+        reverb: z.reverb || ('none' as const),
+      }));
+
+      this.zoneSystem = new ZoneSystem(zoneDefs);
+      logger.log(`✅ Initialized ${manifest.zones.length} zones`);
+
+      // Store zones for audio isolation (zone-engine)
+      // Convert ZoneSystem zones (sphere/box) to Zone format (circle/polygon) for audio engine
+      this.audioZones = manifest.zones.map((z): Zone => {
+        if (z.shape === 'sphere' && z.pos && z.r !== undefined) {
+          // Convert sphere to circle
+          return {
+            id: z.id,
+            shape: 'circle',
+            center: [z.pos[0], z.pos[2]], // x, z
+            radius: z.r,
+          };
+        } else if (z.shape === 'box' && z.pos && z.size) {
+          // Convert box to polygon (approximate as rectangle)
+          return {
+            id: z.id,
+            shape: 'polygon',
+            points: [
+              [z.pos[0] - z.size[0] / 2, z.pos[2] - z.size[2] / 2],
+              [z.pos[0] + z.size[0] / 2, z.pos[2] - z.size[2] / 2],
+              [z.pos[0] + z.size[0] / 2, z.pos[2] + z.size[2] / 2],
+              [z.pos[0] - z.size[0] / 2, z.pos[2] + z.size[2] / 2],
+            ],
+          };
+        }
+        // Fallback
+        return {
+          id: z.id,
+          shape: 'circle',
+          center: [0, 0],
+          radius: 5,
+        };
+      });
+      logger.log(`✅ Stored ${this.audioZones.length} audio zones for isolation`);
 
       // Initialize ZoneVisualizer if debug mode is enabled
       if (import.meta.env.VITE_ZONE_DEBUG === 'true' || import.meta.env.DEV) {
         this.zoneVisualizer = new ZoneVisualizer(this.scene);
         this.zoneVisualizer.setEnabled(true);
-        this.zoneVisualizer.visualizeZones(manifest.zones);
-        console.log('✅ Zone visualization enabled');
+        this.zoneVisualizer.visualizeZones(zoneDefs);
+        logger.log('✅ Zone visualization enabled');
       }
     }
 
@@ -928,10 +991,10 @@ export class World {
         try {
           await this.ambience3D.addLoop(amb.id, amb.url, amb.pos, amb.maxDist);
         } catch (error) {
-          console.warn(`Failed to load ambience ${amb.id}:`, error);
+          logger.warn(`Failed to load ambience ${amb.id}:`, error);
         }
       }
-      console.log(`✅ Initialized ${manifest.ambience.length} 3D ambience sources`);
+      logger.log(`✅ Initialized ${manifest.ambience.length} 3D ambience sources`);
     }
 
     // 4. Screens erstellen
@@ -942,7 +1005,7 @@ export class World {
         this.scene.add(screen.mesh);
         this.screens.push(screen);
       });
-      console.log(`✅ Created ${this.screens.length} screens`);
+      logger.log(`✅ Created ${this.screens.length} screens`);
     }
 
     // Resume Ambience3D audio context
@@ -953,18 +1016,18 @@ export class World {
     // 5. Initialize EmoteSystem, MicAnalyser & LipDriver
     if (this.avatarManager && !this.emoteSystem) {
       this.emoteSystem = new EmoteSystem();
-      console.log('✅ EmoteSystem initialized');
+      logger.log('✅ EmoteSystem initialized');
     }
 
     if (this.voiceClient && this.avatarManager && !this.micAnalyser) {
       this.micAnalyser = new MicAnalyser();
       this.lipDriver = new LipDriver();
-      console.log('✅ MicAnalyser and LipDriver initialized');
+      logger.log('✅ MicAnalyser and LipDriver initialized');
     }
 
     // 6. E-Taste Handler für Seating
     if (this.seatingSystem) {
-      console.log('[World] Seating system initialized - E key to sit/stand');
+      logger.log('[World] Seating system initialized - E key to sit/stand');
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key.toLowerCase() === 'e' && this.playerController?.controls.isLocked) {
           const avatar = this.avatarManager?.getAvatar(this.userId);
@@ -973,7 +1036,7 @@ export class World {
             const seated = this.seatingSystem.trySeat(this.camera, avatar?.object);
             if (seated) {
               this.isSitting = this.seatingSystem.isSeated();
-              console.log(
+              logger.log(
                 `[World] ${this.isSitting ? 'Sitting' : 'Standing'} (was: ${wasSeated ? 'sitting' : 'standing'})`
               );
             }
@@ -983,7 +1046,7 @@ export class World {
       window.addEventListener('keydown', handleKeyDown);
       // Cleanup wird in dispose() gemacht
     } else {
-      console.log('[World] Seating system not initialized (no seats in template)');
+      logger.log('[World] Seating system not initialized (no seats in template)');
     }
   }
 
@@ -1019,9 +1082,9 @@ export class World {
         }
 
         texture.dispose();
-        console.log('✅ HDRI loaded:', hdriPath);
+        logger.log('✅ HDRI loaded:', hdriPath);
       } catch (error) {
-        console.warn('⚠️ Failed to load HDRI, using default lights:', error);
+        logger.warn('⚠️ Failed to load HDRI, using default lights:', error);
         // Keep default lights if HDRI fails
       }
     } else {
@@ -1035,7 +1098,7 @@ export class World {
         this.scene.add(sun);
         this.defaultLights = { hemi, sun };
       }
-      console.log('ℹ️ No HDRI in manifest, using default lights');
+      logger.log('ℹ️ No HDRI in manifest, using default lights');
     }
 
     // Apply exposure from manifest if specified
@@ -1055,7 +1118,7 @@ export class World {
 
       await this.avatarManager.loadAvatar(this.userId, avatarUrl, { x: 0, y: 0, z: 0 });
     } catch (error) {
-      console.warn('Failed to load Ready Player Me avatar, using capsule:', error);
+      logger.warn('Failed to load Ready Player Me avatar, using capsule:', error);
       // Fallback: Einfache Kapsel erstellen
       await this.createCapsuleAvatar();
     }
@@ -1095,7 +1158,7 @@ export class World {
       Math.abs(pos.z) < 1000;
 
     if (!isValid) {
-      console.warn('[World] Invalid camera position detected, resetting to spawn');
+      logger.warn('[World] Invalid camera position detected, resetting to spawn');
       const template = this.templateHost.getCurrentTemplate();
       if (template?.manifest?.spawn) {
         const spawn = template.manifest.spawn;
@@ -1356,7 +1419,7 @@ export class World {
       this.lastAvatarUpdate = now;
     }
 
-    // Spatial Audio: Listener-Position aktualisieren
+    // Spatial Audio: Listener-Position aktualisieren + Zone-Engine
     if (this.voiceClient) {
       const cameraPos = this.camera.position;
       this.voiceClient.updateListenerPosition({
@@ -1365,20 +1428,63 @@ export class World {
         z: cameraPos.z,
       });
 
-      // Update peer positions for spatial audio (if LiveKitProvider supports it)
+      // Update zone membership for audio isolation
+      if (this.audioZones.length > 0) {
+        const newZoneId = updateZoneMembership(
+          [cameraPos.x, cameraPos.y, cameraPos.z],
+          this.audioZones
+        );
+        if (newZoneId !== this.currentZoneId) {
+          this.currentZoneId = newZoneId;
+          // Zone changed - logged via debug overlay if enabled
+        }
+      }
+
+      // Update peer positions for spatial audio with zone-based volume control
       if (this.avatarManager && getFeatureFlags().VOICE_ENABLED) {
         const allAvatars = this.avatarManager.getAllAvatars();
+        const listenerPos: [number, number] = [cameraPos.x, cameraPos.z];
+
         allAvatars.forEach((avatar) => {
           if (avatar.userId !== this.userId) {
-            // Try to update peer position via voice client
-            const voiceProvider = (this.voiceClient as VoiceClientWithProvider)?.provider;
-            if (voiceProvider && typeof voiceProvider.setPeerPosition === 'function') {
-              voiceProvider.setPeerPosition(
-                avatar.userId,
-                avatar.position.x,
-                avatar.position.y,
-                avatar.position.z
-              );
+            // Calculate peer zone membership
+            const peerZoneId =
+              this.audioZones.length > 0
+                ? updateZoneMembership(
+                    [avatar.position.x, avatar.position.y, avatar.position.z],
+                    this.audioZones
+                  )
+                : null;
+
+            // Calculate volume based on zones and distance
+            if (this.audioZones.length > 0) {
+              const senderPos: [number, number] = [avatar.position.x, avatar.position.z];
+              // volumeDb is calculated but not used directly - volumeFor returns the volume
+              volumeFor(senderPos, listenerPos, peerZoneId, this.currentZoneId);
+
+              // Apply volume via voice client (if supported)
+              const voiceProvider = (this.voiceClient as VoiceClientWithProvider)?.provider;
+              if (voiceProvider && typeof voiceProvider.setPeerPosition === 'function') {
+                voiceProvider.setPeerPosition(
+                  avatar.userId,
+                  avatar.position.x,
+                  avatar.position.y,
+                  avatar.position.z
+                );
+                // TODO: Apply volumeDb to GainNode when RTCClient supports it
+                // For now, zone-based muting is handled by not subscribing to tracks
+              }
+            } else {
+              // No zones: standard spatial audio
+              const voiceProvider = (this.voiceClient as VoiceClientWithProvider)?.provider;
+              if (voiceProvider && typeof voiceProvider.setPeerPosition === 'function') {
+                voiceProvider.setPeerPosition(
+                  avatar.userId,
+                  avatar.position.x,
+                  avatar.position.y,
+                  avatar.position.z
+                );
+              }
             }
           }
         });
@@ -1478,12 +1584,12 @@ export class World {
 
   async enableVoice(): Promise<void> {
     if (!this.voiceClient) {
-      console.warn('VoiceClient not initialized');
+      logger.warn('VoiceClient not initialized');
       return;
     }
     try {
       await this.voiceClient.enable();
-      console.log('Voice enabled successfully');
+      logger.log('Voice enabled successfully');
 
       // Attach mic stream to MicAnalyser for lip-sync
       if (this.micAnalyser && this.voiceClient) {
@@ -1516,15 +1622,15 @@ export class World {
         }
       }
     } catch (error) {
-      console.error('Failed to enable voice:', error);
+      logger.error('Failed to enable voice:', error);
       throw error;
     }
   }
 
   attachLocalMicStream(stream: MediaStream): void {
     if (this.micAnalyser) {
-      this.micAnalyser.attach(stream).catch((err) => {
-        console.warn('Failed to attach mic stream:', err);
+      this.micAnalyser.attach(stream).catch((err: unknown) => {
+        logger.warn('Failed to attach mic stream:', err);
       });
     }
     if (this.lipDriver && this.avatarManager) {
@@ -1566,7 +1672,7 @@ export class World {
   lockPointer(): void {
     if (this.playerController) {
       this.playerController.lock();
-      console.log('[PointerLock] Lock requested');
+      logger.log('[PointerLock] Lock requested');
     }
   }
 
@@ -1608,7 +1714,7 @@ export class World {
   }
 
   async loadTemplate(templateId: string): Promise<void> {
-    console.log(`[World] Switching to template: ${templateId}`);
+    logger.log(`[World] Switching to template: ${templateId}`);
 
     // Cleanup old template features before loading new template
     this.cleanupTemplateFeatures();
@@ -1626,7 +1732,7 @@ export class World {
         // Check if scene was cleared (no Ground object)
         const hasGround = this.scene.children.some((obj) => obj.name === 'Ground');
         if (!hasGround) {
-          console.log('[World] Rebuilding procedural scene after template load');
+          logger.log('[World] Rebuilding procedural scene after template load');
           await buildEcoAuto(this.scene);
         }
       }
@@ -1674,10 +1780,10 @@ export class World {
         this.camera.rotation.y = spawnRotY;
         this.controls.target.set(spawnPos[0], spawnPos[1], spawnPos[2]);
         this.controls.update();
-        console.log(
+        logger.log(
           `[World] Camera positioned at spawn: (${spawnPos[0]}, ${spawnPos[1]}, ${spawnPos[2]}), rotationY: ${spawnRotY}`
         );
-        console.log(
+        logger.log(
           `[World] Camera looking at: (${this.controls.target.x}, ${this.controls.target.y}, ${this.controls.target.z})`
         );
 
@@ -1700,7 +1806,7 @@ export class World {
           this.camera.position.set(...defaultSpawn);
           this.controls.target.set(...defaultSpawn);
           this.controls.update();
-          console.log(
+          logger.log(
             `[World] No spawn in manifest, using default position: (${defaultSpawn[0]}, ${defaultSpawn[1]}, ${defaultSpawn[2]})`
           );
           this.playerController = new PlayerController(this.camera, this.renderer.domElement, {
@@ -1722,7 +1828,7 @@ export class World {
       this.ambientManager.loadFromTemplate(template.manifest);
       // playAll() is async and handles context resume automatically
       this.ambientManager.playAll().catch((error) => {
-        console.warn('Failed to play ambient audio:', error);
+        logger.warn('Failed to play ambient audio:', error);
       });
     }
   }
@@ -1867,7 +1973,7 @@ export class World {
       if (this.avatarManager) {
         this.avatarManager.setLocalVisibleHead(!isFP, this.userId);
       }
-      console.log(
+      logger.log(
         '[CameraRig] Switched to',
         this.cameraRig.mode === 'fp' ? 'First-Person' : 'Third-Person'
       );
@@ -1876,15 +1982,15 @@ export class World {
 
   async loadAvatarFromUrl(url: string): Promise<void> {
     if (!this.avatarManager) {
-      console.warn('AvatarManager not initialized');
+      logger.warn('AvatarManager not initialized');
       return;
     }
 
     try {
       await this.avatarManager.setLocalAvatarUrl(url);
-      console.log('✅ Avatar loaded from URL:', url);
+      logger.log('✅ Avatar loaded from URL:', url);
     } catch (error) {
-      console.error('Failed to load avatar from URL:', error);
+      logger.error('Failed to load avatar from URL:', error);
       // Fallback: Capsule Avatar
       const spawnPos = this.camera.position;
       const position = {

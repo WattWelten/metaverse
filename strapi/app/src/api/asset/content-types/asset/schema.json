@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "assets",
+  "info": {
+    "singularName": "asset",
+    "pluralName": "assets",
+    "displayName": "Asset"
+  },
+  "attributes": {
+    "idStr": {
+      "type": "string",
+      "required": true
+    },
+    "src": {
+      "type": "string",
+      "required": true
+    },
+    "draco": {
+      "type": "boolean",
+      "default": false
+    },
+    "ktx2": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

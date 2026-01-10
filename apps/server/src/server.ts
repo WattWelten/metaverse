@@ -7,12 +7,20 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { Server } from 'socket.io';
 
+import { initSentry } from './sentry.js';
 import { AuthService } from './auth/AuthService.js';
+import { OAuthService } from './auth/OAuthProvider.js';
 import { createAuthMiddleware, createOptionalAuthMiddleware } from './middleware/auth.js';
 import { PresenceService } from './presence/PresenceService.js';
 import { RoomManager } from './rooms/RoomManager.js';
 import uploadRouter from './routes/upload.js';
 import { StateSyncService } from './sync/StateSyncService.js';
+import { setupYWebSocket } from './routes/yws.js';
+import { createRTCRouter } from './routes/rtc.js';
+import { createContentRouter } from './routes/content.js';
+
+// Initialize Sentry early
+initSentry();
 
 const app = express();
 const httpServer = createServer(app);
@@ -82,6 +90,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize auth service
 const authService = new AuthService();
+const oauthService = new OAuthService();
 
 // Clean up expired sessions every hour
 setInterval(
@@ -92,20 +101,50 @@ setInterval(
 );
 
 // Auth routes
-app.post('/api/auth/login', express.json(), (req, res): void => {
-  const { username } = req.body;
+app.post('/api/auth/login', express.json(), async (req, res): Promise<void> => {
+  const { username, email, provider, providerToken, role } = req.body;
 
-  if (!username || typeof username !== 'string' || username.trim().length === 0) {
-    res.status(400).json({ error: 'Username is required' });
-    return;
+  let finalUsername = username;
+  let finalEmail = email;
+  let finalRole = role;
+
+  // OAuth flow
+  if (provider && providerToken && (provider === 'google' || provider === 'github')) {
+    const userInfo = await oauthService.validateToken(provider, providerToken);
+    if (!userInfo) {
+      res.status(401).json({ error: 'Invalid OAuth token' });
+      return;
+    }
+
+    finalUsername = userInfo.name || userInfo.email.split('@')[0];
+    finalEmail = userInfo.email;
+    finalRole = oauthService.determineRole(userInfo.email, provider);
+  } else {
+    // Local auth flow
+    if (!username || typeof username !== 'string' || username.trim().length === 0) {
+      res.status(400).json({ error: 'Username is required' });
+      return;
+    }
+
+    if (username.trim().length < 2 || username.trim().length > 50) {
+      res.status(400).json({ error: 'Username must be between 2 and 50 characters' });
+      return;
+    }
+
+    finalUsername = username.trim();
   }
 
-  if (username.trim().length < 2 || username.trim().length > 50) {
-    res.status(400).json({ error: 'Username must be between 2 and 50 characters' });
-    return;
+  // Determine role: from request, email domain, or default
+  let userRole: 'host' | 'moderator' | 'speaker' | 'guest' = finalRole || 'guest';
+  if (finalEmail?.endsWith('@wattwelten.de') || finalUsername.toLowerCase().includes('host')) {
+    userRole = 'host';
+  } else if (finalUsername.toLowerCase().includes('mod')) {
+    userRole = 'moderator';
+  } else if (finalUsername.toLowerCase().includes('speaker')) {
+    userRole = 'speaker';
   }
 
-  const { sessionId, user } = authService.createSession(username.trim());
+  const { sessionId, user } = authService.createSession(finalUsername, userRole);
 
   res.json({
     success: true,
@@ -113,6 +152,8 @@ app.post('/api/auth/login', express.json(), (req, res): void => {
     user: {
       userId: user.userId,
       username: user.username,
+      role: userRole,
+      email: finalEmail,
     },
   });
 });
@@ -141,6 +182,8 @@ app.get('/api/auth/me', createAuthMiddleware(authService), (req, res): void => {
 const authMiddleware = createAuthMiddleware(authService);
 app.use('/api/upload', authMiddleware, uploadRouter);
 app.use('/api/files', createOptionalAuthMiddleware(authService), uploadRouter);
+app.use('/api/rtc', createRTCRouter());
+app.use('/api/content', createContentRouter());
 
 // Health check endpoint
 app.get('/', (_req, res) => {
@@ -206,6 +249,28 @@ io.use((socket, next) => {
     return next(new Error('No session ID provided'));
   }
 
+  // Special handling for remote controller connections
+  if (typeof sessionId === 'string' && sessionId.startsWith('remote-')) {
+    // Allow remote connections without full session auth
+    (
+      socket.handshake as {
+        data?: {
+          sessionId?: string;
+          user?: { userId: string; username: string };
+          isRemote?: boolean;
+        };
+      }
+    ).data = {
+      sessionId: sessionId as string,
+      user: {
+        userId: sessionId,
+        username: 'Remote',
+      },
+      isRemote: true,
+    };
+    return next();
+  }
+
   const session = authService.getSession(sessionId as string);
   if (!session) {
     return next(new Error('Invalid or expired session'));
@@ -214,11 +279,16 @@ io.use((socket, next) => {
   // Attach session to handshake
   (
     socket.handshake as {
-      data?: { sessionId?: string; user?: { userId: string; username: string } };
+      data?: {
+        sessionId?: string;
+        user?: { userId: string; username: string };
+        isRemote?: boolean;
+      };
     }
   ).data = {
     sessionId: sessionId as string,
     user: session,
+    isRemote: false,
   };
 
   next();
@@ -231,11 +301,16 @@ const stateSyncService = new StateSyncService();
 io.on('connection', (socket) => {
   const handshakeData = (
     socket.handshake as {
-      data?: { sessionId?: string; user?: { userId: string; username: string } };
+      data?: {
+        sessionId?: string;
+        user?: { userId: string; username: string };
+        isRemote?: boolean;
+      };
     }
   ).data;
   const sessionId = handshakeData?.sessionId;
   const user = handshakeData?.user;
+  const isRemote = handshakeData?.isRemote || false;
 
   if (!sessionId || !user) {
     console.error('Socket connection rejected: missing session');
@@ -243,22 +318,29 @@ io.on('connection', (socket) => {
     return;
   }
 
-  // Update socket ID in session
-  authService.updateSocketId(sessionId, socket.id);
+  // Update socket ID in session (only for non-remote connections)
+  if (!isRemote) {
+    authService.updateSocketId(sessionId, socket.id);
+  }
 
-  console.log(`Client connected: ${socket.id} (User: ${user.username})`);
+  console.log(
+    `Client connected: ${socket.id} (User: ${user.username}${isRemote ? ', Remote' : ''})`
+  );
 
-  socket.on('join-room', async (data: { roomId: string; userId: string; avatar?: unknown }) => {
-    const { roomId, userId, avatar } = data;
-    await roomManager.joinRoom(socket.id, roomId, userId, avatar);
-    socket.join(roomId);
+  socket.on(
+    'join-room',
+    async (data: { roomId: string; userId: string; displayName?: string; avatar?: unknown }) => {
+      const { roomId, userId, displayName, avatar } = data;
+      await roomManager.joinRoom(socket.id, roomId, userId, avatar);
+      socket.join(roomId);
 
-    const roomState = roomManager.getRoomState(roomId);
-    socket.emit('room-state', roomState);
-    socket.to(roomId).emit('user-joined', { userId, socketId: socket.id, avatar });
+      const roomState = roomManager.getRoomState(roomId);
+      socket.emit('room-state', roomState);
+      socket.to(roomId).emit('user-joined', { userId, socketId: socket.id, avatar });
 
-    presenceService.addUser(socket.id, userId, roomId);
-  });
+      presenceService.addUser(socket.id, userId, roomId, displayName);
+    }
+  );
 
   socket.on('leave-room', async (data: { roomId: string; userId: string }) => {
     const { roomId, userId } = data;
@@ -384,11 +466,78 @@ io.on('connection', (socket) => {
     }
   );
 
+  // Remote Controller Pairing & Events
+  socket.on('remote:pair:init', (data: { pairCode: string }) => {
+    const { pairCode } = data;
+    socket.join(`pair:${pairCode}`);
+    console.log(`[Remote] Pairing initialized: ${pairCode} (socket: ${socket.id})`);
+    // Notify host if already connected
+    io.to(`pair:${pairCode}`).emit('remote:paired', { pairCode });
+  });
+
+  socket.on('remote:ptt', (data: { pairCode: string; down: boolean }) => {
+    const { pairCode, down } = data;
+    // Forward to host (other socket in pair room)
+    socket.to(`pair:${pairCode}`).emit('host:ptt', { pairCode, down });
+  });
+
+  socket.on('remote:emote', (data: { pairCode: string; name: string }) => {
+    const { pairCode, name } = data;
+    socket.to(`pair:${pairCode}`).emit('host:emote', { pairCode, name });
+  });
+
+  socket.on('remote:move', (data: { pairCode: string; dx: number; dy: number }) => {
+    const { pairCode, dx, dy } = data;
+    socket.to(`pair:${pairCode}`).emit('host:move', { pairCode, dx, dy });
+  });
+
+  // Moderation Events
+  socket.on('ui:raiseHand', () => {
+    const userInfo = presenceService.getUserInfo(socket.id);
+    if (userInfo) {
+      // Emit to room with user display name if available
+      const displayName = userInfo.displayName || userInfo.userId;
+      io.to(userInfo.roomId).emit('mod:queue:add', {
+        userId: userInfo.userId,
+        displayName,
+        timestamp: Date.now(),
+      });
+    }
+  });
+
+  socket.on('ui:lowerHand', () => {
+    const userInfo = presenceService.getUserInfo(socket.id);
+    if (userInfo) {
+      io.to(userInfo.roomId).emit('mod:queue:remove', { userId: userInfo.userId });
+    }
+  });
+
+  socket.on('mod:muteAll', () => {
+    const userInfo = presenceService.getUserInfo(socket.id);
+    if (userInfo) {
+      io.to(userInfo.roomId).emit('audio:force-mute');
+    }
+  });
+
+  socket.on('mod:spotlight', (data: { userId: string }) => {
+    const userInfo = presenceService.getUserInfo(socket.id);
+    if (userInfo) {
+      io.to(userInfo.roomId).emit('stage:spotlight', { userId: data.userId });
+    }
+  });
+
+  socket.on('mod:lockRoom', (data: { locked: boolean }) => {
+    const userInfo = presenceService.getUserInfo(socket.id);
+    if (userInfo) {
+      io.to(userInfo.roomId).emit('room:locked', data.locked);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
 
-    // Remove socket ID from session
-    if (sessionId) {
+    // Remove socket ID from session (only for non-remote connections)
+    if (sessionId && !isRemote) {
       authService.removeSocketId(socket.id);
     }
 
@@ -400,6 +549,9 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+// Setup Y-WebSocket for collaboration (Whiteboard, Docs)
+setupYWebSocket(httpServer);
 
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {

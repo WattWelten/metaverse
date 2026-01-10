@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { SkeletonUtils } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { VRM } from '@pixiv/three-vrm';
 
 export type LoadedClip = { name: string; clip: THREE.AnimationClip; src: string };
@@ -39,37 +38,52 @@ export async function retargetMixamoToVRM(
   }
 
   // Try to use SkeletonUtils.retargetClip if available
-  // Note: This function may not exist in all Three.js versions
-  if (typeof SkeletonUtils.retargetClip === 'function') {
-    try {
-      // Source-Root suchen (SkinnedMesh/Armature)
-      let srcRoot: THREE.Object3D | null = null;
-      src.scene.traverse((o) => {
-        if ((o as THREE.Bone).isBone && o.name.toLowerCase().includes('hips')) {
-          srcRoot = o;
-        }
-      });
-      if (!srcRoot) srcRoot = src.scene;
+  // Note: Dynamic import to handle Three.js version differences
+  try {
+    // Dynamischer Import für SkeletonUtils (kompatibel mit verschiedenen Three.js Versionen)
+    const SkeletonUtilsModule = await import('three/examples/jsm/utils/SkeletonUtils.js');
+    // SkeletonUtils kann als Named Export oder Default Export exportiert sein
+    const SkeletonUtils =
+      (SkeletonUtilsModule as any).SkeletonUtils ||
+      (SkeletonUtilsModule as any).default ||
+      SkeletonUtilsModule;
 
-      // Ziel = VRM Szene (darin Bones)
-      const target = vrm.scene;
-      // Retarget
-      const retargeted = SkeletonUtils.retargetClip(target, clip, srcRoot, {
-        // Mixamo -> VRM: nutzt Bone-Namen-Heuristik; bei Bedarf Mappings hinzufügen
-        fps: 30,
-      });
-      retargeted.name = rename || clip.name;
-      return retargeted;
-    } catch (retargetError) {
+    if (SkeletonUtils && typeof SkeletonUtils.retargetClip === 'function') {
+      try {
+        // Source-Root suchen (SkinnedMesh/Armature)
+        let srcRoot: THREE.Object3D | null = null;
+        src.scene.traverse((o) => {
+          if ((o as THREE.Bone).isBone && o.name.toLowerCase().includes('hips')) {
+            srcRoot = o;
+          }
+        });
+        if (!srcRoot) srcRoot = src.scene;
+
+        // Ziel = VRM Szene (darin Bones)
+        const target = vrm.scene;
+        // Retarget
+        const retargeted = SkeletonUtils.retargetClip(target, clip, srcRoot, {
+          // Mixamo -> VRM: nutzt Bone-Namen-Heuristik; bei Bedarf Mappings hinzufügen
+          fps: 30,
+        });
+        retargeted.name = rename || clip.name;
+        return retargeted;
+      } catch (retargetError) {
+        console.warn(
+          `[retargetMixamoToVRM] Retargeting failed, using original clip: ${retargetError}`
+        );
+        // Fallback: use original clip
+      }
+    } else {
       console.warn(
-        `[retargetMixamoToVRM] Retargeting failed, using original clip: ${retargetError}`
+        '[retargetMixamoToVRM] SkeletonUtils.retargetClip not available, using original clip'
       );
-      // Fallback: use original clip
     }
-  } else {
+  } catch (importError) {
     console.warn(
-      '[retargetMixamoToVRM] SkeletonUtils.retargetClip not available, using original clip'
+      `[retargetMixamoToVRM] Failed to import SkeletonUtils, using original clip: ${importError}`
     );
+    // Fallback: use original clip
   }
 
   // Fallback: return original clip (may work if bone names match)

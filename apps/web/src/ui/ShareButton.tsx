@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getFeatureFlags } from '../FeatureFlags';
 import type { VoiceClientWithProvider } from '../types/voiceProvider';
 import { World } from '../World';
+import { ensureConsent } from './ConsentModal';
 
 interface ShareButtonProps {
   world: World | null;
@@ -30,6 +31,12 @@ export function ShareButton({ world }: ShareButtonProps) {
       world.attachRemoteStream('local', null);
       setIsSharing(false);
     } else {
+      // Check consent before starting screenshare
+      const consented = await ensureConsent('screenshare');
+      if (!consented) {
+        return;
+      }
+
       const stream = await provider.startScreenShare?.();
       if (stream) {
         world.attachLocalStream(stream);

@@ -1,0 +1,35 @@
+name: EPIC
+description: Großer Themenblock mit Teilaufgaben
+title: "EPIC: <Thema>"
+labels: ["epic"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Ziel
+      description: Was ist das greifbare Ergebnis?
+      placeholder: "z. B. Audio/Video über SFU mit 5–10 TN stabil"
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: In/Out of Scope
+  - type: checkboxes
+    id: ac
+    attributes:
+      label: Acceptance-Criteria
+      options:
+        - label: Join p90 < 6 s
+        - label: Audio p95 < 400 ms
+        - label: Screenshare 1080p/30
+        - label: Zonen isolieren (Cross-Leak < −55 dB)
+        - label: Whiteboard/Markdown Sync < 200 ms
+        - label: /remote PTT < 300 ms
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Teilaufgaben
+      description: Untertickets als Liste
+      placeholder: "- [ ] Task 1\n- [ ] Task 2"

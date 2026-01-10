@@ -1,0 +1,25 @@
+name: Bug
+description: Fehlerbericht
+title: "bug: <Kurzbeschreibung>"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Problem
+      placeholder: "Was passiert? Erwartetes Verhalten?"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version/Commit
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduktion
+      placeholder: "Schritte 1..n"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Console / Screens

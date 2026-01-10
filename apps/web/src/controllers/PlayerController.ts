@@ -95,14 +95,6 @@ export class PlayerController {
     return this.velocity.clone();
   }
 
-  getAngularVelocityY(): number {
-    // Calculate angular velocity from camera rotation change
-    // This is a simplified version - in a real implementation, you'd track previous rotation
-    // For now, we'll use mouse movement or return 0
-    // TODO: Track previous rotation to calculate actual angular velocity
-    return 0; // Placeholder - will be improved with mouse delta tracking
-  }
-
   private onKey(e: KeyboardEvent, down: boolean): void {
     const m = new Map([
       ['KeyW', 'w'],

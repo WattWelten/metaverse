@@ -1,0 +1,22 @@
+name: Feature
+description: Neue Funktion / Verbesserung
+title: "feat: <Kurzbeschreibung>"
+labels: ["feature"]
+body:
+  - type: input
+    id: context
+    attributes:
+      label: Kontext / User Story
+      placeholder: "Als <Rolle> möchte ich …"
+  - type: textarea
+    id: solution
+    attributes:
+      label: Lösung (Kurz)
+  - type: checkboxes
+    id: ac
+    attributes:
+      label: Acceptance-Criteria
+      options:
+        - label: Tests/Smokes vorhanden
+        - label: Docs/ENV aktualisiert
+        - label: CI grün

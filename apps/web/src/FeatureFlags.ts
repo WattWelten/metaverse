@@ -15,6 +15,7 @@ export interface FeatureFlags {
   WATTOS_TENANT?: string;
   SHARE_ENABLED: boolean;
   LIVEKIT_URL?: string;
+  RTC_TOKEN_ENDPOINT?: string;
   TEMPLATE_SWITCH?: boolean;
 }
 
@@ -35,6 +36,9 @@ const defaultFlags: FeatureFlags = {
   WATTOS_TENANT: import.meta.env.VITE_WATTOS_TENANT,
   SHARE_ENABLED: import.meta.env.VITE_SHARE_ENABLED === 'true',
   LIVEKIT_URL: import.meta.env.VITE_LIVEKIT_URL,
+  RTC_TOKEN_ENDPOINT:
+    import.meta.env.VITE_RTC_TOKEN_ENDPOINT ||
+    `${import.meta.env.VITE_SERVER_URL || 'http://localhost:3001'}/api/rtc/token`,
   TEMPLATE_SWITCH: import.meta.env.VITE_TEMPLATE_SWITCH !== 'false', // Default: true
 };
 

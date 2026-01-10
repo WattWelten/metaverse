@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "zones",
+  "info": {
+    "singularName": "zone",
+    "pluralName": "zones",
+    "displayName": "Zone"
+  },
+  "attributes": {
+    "idStr": {
+      "type": "string",
+      "required": true
+    },
+    "shape": {
+      "type": "enumeration",
+      "enum": ["circle", "polygon"],
+      "required": true
+    },
+    "center": {
+      "type": "json"
+    },
+    "radius": {
+      "type": "decimal"
+    },
+    "points": {
+      "type": "json"
+    },
+    "isStage": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

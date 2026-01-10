@@ -1,0 +1,43 @@
+{
+  "id": "demo-meeting",
+  "name": "Demo Meeting",
+  "version": "1.0.0",
+  "description": "Demo-Szene für Meetings mit Whiteboard und Screenshare",
+  "assets": {
+    "scene": "scene.glb",
+    "hdri": "env.hdr",
+    "navmesh": "navmesh.glb"
+  },
+  "spawn": {
+    "x": 0,
+    "y": 1.6,
+    "z": 0
+  },
+  "zones": [
+    {
+      "id": "meeting-room",
+      "label": "Meeting Room",
+      "shape": "polygon",
+      "points": [
+        [-8, -6],
+        [8, -6],
+        [8, 6],
+        [-8, 6]
+      ],
+      "isStage": false,
+      "maxParticipants": 12
+    }
+  ],
+  "audioBeacons": [],
+  "portals": [],
+  "lighting": {
+    "env": "env.hdr",
+    "toneMapping": "ACESFilmic"
+  },
+  "ui": {
+    "showMinimap": false,
+    "showZoneLabels": false,
+    "whiteboardEnabled": true,
+    "screenshareEnabled": true
+  }
+}

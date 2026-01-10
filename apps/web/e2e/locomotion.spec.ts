@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { boot, waitEnter } from './utils';
+import { completePrejoinJourney } from './utils';
 
 test('Locomotion switches idle → walk → run by speed, turn in place by yaw', async ({ page }) => {
-  await boot(page, 'watt-eco');
-  await waitEnter(page);
+  await completePrejoinJourney(page, 'Locomotion Tester');
 
   // Expose kinematics
   const getK = async () =>

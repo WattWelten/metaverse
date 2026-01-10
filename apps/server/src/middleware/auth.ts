@@ -13,6 +13,7 @@ declare global {
         user: {
           userId: string;
           username: string;
+          role?: 'host' | 'moderator' | 'speaker' | 'guest';
         };
       };
     }
@@ -44,6 +45,7 @@ export function createAuthMiddleware(authService: AuthService) {
       user: {
         userId: session.userId,
         username: session.username,
+        role: session.role,
       },
     };
 

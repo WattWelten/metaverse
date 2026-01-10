@@ -1,0 +1,49 @@
+{
+  "kind": "collectionType",
+  "collectionName": "scenes",
+  "info": {
+    "singularName": "scene",
+    "pluralName": "scenes",
+    "displayName": "Scene"
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name"
+    },
+    "spawn": {
+      "type": "json"
+    },
+    "assets": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::asset.asset"
+    },
+    "audioBeacons": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::audio-beacon.audio-beacon"
+    },
+    "portals": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::portal.portal"
+    },
+    "zones": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::zone.zone"
+    },
+    "ui": {
+      "type": "json"
+    },
+    "publishedAt": {
+      "type": "datetime"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "extends": "@metaverse/tsconfig/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"]
+}

@@ -13,8 +13,10 @@ export class LocomotionController {
   private speed = 0; // m/s
   private yawDelta = 0; // rad/s
   private hasAny = false;
-  private fallbackProc?: (dt: number) => void;
-  private debug = import.meta.env.VITE_LOCO_DEBUG === 'true';
+  // Reserved for future use: fallbackProc?: (dt: number) => void;
+  private debug =
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LOCO_DEBUG === 'true') ||
+    false;
   private turnFinishedListener?: () => void;
 
   constructor(vrm?: VRM, obj3D?: THREE.Object3D) {
@@ -27,9 +29,12 @@ export class LocomotionController {
   }
 
   async loadSet(vrm: VRM, cfg?: LocoConfig) {
-    this.vrm = vrm;
+    this.vrm = vrm; // Store for potential future use
     if (!this.mixer) {
       this.mixer = new THREE.AnimationMixer(vrm.scene);
+    } else if (this.vrm && this.mixer.getRoot() !== this.vrm.scene) {
+      // Recreate mixer if VRM changed
+      this.mixer = new THREE.AnimationMixer(this.vrm.scene);
     }
     const c = cfg || defaultLocoConfig();
     const names: ClipName[] = ['idle', 'walk', 'run', 'turn_l', 'turn_r'];
@@ -156,8 +161,6 @@ export class LocomotionController {
   private fadeTo(name: ClipName, duration = 0.1) {
     if (!this.actions[name]) return;
     if (this.current === name) return;
-
-    const next = this.actions[name]!;
 
     // Cleanup turn listener when transitioning away from turn animations
     if ((this.current === 'turn_l' || this.current === 'turn_r') && this.mixer) {

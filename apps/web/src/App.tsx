@@ -17,6 +17,7 @@ import { DebugOverlay } from './DebugOverlay';
 import { FeatureFlags, getFeatureFlags } from './FeatureFlags';
 import { getRoomFromURL, copyRoomLink } from './rooms';
 import { loadPrefs, type Quality } from './state/prefs';
+import { logger } from './utils/logger';
 import { DevicePickerModal } from './ui/DevicePickerModal';
 import { EmoteBar } from './ui/EmoteBar';
 import { EnterOverlay } from './ui/EnterOverlay';
@@ -30,18 +31,26 @@ import { Pinboard } from './ui/Pinboard';
 import { PrejoinPanel } from './ui/PrejoinPanel';
 import { RaiseHandButton } from './ui/RaiseHandButton';
 import { SettingsModal } from './ui/SettingsModal';
-import { ShareButton } from './ui/ShareButton';
 import { StageControls } from './ui/StageControls';
 import { VoicePanel } from './ui/VoicePanel';
 import { WhiteboardPanel } from './ui/WhiteboardPanel';
 import { ZoneIndicator } from './ui/ZoneIndicator';
 import { TemplateSwitcher } from './ui/TemplateSwitcher';
 import { MobileControls } from './ui/MobileControls';
-import { LocoDebug } from './ui/LocoDebug';
 import { loadManifest, resolveTemplateId } from './templates/TemplateRegistry';
 import { World } from './World';
 
 export function App() {
+  // Check if we're on the /remote route
+  const isRemoteRoute = typeof window !== 'undefined' && window.location.pathname === '/remote';
+
+  // If on /remote route, render RemoteController instead
+  if (isRemoteRoute) {
+    // Dynamic import to avoid loading full World for mobile
+    const { RemoteController } = require('./ui/RemoteController');
+    return <RemoteController />;
+  }
+
   const containerRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<World | null>(null);
   const [templateId, setTemplateId] = useState(() => resolveTemplateId());
@@ -192,7 +201,7 @@ export function App() {
 
     // Prevent multiple initializations
     if (worldRef.current) {
-      console.log('[App] World already initialized, skipping');
+      logger.debug('[App] World already initialized, skipping');
       return;
     }
 
@@ -202,16 +211,16 @@ export function App() {
     const initWorld = async () => {
       try {
         const resolvedTemplateId = resolveTemplateId();
-        console.log('[App] Resolved template ID:', resolvedTemplateId);
+        logger.debug('[App] Resolved template ID:', resolvedTemplateId);
         const manifest = await loadManifest(resolvedTemplateId);
         (window as any).__templateManifest = manifest;
         setTemplateId(resolvedTemplateId);
       } catch (error) {
-        console.error('[App] Failed to load template manifest:', error);
+        logger.error('[App] Failed to load template manifest:', error);
         // Continue with default template
       }
 
-      console.log('[App] Initializing World (sessionId:', session.sessionId, ')');
+      logger.debug('[App] Initializing World (sessionId:', session.sessionId, ')');
       const world = new World(containerRef.current!);
       world.setSessionId(session.sessionId);
       worldRef.current = world;
@@ -228,7 +237,7 @@ export function App() {
           }
         })
         .catch((error) => {
-          console.error('Failed to initialize world:', error);
+          logger.error('Failed to initialize world:', error);
           setReady(true); // Set ready even on error to show prejoin panel
         });
     };
@@ -335,7 +344,7 @@ export function App() {
             setVoiceMuted(voiceClient.isMuted());
           }
         } catch (error) {
-          console.error('Failed to enable voice:', error);
+          logger.error('Failed to enable voice:', error);
         }
       }
     }
@@ -360,7 +369,7 @@ export function App() {
   };
 
   const handleOverlayAction = (action: { type: string; payload?: unknown }) => {
-    console.log('Overlay action:', action);
+    logger.debug('Overlay action:', action);
 
     switch (action.type) {
       case 'switch-template':
@@ -382,7 +391,7 @@ export function App() {
             template.unmount();
             // Template wird beim nächsten Render neu gemountet
             world.loadTemplate(newTemplateId).catch((error) => {
-              console.error('Failed to switch template:', error);
+              logger.error('Failed to switch template:', error);
             });
           }
         }
@@ -391,7 +400,7 @@ export function App() {
         // Menu-Logik hier
         break;
       default:
-        console.warn('Unknown overlay action:', action.type);
+        logger.warn('Unknown overlay action:', action.type);
     }
   };
 
@@ -462,9 +471,9 @@ export function App() {
   const handleCopyLink = () => {
     try {
       copyRoomLink();
-      console.log('Room link copied to clipboard');
+      logger.info('Room link copied to clipboard');
     } catch (error) {
-      console.error('Failed to copy room link:', error);
+      logger.error('Failed to copy room link:', error);
     }
   };
 
@@ -487,7 +496,7 @@ export function App() {
 
   const handlePrejoinContinue = async () => {
     const prefs = loadPrefs();
-    console.log('[App] handlePrejoinContinue - Prefs:', {
+    logger.debug('[App] handlePrejoinContinue - Prefs:', {
       username: prefs.username,
       avatarUrl: prefs.avatarUrl ? 'set' : 'not set',
       quality: prefs.quality,
@@ -497,33 +506,33 @@ export function App() {
     try {
       const { resumeContext } = await import('@metaverse/audio');
       await resumeContext();
-      console.log('[App] ✅ Audio context resumed');
+      logger.info('[App] ✅ Audio context resumed');
     } catch (error) {
-      console.warn('[App] ⚠️ Failed to resume audio context:', error);
+      logger.warn('[App] ⚠️ Failed to resume audio context:', error);
     }
 
     // Avatar/Name an World durchreichen
     try {
       if (prefs.avatarUrl && worldRef.current) {
-        console.log('[App] Loading avatar from URL via World.loadAvatarFromUrl:', prefs.avatarUrl);
+        logger.debug('[App] Loading avatar from URL via World.loadAvatarFromUrl:', prefs.avatarUrl);
         await worldRef.current.loadAvatarFromUrl(prefs.avatarUrl);
       }
       const avatarManager = worldRef.current?.getAvatarManager();
       if (avatarManager) {
-        console.log('[App] Setting avatar name:', prefs.username);
+        logger.debug('[App] Setting avatar name:', prefs.username);
         avatarManager.setName('me', prefs.username);
         // Also set local avatar URL if not already set
         if (prefs.avatarUrl) {
-          console.log('[App] Setting local avatar URL via AvatarManager:', prefs.avatarUrl);
+          logger.debug('[App] Setting local avatar URL via AvatarManager:', prefs.avatarUrl);
           await avatarManager.setLocalAvatarUrl(prefs.avatarUrl);
         } else {
-          console.log('[App] No avatar URL in prefs, skipping avatar load');
+          logger.debug('[App] No avatar URL in prefs, skipping avatar load');
         }
       } else {
-        console.warn('[App] ⚠️ AvatarManager not available');
+        logger.warn('[App] ⚠️ AvatarManager not available');
       }
     } catch (error) {
-      console.error('[App] ❌ Failed to apply prefs:', error);
+      logger.error('[App] ❌ Failed to apply prefs:', error);
       journey.transition('error', 'Failed to apply preferences');
       return;
     }
@@ -606,7 +615,14 @@ export function App() {
           onDecline={() => handleVoiceConsent(false)}
         />
         {showDebug && <DebugOverlay world={worldRef.current} />}
-        {getFeatureFlags().VOICE_ENABLED && showVoicePanel && <VoicePanel room={roomId} />}
+        {getFeatureFlags().VOICE_ENABLED && showVoicePanel && (
+          <VoicePanel
+            room={roomId}
+            userId={worldRef.current?.getUserId()}
+            displayName={session?.user?.username || loadPrefs().username}
+            role={loadPrefs().role || 'guest'}
+          />
+        )}
         {getFeatureFlags().WHITEBOARD_ENABLED && showWhiteboard && (
           <WhiteboardPanel room={roomId} />
         )}
@@ -631,7 +647,7 @@ export function App() {
               if (worldRef.current && !worldRef.current.hasPlayerController()) {
                 // PlayerController will be initialized when template is loaded
                 // For now, just proceed to metaverse
-                console.log(
+                logger.debug(
                   '[EnterOverlay] PlayerController not yet initialized, proceeding anyway'
                 );
               }
@@ -750,7 +766,7 @@ export function App() {
                     // Load template in World
                     await worldRef.current.loadTemplate(newTemplateId);
                   } catch (error) {
-                    console.error('[App] Failed to switch template:', error);
+                    logger.error('[App] Failed to switch template:', error);
                     throw error;
                   }
                 }
@@ -938,8 +954,8 @@ export function App() {
         {/* Zone Indicator (Center Screen) */}
         {prejoinDone && (
           <ZoneIndicator
-            zoneLabel={activeZone}
-            zoneId={activeZone ? worldRef.current?.getZoneSystem()?.getActive() || null : null}
+            zoneId={worldRef.current?.getCurrentZoneId() || null}
+            zoneLabel={activeZone || worldRef.current?.getCurrentZoneId() || null}
           />
         )}
       </div>

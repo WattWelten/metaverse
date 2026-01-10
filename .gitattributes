@@ -1,7 +1,15 @@
+# Text normalisieren
 * text=auto eol=lf
-*.{cmd,[cC][mM][dD]} text eol=crlf
-*.{bat,[bB][aA][tT]} text eol=crlf
-*.sh text eol=lf
 
+# Große Binärdateien (optional LFS – nur aktivieren, wenn LFS genutzt wird)
+# *.glb filter=lfs diff=lfs merge=lfs -text
+# *.gltf filter=lfs diff=lfs merge=lfs -text
+# *.ktx2 filter=lfs diff=lfs merge=lfs -text
+# *.hdr filter=lfs diff=lfs merge=lfs -text
+# *.ogg filter=lfs diff=lfs merge=lfs -text
 
-
+# Nicht diffen
+*.png -diff
+*.jpg -diff
+*.mp3 -diff
+*.mp4 -diff

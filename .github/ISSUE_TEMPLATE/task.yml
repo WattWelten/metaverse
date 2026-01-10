@@ -1,0 +1,17 @@
+name: Task
+description: Kleine, klar umrissene Aufgabe
+title: "task: <Kurzbeschreibung>"
+labels: ["task"]
+body:
+  - type: textarea
+    id: desc
+    attributes:
+      label: Beschreibung
+  - type: checkboxes
+    id: done
+    attributes:
+      label: Definition of Done
+      options:
+        - label: Lint/Typecheck ok
+        - label: Tests ok (falls vorhanden)
+        - label: Docs aktualisiert (falls nötig)

@@ -25,6 +25,9 @@ export function PrejoinPanel({ onContinue }: PrejoinPanelProps) {
   const [name, setName] = useState(init.username);
   const [quality, setQuality] = useState<Quality>(init.quality);
   const [avatarUrl, setAvatarUrl] = useState(init.avatarUrl);
+  const [role, setRole] = useState<'host' | 'moderator' | 'speaker' | 'guest'>(
+    init.role || 'guest'
+  );
   const flags = getFeatureFlags();
 
   const step = STEPS[currentStep];
@@ -37,6 +40,7 @@ export function PrejoinPanel({ onContinue }: PrejoinPanelProps) {
         username: name.trim() || 'Gast',
         quality,
         avatarUrl,
+        role,
       });
       onContinue();
       return;
@@ -50,6 +54,7 @@ export function PrejoinPanel({ onContinue }: PrejoinPanelProps) {
         username: name.trim() || 'Gast',
         quality,
         avatarUrl,
+        role,
       });
       onContinue();
     }
@@ -138,8 +143,10 @@ export function PrejoinPanel({ onContinue }: PrejoinPanelProps) {
               <UsernameQualityStep
                 username={name}
                 quality={quality}
+                role={role}
                 onUsernameChange={setName}
                 onQualityChange={setQuality}
+                onRoleChange={setRole}
                 onNext={handleNext}
                 onBack={handleBack}
               />

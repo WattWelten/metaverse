@@ -28,6 +28,7 @@ export function MobileControls({ onMove, onJump }: MobileControlsProps) {
     const handleTouchStart = (e: TouchEvent) => {
       e.preventDefault();
       const touch = e.touches[0];
+      if (!touch) return;
       const rect = joystick.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
@@ -41,6 +42,7 @@ export function MobileControls({ onMove, onJump }: MobileControlsProps) {
       if (!touchStartRef.current) return;
 
       const touch = e.touches[0];
+      if (!touch) return;
       currentTouchRef.current = { x: touch.clientX, y: touch.clientY };
 
       const rect = joystick.getBoundingClientRect();

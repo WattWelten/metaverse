@@ -20,12 +20,15 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@tldraw/tldraw": "^3.4.7",
+    "react": "^18.2.0",
     "yjs": "^13.6.0",
     "y-websocket": "^2.0.0"
   },
   "devDependencies": {
     "@metaverse/eslint-config": "workspace:*",
     "@metaverse/tsconfig": "workspace:*",
+    "@types/react": "^18.3.12",
     "typescript": "^5.9.3"
   }
 }

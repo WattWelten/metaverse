@@ -87,15 +87,19 @@ export function AvatarSelectionStep({
 interface UsernameQualityStepProps extends StepProps {
   username: string;
   quality: Quality;
+  role?: 'host' | 'moderator' | 'speaker' | 'guest';
   onUsernameChange: (username: string) => void;
   onQualityChange: (quality: Quality) => void;
+  onRoleChange?: (role: 'host' | 'moderator' | 'speaker' | 'guest') => void;
 }
 
 export function UsernameQualityStep({
   username,
   quality,
+  role,
   onUsernameChange,
   onQualityChange,
+  onRoleChange,
   onNext,
   onBack,
 }: UsernameQualityStepProps) {
@@ -164,6 +168,39 @@ export function UsernameQualityStep({
           Low = Beste Performance • Fair = Ausgewogen • High = Beste Qualität
         </p>
       </div>
+
+      {/* Role Selection (optional, only if onRoleChange provided) */}
+      {onRoleChange && (
+        <div>
+          <h4
+            className="text-headline"
+            style={{
+              margin: '0 0 8px',
+              color: 'var(--color-label)',
+              fontSize: '15px',
+              fontWeight: 600,
+            }}
+          >
+            Rolle
+          </h4>
+          <AppleSegmentedControl
+            options={[
+              { value: 'guest', label: 'Gast' },
+              { value: 'speaker', label: 'Speaker' },
+              { value: 'moderator', label: 'Moderator' },
+              { value: 'host', label: 'Host' },
+            ]}
+            value={role || 'guest'}
+            onChange={(v) => onRoleChange(v as 'host' | 'moderator' | 'speaker' | 'guest')}
+          />
+          <p
+            className="text-footnote"
+            style={{ marginTop: '8px', color: 'var(--color-label-secondary)', opacity: 0.7 }}
+          >
+            Gast = Zuhören • Speaker = Sprechen • Moderator = Verwalten • Host = Vollzugriff
+          </p>
+        </div>
+      )}
 
       {/* Navigation */}
       <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>

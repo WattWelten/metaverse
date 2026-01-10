@@ -1,0 +1,11 @@
+# Alle Dateien: Maintainer-Team anpassen
+*       @WattWelten/maintainers
+
+# Kritische Bereiche
+/apps/server/src/routes/rtc.ts             @WattWelten/realtime
+/packages/rtc-sfu/                         @WattWelten/realtime
+/packages/voice/                           @WattWelten/realtime
+/apps/server/src/routes/yws.ts             @WattWelten/collab
+/packages/collab-*/                         @WattWelten/collab
+/packages/content/                         @WattWelten/content
+/strapi/                                   @WattWelten/content

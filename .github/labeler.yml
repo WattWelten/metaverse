@@ -1,0 +1,30 @@
+realtime:
+  - "apps/server/src/routes/rtc.ts"
+  - "apps/server/src/routes/rtc.ts/**"
+  - "packages/rtc-sfu/**"
+  - "packages/voice/**"
+
+collab:
+  - "apps/server/src/routes/yws.ts"
+  - "apps/server/src/routes/yws.ts/**"
+  - "packages/collab-*/**"
+  - "packages/whiteboard/**"
+
+content:
+  - "packages/content/**"
+  - "strapi/**"
+
+infra:
+  - ".github/**"
+  - "Dockerfile"
+  - "docker/**"
+
+docs:
+  - "docs/**"
+  - "**/*.md"
+
+ux:
+  - "apps/web/**"
+
+ci:
+  - ".github/workflows/**"

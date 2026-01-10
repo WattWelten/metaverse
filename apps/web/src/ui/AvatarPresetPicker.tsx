@@ -78,6 +78,7 @@ export function AvatarPresetPicker({ selectedUrl, onSelect }: AvatarPresetPicker
                 : isHovered
                   ? '0 2px 8px rgba(0, 0, 0, 0.1)'
                   : 'none',
+              position: 'relative',
             }}
           >
             {/* Avatar Preview */}

@@ -1,10 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
+import { initSentry } from './sentry.js';
 import { App } from './App';
 import './index.css';
 import './styles/design-system.css';
 import './styles/apple.css';
+
+// Initialize Sentry early
+initSentry();
 
 // Test hooks for E2E tests (only in development/test environment)
 if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
