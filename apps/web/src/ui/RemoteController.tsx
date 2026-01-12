@@ -6,6 +6,7 @@ import { logger } from '../utils/logger';
 import { PTTButton } from './PTTButton';
 import { RTCClient } from '@metaverse/rtc-sfu';
 import { getFeatureFlags } from '../FeatureFlags';
+import { t } from '../i18n';
 
 export function RemoteController() {
   const [roomId] = useState(() => getRoomFromURL());
@@ -129,161 +130,169 @@ export function RemoteController() {
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '2rem',
-        color: 'white',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      }}
-    >
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎮 Remote Controller</h1>
-        <p style={{ opacity: 0.8 }}>Room: {roomId}</p>
-        {pairCode && (
-          <p style={{ opacity: 0.8, fontSize: '0.9rem', marginTop: '0.5rem' }}>
-            Pair Code: <strong>{pairCode}</strong>
-          </p>
-        )}
-      </div>
-
+    <ErrorBoundaryWrapper>
       <div
         style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem',
-          width: '100%',
-          maxWidth: '400px',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem',
+          color: 'white',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         }}
       >
-        {qrDataUrl && (
-          <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
-            <img
-              src={qrDataUrl}
-              alt="QR Code"
-              width={160}
-              height={160}
-              style={{ borderRadius: '8px' }}
-            />
-            <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>
-              Scanne diesen QR-Code auf dem Desktop
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+            🎮 {t('remoteController') || 'Remote Controller'}
+          </h1>
+          <p style={{ opacity: 0.8 }}>
+            {t('room')}: {roomId}
+          </p>
+          {pairCode && (
+            <p style={{ opacity: 0.8, fontSize: '0.9rem', marginTop: '0.5rem' }}>
+              {t('pairCode')}: <strong>{pairCode}</strong>
             </p>
-          </div>
-        )}
-
-        <PTTButton onPTTStart={handlePTTStart} onPTTEnd={handlePTTEnd} disabled={!paired} />
+          )}
+        </div>
 
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '0.5rem',
-            marginTop: '1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.5rem',
+            width: '100%',
+            maxWidth: '400px',
           }}
         >
-          <button
-            onClick={() => handleMove(0, 1)}
-            style={{
-              padding: '1rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              fontSize: '1.5rem',
-            }}
-          >
-            ⬆️
-          </button>
-          <button
-            onClick={() => handleMove(-1, 0)}
-            style={{
-              padding: '1rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              fontSize: '1.5rem',
-            }}
-          >
-            ⬅️
-          </button>
-          <button
-            onClick={() => handleMove(1, 0)}
-            style={{
-              padding: '1rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              fontSize: '1.5rem',
-            }}
-          >
-            ➡️
-          </button>
-          <button
-            onClick={() => handleMove(0, -1)}
-            style={{
-              padding: '1rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              fontSize: '1.5rem',
-            }}
-          >
-            ⬇️
-          </button>
-          <button
-            onClick={() => handleEmote('wave')}
-            style={{
-              padding: '1rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              fontSize: '1.5rem',
-            }}
-          >
-            🎭
-          </button>
-          <button
-            onClick={() => handleEmote('clap')}
-            style={{
-              padding: '1rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: 'white',
-              fontSize: '1.5rem',
-            }}
-          >
-            👏
-          </button>
-        </div>
+          {qrDataUrl && (
+            <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+              <img
+                src={qrDataUrl}
+                alt="QR Code"
+                width={160}
+                height={160}
+                style={{ borderRadius: '8px' }}
+              />
+              <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>
+                {t('scanQRCode') || 'Scanne diesen QR-Code auf dem Desktop'}
+              </p>
+            </div>
+          )}
 
-        {!paired && (
+          <PTTButton onPTTStart={handlePTTStart} onPTTEnd={handlePTTEnd} disabled={!paired} />
+
           <div
             style={{
-              marginTop: '2rem',
-              padding: '1rem',
-              background: 'rgba(255,255,255,0.1)',
-              borderRadius: '8px',
-              textAlign: 'center',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '0.5rem',
+              marginTop: '1rem',
             }}
           >
-            <p style={{ marginBottom: '0.5rem' }}>Warte auf Pairing...</p>
-            <p style={{ fontSize: '0.9rem', opacity: '0.8' }}>
-              Pair Code: <strong>{pairCode}</strong>
-            </p>
+            <button
+              onClick={() => handleMove(0, 1)}
+              style={{
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '1.5rem',
+              }}
+            >
+              ⬆️
+            </button>
+            <button
+              onClick={() => handleMove(-1, 0)}
+              style={{
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '1.5rem',
+              }}
+            >
+              ⬅️
+            </button>
+            <button
+              onClick={() => handleMove(1, 0)}
+              style={{
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '1.5rem',
+              }}
+            >
+              ➡️
+            </button>
+            <button
+              onClick={() => handleMove(0, -1)}
+              style={{
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '1.5rem',
+              }}
+            >
+              ⬇️
+            </button>
+            <button
+              onClick={() => handleEmote('wave')}
+              style={{
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '1.5rem',
+              }}
+            >
+              🎭
+            </button>
+            <button
+              onClick={() => handleEmote('clap')}
+              style={{
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '1.5rem',
+              }}
+            >
+              👏
+            </button>
           </div>
-        )}
+
+          {!paired && (
+            <div
+              style={{
+                marginTop: '2rem',
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                textAlign: 'center',
+              }}
+            >
+              <p style={{ marginBottom: '0.5rem' }}>
+                {t('waitingForPairing') || 'Warte auf Pairing...'}
+              </p>
+              <p style={{ fontSize: '0.9rem', opacity: '0.8' }}>
+                {t('pairCode')}: <strong>{pairCode}</strong>
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </ErrorBoundaryWrapper>
   );
 }

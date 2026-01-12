@@ -6,6 +6,10 @@
     "pluralName": "portals",
     "displayName": "Portal"
   },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
   "attributes": {
     "to": {
       "type": "string",

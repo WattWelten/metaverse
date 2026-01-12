@@ -9,12 +9,12 @@ import {
   OverlayHost,
   RoomUI,
 } from '@metaverse/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 
 import { AuthService } from './auth/AuthService';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DebugOverlay } from './DebugOverlay';
-import { FeatureFlags, getFeatureFlags } from './FeatureFlags';
+import { FeatureFlags, getFeatureFlags, setFeatureFlags } from './FeatureFlags';
 import { getRoomFromURL, copyRoomLink } from './rooms';
 import { loadPrefs, type Quality } from './state/prefs';
 import { logger } from './utils/logger';
@@ -33,12 +33,18 @@ import { RaiseHandButton } from './ui/RaiseHandButton';
 import { SettingsModal } from './ui/SettingsModal';
 import { StageControls } from './ui/StageControls';
 import { VoicePanel } from './ui/VoicePanel';
-import { WhiteboardPanel } from './ui/WhiteboardPanel';
+// Lazy-load WhiteboardPanel for code-splitting (Performance-Optimierung)
+const WhiteboardPanel = lazy(() =>
+  import('./ui/WhiteboardPanel').then((m) => ({ default: m.WhiteboardPanel }))
+);
 import { ZoneIndicator } from './ui/ZoneIndicator';
 import { TemplateSwitcher } from './ui/TemplateSwitcher';
 import { MobileControls } from './ui/MobileControls';
 import { loadManifest, resolveTemplateId } from './templates/TemplateRegistry';
 import { World } from './World';
+import LangSwitcher from './i18n/LangSwitcher';
+import { t } from './i18n';
+// Note: initLang() is called automatically in i18n/index.ts, no manual call needed
 
 export function App() {
   // Check if we're on the /remote route
@@ -46,9 +52,15 @@ export function App() {
 
   // If on /remote route, render RemoteController instead
   if (isRemoteRoute) {
-    // Dynamic import to avoid loading full World for mobile
-    const { RemoteController } = require('./ui/RemoteController');
-    return <RemoteController />;
+    // Lazy-load RemoteController for code-splitting (Performance-Optimierung)
+    const RemoteController = lazy(() =>
+      import('./ui/RemoteController').then((m) => ({ default: m.RemoteController }))
+    );
+    return (
+      <Suspense fallback={<div>Loading Remote Controller...</div>}>
+        <RemoteController />
+      </Suspense>
+    );
   }
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -103,9 +115,9 @@ export function App() {
 
   // FPS-Sampler für Dev & Tests (window.__perf)
   useEffect(() => {
-    const w = window as any;
+    const w = window;
     if (w.__perfAttached) return;
-    w.__perfAttached = true;
+    (w as Window & { __perfAttached?: boolean }).__perfAttached = true;
 
     let last = performance.now();
     let frames = 0;
@@ -212,12 +224,19 @@ export function App() {
       try {
         const resolvedTemplateId = resolveTemplateId();
         logger.debug('[App] Resolved template ID:', resolvedTemplateId);
+
+        // Setze Template-ID in Feature-Flags, damit World.init() die korrekte Template-ID verwendet
+        // Dies stellt sicher, dass Query-Parameter, LocalStorage oder Environment-Variable korrekt berücksichtigt werden
+        setFeatureFlags({ TEMPLATE_ID: resolvedTemplateId });
+
         const manifest = await loadManifest(resolvedTemplateId);
         (window as any).__templateManifest = manifest;
         setTemplateId(resolvedTemplateId);
       } catch (error) {
         logger.error('[App] Failed to load template manifest:', error);
-        // Continue with default template
+        // Continue with default template, aber setze auch hier die Template-ID
+        const fallbackTemplateId = resolveTemplateId();
+        setFeatureFlags({ TEMPLATE_ID: fallbackTemplateId });
       }
 
       logger.debug('[App] Initializing World (sessionId:', session.sessionId, ')');
@@ -515,7 +534,13 @@ export function App() {
     try {
       if (prefs.avatarUrl && worldRef.current) {
         logger.debug('[App] Loading avatar from URL via World.loadAvatarFromUrl:', prefs.avatarUrl);
-        await worldRef.current.loadAvatarFromUrl(prefs.avatarUrl);
+        try {
+          await worldRef.current.loadAvatarFromUrl(prefs.avatarUrl);
+          logger.info('[App] ✅ Avatar loaded successfully');
+        } catch (avatarError) {
+          logger.error('[App] ❌ Failed to load avatar, using fallback:', avatarError);
+          // Fallback wird automatisch angewendet (Capsule-Avatar)
+        }
       }
       const avatarManager = worldRef.current?.getAvatarManager();
       if (avatarManager) {
@@ -524,7 +549,13 @@ export function App() {
         // Also set local avatar URL if not already set
         if (prefs.avatarUrl) {
           logger.debug('[App] Setting local avatar URL via AvatarManager:', prefs.avatarUrl);
-          await avatarManager.setLocalAvatarUrl(prefs.avatarUrl);
+          try {
+            await avatarManager.setLocalAvatarUrl(prefs.avatarUrl);
+            logger.info('[App] ✅ Local avatar URL set successfully');
+          } catch (avatarError) {
+            logger.error('[App] ❌ Failed to set local avatar URL:', avatarError);
+            // Continue anyway - fallback avatar will be used
+          }
         } else {
           logger.debug('[App] No avatar URL in prefs, skipping avatar load');
         }
@@ -615,6 +646,7 @@ export function App() {
           onDecline={() => handleVoiceConsent(false)}
         />
         {showDebug && <DebugOverlay world={worldRef.current} />}
+        <LangSwitcher />
         {getFeatureFlags().VOICE_ENABLED && showVoicePanel && (
           <VoicePanel
             room={roomId}
@@ -624,7 +656,9 @@ export function App() {
           />
         )}
         {getFeatureFlags().WHITEBOARD_ENABLED && showWhiteboard && (
-          <WhiteboardPanel room={roomId} />
+          <Suspense fallback={<div>Loading Whiteboard...</div>}>
+            <WhiteboardPanel room={roomId} />
+          </Suspense>
         )}
         {/* Journey: Login */}
         {journey.state === 'login' && (
@@ -642,17 +676,23 @@ export function App() {
         {/* Journey: Enter */}
         {journey.state === 'enter' && worldRef.current && (
           <EnterOverlay
-            onEnter={() => {
+            onEnter={async () => {
               // Ensure PlayerController is initialized before locking pointer
               if (worldRef.current && !worldRef.current.hasPlayerController()) {
-                // PlayerController will be initialized when template is loaded
-                // For now, just proceed to metaverse
-                logger.debug(
-                  '[EnterOverlay] PlayerController not yet initialized, proceeding anyway'
+                logger.warn(
+                  '[EnterOverlay] PlayerController not yet initialized - this may cause movement issues'
                 );
               }
-              worldRef.current?.lockPointer();
+
+              // Transition to metaverse first
               handleEnterMetaverse();
+
+              // Then try to lock pointer (with delay to ensure World is ready)
+              setTimeout(() => {
+                if (worldRef.current) {
+                  worldRef.current.lockPointer();
+                }
+              }, 300);
             }}
           />
         )}
@@ -760,15 +800,30 @@ export function App() {
                 if (worldRef.current) {
                   // Load new manifest
                   try {
+                    logger.debug(`[App] Switching template to: ${newTemplateId}`);
+
+                    // Update Feature-Flags mit neuer Template-ID (für konsistente Template-Auflösung)
+                    setFeatureFlags({ TEMPLATE_ID: newTemplateId });
+
                     const manifest = await loadManifest(newTemplateId);
+                    // Set manifest BEFORE loading template (TemplateHost checks window.__templateManifest)
                     (window as any).__templateManifest = manifest;
                     setTemplateId(newTemplateId);
-                    // Load template in World
+                    // Load template in World (this will use the pre-loaded manifest)
                     await worldRef.current.loadTemplate(newTemplateId);
+                    logger.debug(`[App] Template switched successfully to: ${newTemplateId}`);
                   } catch (error) {
                     logger.error('[App] Failed to switch template:', error);
+                    // Revert manifest and Feature-Flags on error
+                    const oldManifest = await loadManifest(templateId).catch(() => null);
+                    if (oldManifest) {
+                      (window as any).__templateManifest = oldManifest;
+                      setFeatureFlags({ TEMPLATE_ID: templateId });
+                    }
                     throw error;
                   }
+                } else {
+                  logger.warn('[App] Cannot switch template: World not initialized');
                 }
               }}
             />
@@ -918,7 +973,7 @@ export function App() {
               zIndex: 200,
             }}
           >
-            📁 Upload File
+            📁 {t('uploadFile') || 'Upload File'}
           </button>
         )}
 

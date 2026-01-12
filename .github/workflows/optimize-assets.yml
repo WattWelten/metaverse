@@ -40,5 +40,8 @@ jobs:
           git add apps/web/public/templates/**/*.glb
           git add apps/web/public/assets/**/*.glb
           git add apps/web/public/**/*.ktx2
+          git add template-research-downloads/models/**/*.glb
           git diff --staged --quiet || git commit -m "chore: optimize assets [skip ci]"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

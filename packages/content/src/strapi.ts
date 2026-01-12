@@ -12,13 +12,59 @@ const STRAPI_TOKEN =
 
 export interface StrapiScene {
   id: number;
-  attributes: {
+  documentId?: string;
+  name?: string; // Strapi v5: Felder können direkt auf der Scene stehen
+  attributes?: {
     name: string;
-    sceneJson: unknown; // Validated against scene.schema.json
-    publishedAt: string | null;
-    createdAt: string;
-    updatedAt: string;
+    sceneJson?: unknown; // Validated against scene.schema.json
+    spawn?: { x?: number; y?: number; z?: number };
+    assets?: Array<{ idStr?: string; id?: number; src: string; draco?: boolean; ktx2?: boolean }>;
+    audioBeacons?: Array<{
+      idStr?: string;
+      id?: number;
+      pos: [number, number, number];
+      url: string;
+      radius: number;
+    }>;
+    portals?: Array<{ to: string; position: [number, number, number] }>;
+    zones?: Array<{
+      idStr?: string;
+      id?: number;
+      shape: 'circle' | 'polygon';
+      center?: [number, number];
+      radius?: number;
+      points?: Array<[number, number]>;
+      isStage?: boolean;
+    }>;
+    ui?: Record<string, unknown>;
+    publishedAt?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
   };
+  // Strapi v5: Felder können auch direkt auf der Scene stehen (ohne attributes)
+  spawn?: { x?: number; y?: number; z?: number };
+  assets?: Array<{ idStr?: string; id?: number; src: string; draco?: boolean; ktx2?: boolean }>;
+  audioBeacons?: Array<{
+    idStr?: string;
+    id?: number;
+    pos: [number, number, number];
+    url: string;
+    radius: number;
+  }>;
+  portals?: Array<{ to: string; position: [number, number, number] }>;
+  zones?: Array<{
+    idStr?: string;
+    id?: number;
+    shape: 'circle' | 'polygon';
+    center?: [number, number];
+    radius?: number;
+    points?: Array<[number, number]>;
+    isStage?: boolean;
+  }>;
+  ui?: Record<string, unknown>;
+  publishedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface StrapiResponse<T> {
@@ -43,13 +89,13 @@ export class StrapiProvider {
   ) {}
 
   /**
-   * Fetch all published scenes from Strapi
+   * Fetch all published scenes from Strapi and normalize them
    */
-  async fetchScenes(): Promise<StrapiScene[]> {
+  async fetchScenes(): Promise<ReturnType<typeof normalizeScene>[]> {
     const cacheKey = 'scenes';
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
-      return cached.data as StrapiScene[];
+      return cached.data as ReturnType<typeof normalizeScene>[];
     }
 
     try {
@@ -68,8 +114,9 @@ export class StrapiProvider {
       }
 
       const data: StrapiResponse<StrapiScene> = await response.json();
-      this.cache.set(cacheKey, { data: data.data, timestamp: Date.now() });
-      return data.data;
+      const normalized = data.data.map((d) => normalizeScene(d));
+      this.cache.set(cacheKey, { data: normalized, timestamp: Date.now() });
+      return normalized;
     } catch (error) {
       console.error('[StrapiProvider] Failed to fetch scenes:', error);
       throw error;
@@ -79,11 +126,11 @@ export class StrapiProvider {
   /**
    * Fetch a single scene by ID
    */
-  async fetchScene(id: number | string): Promise<StrapiScene | null> {
+  async fetchScene(id: number | string): Promise<ReturnType<typeof normalizeScene> | null> {
     const cacheKey = `scene-${id}`;
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
-      return cached.data as StrapiScene;
+      return cached.data as ReturnType<typeof normalizeScene>;
     }
 
     try {
@@ -102,8 +149,9 @@ export class StrapiProvider {
       }
 
       const data: { data: StrapiScene } = await response.json();
-      this.cache.set(cacheKey, { data: data.data, timestamp: Date.now() });
-      return data.data;
+      const normalized = normalizeScene(data.data);
+      this.cache.set(cacheKey, { data: normalized, timestamp: Date.now() });
+      return normalized;
     } catch (error) {
       console.error(`[StrapiProvider] Failed to fetch scene ${id}:`, error);
       throw error;
@@ -150,6 +198,82 @@ export class StrapiProvider {
 
     return { valid: true };
   }
+}
+
+/**
+ * Normalize Strapi scene data to client format
+ *
+ * Converts Strapi API response format to client-friendly format:
+ * - Maps nested attributes to flat structure
+ * - Converts IDs to strings
+ * - Handles missing/optional fields with defaults
+ * - Normalizes zone shapes (circle/polygon)
+ *
+ * @param d - Strapi scene response
+ * @returns Normalized scene data
+ */
+export function normalizeScene(d: StrapiScene): {
+  name: string;
+  spawn: { x?: number; y?: number; z?: number };
+  assets: Array<{ id: string; src: string; draco?: boolean; ktx2?: boolean }>;
+  audioBeacons: Array<{
+    id: string;
+    pos: [number, number, number];
+    url: string;
+    radius: number;
+  }>;
+  portals: Array<{ to: string; position: [number, number, number] }>;
+  zones: Array<{
+    id: string;
+    shape: 'circle' | 'polygon';
+    center?: [number, number];
+    radius?: number;
+    points?: Array<[number, number]>;
+    isStage?: boolean;
+  }>;
+  ui: Record<string, unknown>;
+} {
+  // Strapi v5: Felder können direkt auf der Scene stehen oder unter attributes
+  const attrs = d.attributes || ({} as StrapiScene['attributes']);
+  const name = d.name || attrs?.name || 'Unnamed Scene';
+  const spawn = d.spawn || attrs?.spawn || {};
+  const assets = d.assets || attrs?.assets || [];
+  const audioBeacons = d.audioBeacons || attrs?.audioBeacons || [];
+  const portals = d.portals || attrs?.portals || [];
+  const zones = d.zones || attrs?.zones || [];
+  const ui = d.ui || attrs?.ui || {};
+
+  const arrayOrEmpty = <T>(x: T[] | undefined | null): T[] => x || [];
+
+  return {
+    name,
+    spawn: (spawn as { x?: number; y?: number; z?: number }) || {},
+    assets: arrayOrEmpty(assets).map((a: any) => ({
+      id: a.idStr || a.id?.toString() || '',
+      src: a.src || '',
+      draco: a.draco || false,
+      ktx2: a.ktx2 || false,
+    })),
+    audioBeacons: arrayOrEmpty(audioBeacons).map((b: any) => ({
+      id: b.idStr || b.id?.toString() || '',
+      pos: (b.pos as [number, number, number]) || [0, 0, 0],
+      url: b.url || '',
+      radius: Number(b.radius || 0),
+    })),
+    portals: arrayOrEmpty(portals).map((p: any) => ({
+      to: p.to || '',
+      position: (p.position as [number, number, number]) || [0, 0, 0],
+    })),
+    zones: arrayOrEmpty(zones).map((z: any) => ({
+      id: z.idStr || z.id?.toString() || '',
+      shape: (z.shape as 'circle' | 'polygon') || 'circle',
+      center: z.center as [number, number] | undefined,
+      radius: z.radius ? Number(z.radius) : undefined,
+      points: z.points as Array<[number, number]> | undefined,
+      isStage: !!z.isStage,
+    })),
+    ui: (ui as Record<string, unknown>) || {},
+  };
 }
 
 // Singleton instance

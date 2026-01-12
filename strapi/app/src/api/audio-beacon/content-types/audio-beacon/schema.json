@@ -6,6 +6,10 @@
     "pluralName": "audio-beacons",
     "displayName": "Audio Beacon"
   },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
   "attributes": {
     "idStr": {
       "type": "string",

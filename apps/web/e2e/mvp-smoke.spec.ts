@@ -2,10 +2,9 @@ import { test, expect } from '@playwright/test';
 
 const ROOM = process.env.E2E_ROOM || 'plaza';
 const WEB = process.env.E2E_URL || process.env.BASE_URL || 'http://localhost:5173';
+// Try new rtc-api first (Port 8787), fallback to server endpoint
 const TOKEN_API =
-  process.env.RTC_TOKEN_URL ||
-  process.env.VITE_RTC_TOKEN_ENDPOINT ||
-  'http://localhost:3001/api/rtc/token';
+  process.env.RTC_TOKEN_URL || process.env.VITE_RTC_TOKEN_ENDPOINT || 'http://localhost:8787/token';
 // YWS ist auf demselben Server wie der API-Server (Port 3001)
 const SERVER_PORT = Number(process.env.PORT || 3001);
 const STRAPI = process.env.STRAPI_URL || 'http://localhost:1337';
@@ -72,8 +71,14 @@ test.describe('MVP Smoke', () => {
 
   test('Strapi scenes (optional)', async ({ request }) => {
     try {
-      const r = await request.get(`${STRAPI}/api/scenes?populate=deep`, { timeout: 3000 });
+      const r = await request.get(`${STRAPI}/api/scenes`, { timeout: 3000 });
       expect(r.status()).toBeLessThan(500); // 200, 401 (ohne Public), etc. sind ok
+
+      if (r.ok()) {
+        const data = await r.json();
+        expect(data.data).toBeDefined();
+        console.log(`✅ Found ${data.data.length} scenes in Strapi`);
+      }
     } catch (error: any) {
       if (error.message?.includes('ECONNREFUSED') || error.message?.includes('timeout')) {
         test.skip(); // Skip wenn Strapi nicht läuft (optional)

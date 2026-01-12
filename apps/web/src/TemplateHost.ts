@@ -61,12 +61,21 @@ export class TemplateHost {
     const signal = this.loadingAbortController.signal;
 
     try {
-      // Register default template loader if not already registered
-      if (!templateRegistry.getCurrentInstance()) {
-        const defaultLoader = this.createDefaultTemplateLoader();
-        templateRegistry.register('watt-default', defaultLoader);
-        // Register watt-eco with the same loader (uses same format)
-        templateRegistry.register('watt-eco', defaultLoader);
+      // Create default template loader (used for all templates)
+      const defaultLoader = this.createDefaultTemplateLoader();
+
+      // Always register all known templates (for dynamic template loading)
+      // This ensures all templates can be loaded via templateRegistry or directly
+      const knownTemplates = [
+        'watt-default',
+        'watt-eco',
+        'park',
+        'play-park-dirty',
+        'demo-meeting',
+        'demo-plaza',
+      ];
+      for (const id of knownTemplates) {
+        templateRegistry.register(id, defaultLoader);
       }
 
       // Check if aborted before loading
@@ -76,13 +85,13 @@ export class TemplateHost {
 
       console.log(`[TemplateHost] Loading template: ${templateId}`);
 
-      // Check if manifest is already loaded via window.__templateManifest (from TemplateRegistry)
+      // Always use pre-loaded manifest if available (from TemplateRegistry in App.tsx)
+      // This ensures consistent template loading and proper manifest handling
       const windowManifest = (window as any).__templateManifest;
       if (windowManifest && windowManifest.id === templateId) {
         console.log(`[TemplateHost] Using pre-loaded manifest for ${templateId}`);
         // Use the pre-loaded manifest by passing it directly to the loader
-        const loader = this.createDefaultTemplateLoader();
-        const instance = await loader(windowManifest);
+        const instance = await defaultLoader(windowManifest);
         await instance.mount(this.scene);
         this.currentTemplate = instance;
         this.loadingAbortController = null;
@@ -92,7 +101,14 @@ export class TemplateHost {
         return;
       }
 
-      const instance = await templateRegistry.load(templateId, this.scene);
+      // Fallback: Load manifest and use default loader directly
+      // This handles cases where manifest wasn't pre-loaded
+      console.log(`[TemplateHost] Manifest not pre-loaded, loading manifest for ${templateId}`);
+      const { loadManifest } = await import('./templates/TemplateRegistry');
+      const manifest = await loadManifest(templateId);
+      (window as any).__templateManifest = manifest;
+      const instance = await defaultLoader(manifest);
+      await instance.mount(this.scene);
 
       // Check if aborted after loading
       if (signal.aborted) {
@@ -126,12 +142,13 @@ export class TemplateHost {
       try {
         // Use createGLTFLoader which handles cache, Draco, and KTX2 automatically
         const loader = createGLTFLoader(this.renderer || undefined);
-        const gltf = await loader.loadAsync(`/templates/${manifest.name}/scene.glb`);
+        // Use manifest.id for path (directory structure is based on IDs, not names)
+        const gltf = await loader.loadAsync(`/templates/${manifest.id}/scene.glb`);
         sceneObject = gltf.scene || gltf.scenes?.[0] || new Object3D();
-        console.log(`✅ Template "${manifest.name}": Loaded scene.glb`);
+        console.log(`✅ Template "${manifest.id}": Loaded scene.glb`);
       } catch (error) {
         // Generate a simple default scene
-        console.log(`ℹ️ Template "${manifest.name}": No scene.glb found, generating default scene`);
+        console.log(`ℹ️ Template "${manifest.id}": No scene.glb found, generating default scene`);
         sceneObject = this.createDefaultScene();
       }
 
@@ -153,7 +170,7 @@ export class TemplateHost {
             const size = box.getSize(new Vector3());
             const center = box.getCenter(new Vector3());
 
-            console.log(`✅ Template "${manifest.name}": Scene mounted`);
+            console.log(`✅ Template "${manifest.id}": Scene mounted`);
             console.log(`  - Children: ${sceneObject.children.length}`);
             console.log(
               `  - Bounding box: size=(${size.x.toFixed(2)}, ${size.y.toFixed(2)}, ${size.z.toFixed(2)}), center=(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`

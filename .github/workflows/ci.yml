@@ -24,3 +24,5 @@ jobs:
       - run: pnpm -w typecheck --if-present
       - run: pnpm -w test --if-present
       - run: pnpm -w e2e --if-present
+      - name: Validate templates
+        run: pnpm exec tsx scripts/validate-templates.ts

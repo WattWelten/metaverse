@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { getFeatureFlags } from '../FeatureFlags';
-import {
-  loadIndex,
-  persistTemplateId,
-  setTemplateQueryParam,
-  type TemplateInfo,
-} from '../templates/TemplateRegistry';
+import { loadIndex, persistTemplateId, type TemplateInfo } from '../templates/TemplateRegistry';
 
 interface TemplateSwitcherProps {
   className?: string;
@@ -47,7 +42,11 @@ export function TemplateSwitcher({ className = '', onTemplateChange }: TemplateS
     const newId = e.target.value;
     setCurrentId(newId);
     persistTemplateId(newId);
-    setTemplateQueryParam(newId);
+
+    // Update URL without reload (für Hot-Swap)
+    const url = new URL(location.href);
+    url.searchParams.set('template', newId);
+    window.history.replaceState({}, '', url.toString());
 
     // Hot-Swap ohne Reload
     if (onTemplateChange) {

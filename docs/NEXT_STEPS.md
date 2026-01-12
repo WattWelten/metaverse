@@ -1,8 +1,8 @@
 # Nächste Schritte - WattWelten Metaverse
 
-**Aktualisiert:** 2026-01-10  
+**Aktualisiert:** 2026-01-11  
 **Branch:** `feat/auto-setup-mvp`  
-**Status:** Phase B & A2 abgeschlossen, Phase A1 ausstehend
+**Status:** Phase A1 (Strapi Setup) abgeschlossen ✅
 
 ## ✅ Abgeschlossen (diese Session)
 
@@ -25,84 +25,40 @@
 - ✅ `docs/CURRENT_STATUS.md` erstellt
 - ✅ Git commit & push durchgeführt
 
+## ✅ Phase A 1: Strapi Setup (abgeschlossen)
+
+### Abgeschlossene Schritte
+
+- ✅ **Docker Compose:** PostgreSQL auf Port 5433 konfiguriert
+- ✅ **Strapi installiert:** Läuft auf `http://localhost:1337`
+- ✅ **Content Types registriert:** Routes/Controller/Service für alle 5 CTs erstellt
+- ✅ **Public API Rechte:** Automatisch via Bootstrap-Script gesetzt (find/findOne)
+- ✅ **API Token:** Erstellt und in `.env.local` gespeichert
+- ✅ **Seeds ausgeführt:** Test-Daten vorhanden (1 Scene, 2 Assets, 2 Zones, 1 Portal, 1 Audio-Beacon)
+- ✅ **Webhook konfiguriert:** Automatisch erstellt via `scripts/setup-strapi-webhook.mjs`
+
+### Automatisierung
+
+Alle Schritte sind automatisiert:
+
+- **Bootstrap-Script:** `strapi/app/src/index.ts` setzt Permissions automatisch
+- **Webhook-Setup:** `scripts/setup-strapi-webhook.mjs` erstellt Webhook automatisch
+- **Seeds:** `scripts/seed-strapi.mjs` erstellt Test-Daten
+- **Tests:** `scripts/test-webhook.mjs` testet Webhook + Client-Integration
+
+### Verifizierung
+
+```bash
+# Test Webhook + Client Integration
+node scripts/test-webhook.mjs
+
+# Erwartete Ausgabe:
+# ✅ Webhook Endpoint: ✅
+# ✅ Webhook Trigger: ✅
+# ✅ Client Integration: ✅
+```
+
 ## 🎯 Nächste Schritte (Priorisiert)
-
-### Phase A 1: Strapi Setup (autark soweit möglich)
-
-#### Schritt 1: Docker Compose prüfen
-
-```bash
-# PostgreSQL läuft bereits auf Port 5432 (PID 20412)
-# Prüfen ob Docker Compose die DB nutzen kann oder Port ändern
-cd strapi
-docker compose up -d
-```
-
-**Hinweis:** Falls Port 5432 belegt ist:
-
-- Option A: Bestehende PostgreSQL-Instanz nutzen (wenn kompatibel)
-- Option B: Port in `docker-compose.yml` ändern (z.B. 5433)
-
-#### Schritt 2: Strapi lokal installieren
-
-```bash
-cd strapi
-# Falls noch nicht vorhanden:
-npx create-strapi-app@latest app --quickstart --no-run
-
-# Oder falls bereits vorhanden:
-cd app
-npm install
-npm run develop
-```
-
-#### Schritt 3: Content Types registrieren
-
-Die JSON-Schemas sind bereits erstellt:
-
-- `strapi/app/src/api/scene/content-types/scene/schema.json`
-- `strapi/app/src/api/asset/content-types/asset/schema.json`
-- `strapi/app/src/api/zone/content-types/zone/schema.json`
-- `strapi/app/src/api/portal/content-types/portal/schema.json`
-- `strapi/app/src/api/audio-beacon/content-types/audio-beacon/schema.json`
-
-**Aktion:** Strapi sollte diese beim Start automatisch erkennen. Falls nicht, in Admin-UI prüfen.
-
-#### Schritt 4: Public API Rechte konfigurieren
-
-1. Strapi Admin-UI öffnen: `http://localhost:1337/admin`
-2. Settings → Roles → Public
-3. Für jeden Content Type (Scene, Asset, Zone, Portal, Audio-Beacon):
-   - `find` aktivieren
-   - `findOne` aktivieren
-   - Optional: `create`, `update`, `delete` (je nach Bedarf)
-
-#### Schritt 5: API Token erstellen
-
-1. Settings → API Tokens
-2. "Create new API Token"
-3. Name: z.B. "Seed Script Token"
-4. Token type: "Full access" (oder eingeschränkt)
-5. Token kopieren und in `.env.local` setzen:
-   ```bash
-   echo STRAPI_TOKEN=dein_token_hier >> .env.local
-   ```
-
-#### Schritt 6: Seeds ausführen
-
-```bash
-cd C:\cursor.ai\WattWelten_Metaverse
-node scripts/seed-strapi.mjs
-```
-
-#### Schritt 7: Webhook konfigurieren
-
-1. Strapi Admin → Settings → Webhooks
-2. "Create new webhook"
-3. Name: "Content Refresh"
-4. URL: `http://localhost:3001/api/content/refresh`
-5. Events: `entry.publish`, `entry.unpublish`, `entry.update`
-6. Save
 
 ### Nach Strapi Setup
 

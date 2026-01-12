@@ -84,6 +84,11 @@ export class AmbientManager {
   }
 
   loadFromTemplate(manifest: TemplateManifest): void {
+    // Clear all existing sources first (for template switching)
+    this.stopAll();
+    this.sources.forEach((source) => source.dispose());
+    this.sources.clear();
+
     if (!manifest.ambient?.sources) return;
 
     manifest.ambient.sources.forEach((config) => {

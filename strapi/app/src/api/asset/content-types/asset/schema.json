@@ -6,6 +6,10 @@
     "pluralName": "assets",
     "displayName": "Asset"
   },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
   "attributes": {
     "idStr": {
       "type": "string",

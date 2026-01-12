@@ -32,13 +32,13 @@
     "sources": [
       {
         "id": "birds",
-        "file": "ambient/birds.mp3",
+        "file": "/templates/watt-eco/ambient/birds.mp3",
         "volume": 0.3,
         "loop": true
       },
       {
         "id": "wind",
-        "file": "ambient/wind.mp3",
+        "file": "/templates/watt-eco/ambient/wind.mp3",
         "volume": 0.2,
         "loop": true
       }

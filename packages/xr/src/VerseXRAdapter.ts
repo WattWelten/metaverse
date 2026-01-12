@@ -2,8 +2,13 @@ import type { IXRAdapter } from './XRAdapter.js';
 
 /**
  * VerseEngine XR adapter (stub implementation).
+ *
+ * ⚠️ FUTURE IMPLEMENTATION - Not yet available
+ *
  * This is a placeholder for future VerseEngine integration.
  * Falls back to ThreeXRAdapter if VerseEngine is not available.
+ *
+ * TODO: Implement when VerseEngine SDK becomes available
  */
 export class VerseXRAdapter implements IXRAdapter {
   async supported(): Promise<boolean> {

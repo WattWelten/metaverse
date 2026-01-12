@@ -1,0 +1,175 @@
+# Cursor Plan – WattWelten Metaverse MVP-Finalisierung
+
+**Version:** 1.0  
+**Datum:** 2026-01-11  
+**Phase:** MVP-Finalisierung (Woche 1-4)
+
+---
+
+## 🎯 Aktuelle Phase: MVP-Finalisierung
+
+### Primäre Dokumente (Täglich zu prüfen)
+
+1. **[docs/MVP_FINALIZATION_PLAN.md](docs/MVP_FINALIZATION_PLAN.md)** ⭐⭐⭐
+   - Hauptplan für MVP-Finalisierung
+   - 4 Phasen mit detaillierten Tasks
+   - Erfolgs-Kriterien
+
+2. **[docs/MVP_ROADMAP.md](docs/MVP_ROADMAP.md)** ⭐⭐⭐
+   - Wochenplan (4 Wochen)
+   - Tägliche Tasks
+   - Deliverables
+
+3. **[docs/TEMPLATE_CANDIDATE_LIST.md](docs/TEMPLATE_CANDIDATE_LIST.md)** ⭐⭐
+   - Template-Kandidaten-Dokumentation
+   - Bewertungskriterien
+   - Top 5 Kandidaten
+
+### Sekundäre Dokumente (Wöchentlich)
+
+4. **[docs/PLAN_SOURCE_OF_TRUTH.md](docs/PLAN_SOURCE_OF_TRUTH.md)** 🔴
+   - Verbindlicher Plan (Source of Truth)
+   - MVP Completion Plan
+   - **BEI JEDER ÄNDERUNG PRÜFEN!**
+
+5. **[docs/STATUS.md](docs/STATUS.md)**
+   - Aktueller MVP-Status
+   - Feature-Übersicht
+   - Quick Start
+
+6. **[docs/TASK_LOG.md](docs/TASK_LOG.md)**
+   - Task-Log
+   - Abgeschlossene Tasks
+   - Offene Tasks
+
+7. **[docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)**
+   - Nächste Schritte
+   - Priorisierte Tasks
+
+### Referenz-Dokumente (Bei Bedarf)
+
+8. **[docs/DESIGNER_BRIEFING_DE.md](docs/DESIGNER_BRIEFING_DE.md)**
+   - Designer-Briefing (Deutsch)
+   - Technische Spezifikationen
+
+9. **[docs/DESIGNER_BRIEFING_EN.md](docs/DESIGNER_BRIEFING_EN.md)**
+   - Designer Briefing (English)
+   - Technical specifications
+
+10. **[docs/TEMPLATE_INTEGRATION_WORKFLOW.md](docs/TEMPLATE_INTEGRATION_WORKFLOW.md)**
+    - Template-Integration Workflow
+    - Validierung & Testing
+
+11. **[docs/troubleshooting.md](docs/troubleshooting.md)**
+    - Troubleshooting Guide
+    - Häufige Probleme
+
+---
+
+## 📋 Aktuelle Woche: Woche 1 – Template-Recherche & Interview
+
+### Tag 1-2: Template-Recherche
+
+**Scripts:**
+- `scripts/research-templates.mjs` - Template-Recherche starten
+- `docs/TEMPLATE_CANDIDATE_LIST.md` - Kandidaten dokumentieren
+
+**Tasks:**
+- [ ] Recherche-Script ausführen
+- [ ] Plattformen durchsuchen (Sketchfab, PolyHaven, etc.)
+- [ ] 10-20 Kandidaten finden
+- [ ] Top 5 identifizieren
+
+### Tag 3: Designer-Interview
+
+**Scripts:**
+- `scripts/conduct-template-interview.mjs` - Interview-Protokoll erstellen
+- `docs/TEMPLATE_INTERVIEW.md` - Interview-Fragen
+
+**Tasks:**
+- [ ] Interview vorbereiten
+- [ ] Interview durchführen (40 Fragen)
+- [ ] Protokoll dokumentieren
+- [ ] Design-Briefing aktualisieren
+
+### Tag 4-5: Design-Briefing finalisieren
+
+**Dokumente:**
+- `docs/DESIGNER_BRIEFING_DE.md` - Aktualisieren
+- `docs/DESIGNER_BRIEFING_EN.md` - Aktualisieren
+
+**Tasks:**
+- [ ] Moodboard erstellen
+- [ ] Referenz-Templates sammeln
+- [ ] Finale Template-Auswahl treffen
+
+---
+
+## 🔧 Wichtige Scripts
+
+### Template-Recherche
+```bash
+node scripts/research-templates.mjs
+```
+
+### Interview-Protokoll
+```bash
+node scripts/conduct-template-interview.mjs
+```
+
+### Template-Validierung
+```bash
+node scripts/validate-templates.ts my-template-name
+```
+
+### Template-Import
+```bash
+node scripts/import-template.js ./designer-delivery/my-template-name
+```
+
+---
+
+## 📊 Erfolgs-Kriterien (MVP)
+
+### Funktionale Anforderungen
+- [x] Template-Switching funktioniert
+- [x] Strapi-Integration funktioniert
+- [ ] Professionelles Template integriert
+- [x] Multiplayer funktioniert (5-10 Teilnehmer)
+- [x] Voice-Chat funktioniert
+- [x] Whiteboard funktioniert
+
+### Performance-Anforderungen
+- [ ] Desktop: 60 FPS (p90)
+- [ ] Mobile: 40 FPS (p90)
+- [ ] Bundle-Size: < 2MB (initial)
+- [ ] Ladezeit: < 5s (auf schneller Verbindung)
+
+### Qualitäts-Anforderungen
+- [ ] E2E-Tests: > 80% Coverage
+- [ ] TypeScript: Keine `any`-Types (außer Legacy)
+- [ ] Dokumentation: Vollständig
+- [ ] CI/CD: Alle Tests grün
+
+---
+
+## 🚨 Wichtige Regeln
+
+1. **Source of Truth beachten**: `docs/PLAN_SOURCE_OF_TRUTH.md` ist verbindlich
+2. **Dokumentation aktualisieren**: Nach jedem Major-Step `TASK_LOG.md` aktualisieren
+3. **Conventional Commits**: Verwende Conventional Commits + Changesets
+4. **Tests**: Alle Tests müssen grün sein vor Commit
+5. **Performance**: 60 FPS Desktop, 40 FPS Mobile
+
+---
+
+## 📚 Quick Links
+
+- **Master-Index**: [docs/MASTER_INDEX.md](docs/MASTER_INDEX.md)
+- **Quick Start**: [docs/MVP_QUICK_START.md](docs/MVP_QUICK_START.md)
+- **Status**: [docs/STATUS.md](docs/STATUS.md)
+- **Troubleshooting**: [docs/troubleshooting.md](docs/troubleshooting.md)
+
+---
+
+**Letzte Aktualisierung:** 2026-01-11

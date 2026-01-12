@@ -29,24 +29,49 @@ export default defineConfig({
     port: 5173,
     https: false,
     host: true,
+    strictPort: false,
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+    },
   },
   build: {
     target: 'esnext',
     sourcemap: true,
     minify: 'esbuild', // Schnell und effizient
-    // Chunk-Size-Warnung erhöhen (Three.js ist groß)
-    chunkSizeWarningLimit: 600,
+    // Chunk-Size-Warnung erhöhen (Three.js ist groß, aber wir optimieren)
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       external: ['@pixiv/three-vrm'], // Optional dependency, not bundled
+      treeshake: {
+        moduleSideEffects: (id) => {
+          // Three.js Examples können side effects haben
+          if (id.includes('three/examples')) {
+            return false; // Tree-shake wenn möglich
+          }
+          return false; // Aggressives Tree-Shaking
+        },
+        propertyReadSideEffects: false,
+        tryCatchDeoptimization: false,
+      },
       output: {
         manualChunks: (id) => {
-          // Three.js in separaten Chunk
+          // Three.js in separaten Chunk (optimiert für Tree-Shaking)
           if (id.includes('three')) {
-            // Three.js Core
-            if (id.includes('three/examples/jsm') || id.includes('three/src')) {
+            // Three.js Core (nur benötigte Module)
+            if (id.includes('three/src') && !id.includes('examples')) {
               return 'three-core';
             }
-            // Three.js Examples (Controls, Loaders, etc.)
+            // Three.js Examples (Controls, Loaders, etc.) - lazy loaded
+            if (id.includes('three/examples/jsm/controls')) {
+              return 'three-controls';
+            }
+            if (id.includes('three/examples/jsm/loaders')) {
+              return 'three-loaders';
+            }
+            if (id.includes('three/examples/jsm/objects')) {
+              return 'three-objects';
+            }
             if (id.includes('three/examples')) {
               return 'three-examples';
             }
@@ -59,11 +84,15 @@ export default defineConfig({
           // Packages in separate Chunks für Lazy-Loading
           if (id.includes('@metaverse/')) {
             const packageName = id.split('@metaverse/')[1]?.split('/')[0];
-            if (packageName && ['ai', 'voice', 'xr'].includes(packageName)) {
-              // Feature-Packages können lazy geladen werden
+            if (packageName && ['ai', 'voice', 'xr', 'content'].includes(packageName)) {
+              // Feature-Packages können lazy geladen werden (inkl. StrapiProvider)
               return `metaverse-${packageName}`;
             }
             return 'metaverse-core';
+          }
+          // StrapiProvider lazy loading
+          if (id.includes('strapi') || id.includes('StrapiTemplateLoader')) {
+            return 'metaverse-strapi';
           }
         },
       },

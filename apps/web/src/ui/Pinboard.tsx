@@ -1,8 +1,7 @@
-import * as pdfjsLib from 'pdfjs-dist';
 import { useState, useRef, DragEvent } from 'react';
-
-// PDF.js Worker Setup
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+import PdfViewer from '../components/PdfViewer';
+import { t } from '../i18n';
+import { ErrorBoundaryWrapper } from '../components/ErrorBoundaryWrapper';
 
 interface PinboardItem {
   id: string;
@@ -93,7 +92,7 @@ export function Pinboard({ visible, onClose }: { visible: boolean; onClose: () =
           borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
         }}
       >
-        <h3 style={{ color: '#fff', margin: 0 }}>Pinboard</h3>
+        <h3 style={{ color: '#fff', margin: 0 }}>{t('notes')}</h3>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={handleAddLink}
@@ -107,7 +106,7 @@ export function Pinboard({ visible, onClose }: { visible: boolean; onClose: () =
               fontSize: '14px',
             }}
           >
-            Add Link
+            {t('addLink') || 'Add Link'}
           </button>
           <button
             onClick={onClose}
@@ -140,12 +139,17 @@ export function Pinboard({ visible, onClose }: { visible: boolean; onClose: () =
           }}
         >
           {item.type === 'pdf' && (
-            <iframe
-              src={item.url}
-              sandbox="allow-same-origin allow-scripts"
-              style={{ width: '400px', height: '600px', border: 'none' }}
-              title="PDF Viewer"
-            />
+            <div
+              style={{
+                width: '500px',
+                height: '700px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '4px',
+                overflow: 'hidden',
+              }}
+            >
+              <PdfViewer url={item.url} />
+            </div>
           )}
           {item.type === 'image' && (
             <img src={item.url} alt="Pinboard" style={{ maxWidth: '300px', display: 'block' }} />

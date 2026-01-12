@@ -6,6 +6,10 @@
     "pluralName": "scenes",
     "displayName": "Scene"
   },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
   "attributes": {
     "name": {
       "type": "string",
@@ -41,9 +45,6 @@
     },
     "ui": {
       "type": "json"
-    },
-    "publishedAt": {
-      "type": "datetime"
     }
   }
 }

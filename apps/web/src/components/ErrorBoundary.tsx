@@ -37,6 +37,14 @@ export class ErrorBoundary extends Component<Props, State> {
       error,
       errorInfo,
     });
+
+    // Report to error reporting service if available
+    if (
+      typeof window !== 'undefined' &&
+      (window as Window & { reportError?: (error: Error) => void }).reportError
+    ) {
+      (window as Window & { reportError: (error: Error) => void }).reportError(error);
+    }
   }
 
   handleReset = (): void => {

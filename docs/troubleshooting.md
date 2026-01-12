@@ -112,6 +112,114 @@ pnpm install
 pnpm setup:decoders
 ```
 
+### Strapi-Probleme
+
+#### "Cannot connect to database"
+
+**Lösung:**
+
+```bash
+# Prüfe Docker
+docker ps | grep postgres
+
+# Starte Docker neu
+cd strapi
+docker-compose restart
+
+# Prüfe Logs
+docker-compose logs postgres
+```
+
+#### "Content Type not found (404)"
+
+**Lösung:**
+
+1. Öffne Strapi Admin: http://localhost:1337/admin
+2. Gehe zu: **Content-Type Builder**
+3. Klicke auf jeden Content Type → **"Save"**
+4. Starte Strapi neu: `cd strapi/app && npm run develop`
+
+**Automatisch:**
+
+```bash
+node scripts/fix-strapi-content-types.mjs
+```
+
+#### "Forbidden (403)"
+
+**Lösung:**
+
+```bash
+# Permissions automatisch setzen
+node scripts/setup-strapi-permissions.mjs
+
+# Oder manuell in Admin-UI
+# Settings → Users & Permissions → Roles → Public
+# Aktiviere "find" und "findOne" für alle Content Types
+```
+
+**Hinweis:** Das Bootstrap-Script setzt Permissions automatisch beim Start (nur in DEV-Modus).
+
+#### "API Token not found"
+
+**Lösung:**
+
+```bash
+# Token automatisch erstellen
+node scripts/setup-strapi-simple.mjs
+
+# Oder manuell in Admin-UI
+# Settings → API Tokens → Create new API Token
+```
+
+#### "Bootstrap script not running"
+
+**Lösung:**
+
+1. Prüfe `strapi/app/src/index.ts` → `bootstrap` Funktion
+2. Prüfe Logs beim Start: `npm run develop`
+3. Sollte zeigen: `✅ Public permissions seeded (DEV)`
+
+#### "Webhook not triggering"
+
+**Lösung:**
+
+1. Prüfe Webhook-Konfiguration in Admin-UI
+2. Prüfe Server-Logs: `cd apps/server && pnpm dev`
+3. Teste Webhook manuell:
+
+```bash
+node scripts/test-webhook.mjs
+```
+
+**Setup:**
+
+```bash
+node scripts/setup-strapi-webhook.mjs
+```
+
+#### Strapi startet nicht
+
+**Lösung:**
+
+```bash
+# Prüfe Environment
+cd strapi/app
+cat .env | grep DATABASE
+
+# Prüfe Dependencies
+npm install
+
+# Prüfe PostgreSQL
+docker ps | grep postgres
+
+# Prüfe Logs
+npm run develop
+# Suche nach Fehlermeldungen
+```
+
+**Vollständiger Setup-Guide:** Siehe `docs/STRAPI_SETUP.md`
+
 ## Debug-Tipps
 
 ### Debug-Overlay

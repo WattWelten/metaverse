@@ -2,6 +2,7 @@ import { RTCClient } from '@metaverse/rtc-sfu';
 import { getFeatureFlags } from '../FeatureFlags';
 import { loadPrefs } from '../state/prefs';
 import { logger } from '../utils/logger';
+import { t } from '../i18n';
 import { useEffect, useMemo, useState } from 'react';
 
 const ENABLED = import.meta.env.VITE_VOICE_ENABLED === 'true';
@@ -109,13 +110,13 @@ export function VoicePanel({ room, userId, displayName, role = 'guest' }: VoiceP
       </div>
       {!joined ? (
         <button onClick={join} disabled={state === 'connecting'}>
-          {state === 'connecting' ? 'Connecting...' : 'Join Voice'}
+          {state === 'connecting' ? t('loading') : t('join')}
         </button>
       ) : (
         <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={toggleMute}>{muted ? 'Unmute' : 'Mute'}</button>
-            <button onClick={leave}>Leave</button>
+            <button onClick={toggleMute}>{muted ? t('unmute') : t('mute')}</button>
+            <button onClick={leave}>{t('leave')}</button>
           </div>
           <select
             onChange={(e) => {

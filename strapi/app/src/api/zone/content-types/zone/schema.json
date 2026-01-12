@@ -6,6 +6,10 @@
     "pluralName": "zones",
     "displayName": "Zone"
   },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
   "attributes": {
     "idStr": {
       "type": "string",
@@ -13,8 +17,8 @@
     },
     "shape": {
       "type": "enumeration",
-      "enum": ["circle", "polygon"],
-      "required": true
+      "required": true,
+      "enum": ["circle", "polygon"]
     },
     "center": {
       "type": "json"

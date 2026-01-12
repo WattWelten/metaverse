@@ -28,6 +28,20 @@ export default defineConfig({
     viewport: { width: 1400, height: 900 },
   },
   projects: [
+    // Multi-Browser Desktop Tests
+    {
+      name: 'chrome',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    // Multi-Client Desktop Tests (für Multiplayer-Szenarien)
     {
       name: 'desktop-1',
       use: { ...devices['Desktop Chrome'] },
@@ -40,22 +54,22 @@ export default defineConfig({
       name: 'desktop-3',
       use: { ...devices['Desktop Chrome'] },
     },
+    // Mobile Tests
     {
-      name: 'mobile',
+      name: 'mobile-ios',
       use: { ...devices['iPhone 12'] },
     },
-    // Legacy projects for other tests
+    {
+      name: 'mobile-android',
+      use: {
+        ...devices['Pixel 5'],
+        viewport: { width: 390, height: 844 },
+      },
+    },
+    // Legacy projects (für Kompatibilität)
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
     },
     {
       name: 'Mobile Chrome',

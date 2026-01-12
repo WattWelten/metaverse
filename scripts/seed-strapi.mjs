@@ -1,4 +1,22 @@
 import assert from 'node:assert/strict';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+
+// Lade .env.local falls vorhanden
+const envLocalPath = join(process.cwd(), '.env.local');
+if (existsSync(envLocalPath)) {
+  const envContent = readFileSync(envLocalPath, 'utf-8');
+  envContent.split('\n').forEach((line) => {
+    const match = line.match(/^([^=]+)=(.*)$/);
+    if (match) {
+      const key = match[1].trim();
+      const value = match[2].trim();
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  });
+}
 
 const STRAPI = process.env.STRAPI_URL || 'http://localhost:1337';
 const TOKEN = process.env.STRAPI_TOKEN;
@@ -10,8 +28,10 @@ const H = {
 };
 
 async function upsert(type, uniqueField, payload) {
+  // In Strapi v5: Felder stehen direkt unter data, nicht unter data.attributes
+  const fieldValue = payload.data[uniqueField] || payload.data.attributes?.[uniqueField];
   const q = new URLSearchParams({
-    [`filters[${uniqueField}][$eq]`]: payload.data.attributes[uniqueField],
+    [`filters[${uniqueField}][$eq]`]: fieldValue,
     'pagination[limit]': '1',
   });
   const list = await fetch(`${STRAPI}/api/${type}?${q}`, { headers: H });
@@ -31,74 +51,67 @@ async function upsert(type, uniqueField, payload) {
       headers: H,
       body: JSON.stringify(payload),
     });
+    if (!r.ok) {
+      const errorText = await r.text();
+      throw new Error(`POST failed for ${type}: ${r.status} ${errorText.substring(0, 200)}`);
+    }
     const jr = await r.json();
     return jr.data;
   }
 }
 
 try {
+  // In Strapi v5: Felder stehen direkt unter data, nicht unter data.attributes
   const asset = await upsert('assets', 'idStr', {
     data: {
-      attributes: {
-        idStr: 'plaza',
-        src: 'glb/plaza.glb',
-        draco: true,
-        ktx2: true,
-      },
+      idStr: 'plaza',
+      src: 'glb/plaza.glb',
+      draco: true,
+      ktx2: true,
     },
   });
 
   const zoneA = await upsert('zones', 'idStr', {
     data: {
-      attributes: {
-        idStr: 'stage',
-        shape: 'circle',
-        center: [0, 0],
-        radius: 6,
-        isStage: true,
-      },
+      idStr: 'stage',
+      shape: 'circle',
+      center: [0, 0],
+      radius: 6,
+      isStage: true,
     },
   });
 
   const zoneB = await upsert('zones', 'idStr', {
     data: {
-      attributes: {
-        idStr: 'breakoutA',
-        shape: 'circle',
-        center: [8, 0],
-        radius: 4,
-        isStage: false,
-      },
+      idStr: 'breakoutA',
+      shape: 'circle',
+      center: [8, 0],
+      radius: 4,
+      isStage: false,
     },
   });
 
   const beacon = await upsert('audio-beacons', 'idStr', {
     data: {
-      attributes: {
-        idStr: 'fountain',
-        pos: [2, 0, -4],
-        url: 'audio/fountain.ogg',
-        radius: 8,
-      },
+      idStr: 'fountain',
+      pos: [2, 0, -4],
+      url: 'audio/fountain.ogg',
+      radius: 8,
     },
   });
 
   const portal = await upsert('portals', 'to', {
     data: {
-      attributes: {
-        to: 'Breakout A',
-        position: [5, 0, 2],
-      },
+      to: 'Breakout A',
+      position: [5, 0, 2],
     },
   });
 
   const scenePayload = {
     data: {
-      attributes: {
-        name: 'Welcome Plaza',
-        spawn: { x: 0, y: 0, z: 3 },
-        ui: { showMinimap: true },
-      },
+      name: 'Welcome Plaza',
+      spawn: { x: 0, y: 0, z: 3 },
+      ui: { showMinimap: true },
     },
   };
   const scene = await upsert('scenes', 'name', scenePayload);

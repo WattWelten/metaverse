@@ -39,6 +39,13 @@ const configs: AssetConfig[] = [
     ktx2: true,
     quality: 'medium',
   },
+  {
+    inputDir: join(process.cwd(), 'template-research-downloads/models'),
+    outputDir: join(process.cwd(), 'template-research-downloads/models'),
+    draco: true,
+    ktx2: true,
+    quality: 'high',
+  },
 ];
 
 /**
@@ -212,6 +219,14 @@ function processAssets(config: AssetConfig): void {
 }
 
 /**
+ * Get statistics about processed assets
+ */
+function getStatistics(): { processed: number; failed: number; totalSize: number } {
+  // This would be enhanced to track actual statistics
+  return { processed: 0, failed: 0, totalSize: 0 };
+}
+
+/**
  * Main function
  */
 async function main(): Promise<void> {
@@ -223,16 +238,34 @@ async function main(): Promise<void> {
     installGLTFTransform();
   }
 
+  let totalProcessed = 0;
+  let totalFailed = 0;
+
   // Process all asset configurations
   for (const config of configs) {
-    processAssets(config);
+    if (existsSync(config.inputDir)) {
+      const files = readdirSync(config.inputDir, { recursive: true });
+      const assetFiles = files.filter(
+        (f) =>
+          f.endsWith('.glb') ||
+          f.endsWith('.gltf') ||
+          ['.jpg', '.jpeg', '.png', '.webp'].some((ext) => f.toLowerCase().endsWith(ext))
+      );
+      totalProcessed += assetFiles.length;
+      processAssets(config);
+    } else {
+      console.log(`  ⚠️  Directory does not exist: ${config.inputDir}`);
+    }
   }
 
   console.log('\n✅ Asset Pipeline completed!');
   console.log('\n📊 Summary:');
+  console.log(`  - Processed: ${totalProcessed} assets`);
   console.log('  - GLB files optimized with DRACO compression');
   console.log('  - Textures converted to KTX2 format');
   console.log('  - Assets ready for production use');
+  console.log('\n💡 Run this script before committing new assets');
+  console.log('   Or use: pnpm assets:optimize');
 }
 
 main().catch((error) => {

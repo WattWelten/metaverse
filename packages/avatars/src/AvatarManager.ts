@@ -78,53 +78,45 @@ export class AvatarManager {
   ): Promise<Avatar> {
     console.log(`[AvatarManager] Loading avatar for ${userId} from ${avatarUrl}`);
     try {
-      const avatarObject = await loadReadyPlayerMeAvatar(avatarUrl);
-      console.log(`[AvatarManager] Avatar object loaded, checking for animations...`);
+      // Use loadRpm instead of loadReadyPlayerMeAvatar to get animations
+      const { object: avatarObject, animations: gltfAnimations } = await loadRpm(avatarUrl);
+      console.log(
+        `[AvatarManager] Avatar object loaded, animations: ${gltfAnimations?.length || 0}`
+      );
 
       // Setup animation mixer if GLTF has animations
       let animationMixer: AnimationMixer | undefined;
       const animationActions = new Map<string, AnimationAction>();
 
-      // Try to load with animations
-      try {
-        console.log(`[AvatarManager] Loading GLTF with animations from ${avatarUrl}...`);
-        const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
-        const loader = new GLTFLoader();
-        const gltf = await loader.loadAsync(avatarUrl);
-        console.log(`[AvatarManager] GLTF loaded, animations: ${gltf.animations?.length || 0}`);
-
-        if (gltf.animations && gltf.animations.length > 0) {
-          animationMixer = new AnimationMixer(avatarObject);
-          console.log(
-            `[AvatarManager] Found ${gltf.animations.length} animation clips for avatar ${userId}:`
-          );
-          gltf.animations.forEach((clip: AnimationClip) => {
-            console.log(`  - "${clip.name}" (duration: ${clip.duration.toFixed(2)}s)`);
-            // clipAction signature: clipAction(clip, optionalRoot)
-            // Use type assertion to handle Three.js version differences
-            interface AnimationMixerWithClipAction extends AnimationMixer {
-              clipAction: (clip: AnimationClip, root?: Object3D) => AnimationAction;
+      // Extract animations from GLTF
+      if (gltfAnimations && gltfAnimations.length > 0) {
+        animationMixer = new AnimationMixer(avatarObject);
+        console.log(
+          `[AvatarManager] Found ${gltfAnimations.length} animation clips for avatar ${userId}:`
+        );
+        gltfAnimations.forEach((clip: AnimationClip) => {
+          console.log(`  - "${clip.name}" (duration: ${clip.duration.toFixed(2)}s)`);
+          // clipAction signature: clipAction(clip, optionalRoot)
+          // Use type assertion to handle Three.js version differences
+          interface AnimationMixerWithClipAction extends AnimationMixer {
+            clipAction: (clip: AnimationClip, root?: Object3D) => AnimationAction;
+          }
+          const action = (animationMixer as AnimationMixerWithClipAction).clipAction(
+            clip,
+            avatarObject
+          ) as AnimationAction;
+          if (action) {
+            // setLoop signature: setLoop(mode: AnimationActionLoopStyles, repetitions?: number)
+            interface AnimationActionWithSetLoop extends AnimationAction {
+              setLoop: (mode: number, repetitions?: number) => AnimationAction;
             }
-            const action = (animationMixer as AnimationMixerWithClipAction).clipAction(
-              clip,
-              avatarObject
-            ) as AnimationAction;
-            if (action) {
-              // setLoop signature: setLoop(mode: AnimationActionLoopStyles, repetitions?: number)
-              interface AnimationActionWithSetLoop extends AnimationAction {
-                setLoop: (mode: number, repetitions?: number) => AnimationAction;
-              }
-              (action as AnimationActionWithSetLoop).setLoop(LoopRepeat, Infinity);
-              animationActions.set(clip.name, action);
-            }
-          });
-          console.log(`[AvatarManager] Registered ${animationActions.size} animation actions`);
-        } else {
-          console.warn(`[AvatarManager] No animations found in avatar ${userId}`);
-        }
-      } catch (error) {
-        // No animations available - continue without animations
-        console.warn(`[AvatarManager] Failed to load animations for avatar ${userId}:`, error);
+            (action as AnimationActionWithSetLoop).setLoop(LoopRepeat, Infinity);
+            animationActions.set(clip.name, action);
+          }
+        });
+        console.log(`[AvatarManager] Registered ${animationActions.size} animation actions`);
+      } else {
+        console.warn(`[AvatarManager] No animations found in avatar ${userId}`);
       }
 
       const avatar: Avatar = {
@@ -140,7 +132,7 @@ export class AvatarManager {
       this.scene.add(avatar.object);
       this.avatars.set(userId, avatar);
 
-      // Start idle animation by default if available
+      // Start idle animation by default if available, otherwise use procedural idle
       if (animationMixer && animationActions && animationActions.size > 0) {
         const availableAnimations = Array.from(animationActions.keys());
         console.log(`[AvatarManager] Starting default idle animation for avatar ${userId}`);
@@ -148,14 +140,10 @@ export class AvatarManager {
         this.playAnimation(avatar, 'idle');
       } else {
         console.warn(
-          `[AvatarManager] ⚠️ No animations available for avatar ${userId} - avatar will remain in T-Pose`
+          `[AvatarManager] ⚠️ No animations available for avatar ${userId} - applying procedural idle fallback`
         );
-        console.warn(
-          `[AvatarManager] AnimationMixer: ${animationMixer ? 'initialized' : 'not initialized'}`
-        );
-        console.warn(
-          `[AvatarManager] AnimationActions: ${animationActions ? `${animationActions.size} actions` : 'not initialized'}`
-        );
+        // Apply procedural idle fallback for all avatars (not just local)
+        this.applyProceduralIdle(avatar);
       }
 
       return avatar;
@@ -364,6 +352,10 @@ export class AvatarManager {
       console.warn(
         `[AvatarManager] Avatar ${avatar.userId} - AnimationMixer: ${avatar.animationMixer ? 'exists' : 'missing'}, AnimationActions: ${avatar.animationActions ? 'exists' : 'missing'}`
       );
+      // Apply procedural idle if no animations available
+      if (!avatar.animationMixer && !avatar.animationActions) {
+        this.applyProceduralIdle(avatar);
+      }
       return;
     }
 
@@ -372,16 +364,32 @@ export class AvatarManager {
       avatar.currentAnimationAction.fadeOut(0.2);
     }
 
+    // Clear procedural idle if animation is available
+    if ((avatar as any).proceduralIdle) {
+      delete (avatar as any).proceduralIdle;
+    }
+
     // Map animation names to clip names (extended with alternatives)
     const animationMap: Record<string, string[]> = {
-      idle: ['Idle', 'idle', 'IDLE', 'TPose', 'T-Pose', 'Tpose'],
-      walk: ['Walking', 'walk', 'Walk', 'walking', 'WALKING', 'WalkForward', 'walk_forward'],
-      wave: ['Wave', 'wave', 'WAVE', 'Waving'],
-      dance: ['Dance', 'dance', 'DANCE', 'Dancing'],
-      sit: ['Sitting', 'sit', 'Sit', 'SITTING', 'SitDown'],
-      jump: ['Jump', 'jump', 'JUMP', 'Jumping'],
-      clap: ['Clap', 'clap', 'CLAP', 'Clapping'],
-      thumbsup: ['ThumbsUp', 'thumbsup', 'Thumbs_Up', 'thumbs_up'],
+      idle: ['Idle', 'idle', 'IDLE', 'TPose', 'T-Pose', 'Tpose', 'Idle_01', 'idle_01', 'IDLE_01'],
+      walk: [
+        'Walking',
+        'walk',
+        'Walk',
+        'walking',
+        'WALKING',
+        'WalkForward',
+        'walk_forward',
+        'Walk_01',
+        'walk_01',
+      ],
+      run: ['Running', 'run', 'Run', 'running', 'RUNNING', 'Run_01', 'run_01'],
+      wave: ['Wave', 'wave', 'WAVE', 'Waving', 'Wave_01', 'wave_01'],
+      dance: ['Dance', 'dance', 'DANCE', 'Dancing', 'Dance_01', 'dance_01'],
+      sit: ['Sitting', 'sit', 'Sit', 'SITTING', 'SitDown', 'Sit_01', 'sit_01'],
+      jump: ['Jump', 'jump', 'JUMP', 'Jumping', 'Jump_01', 'jump_01'],
+      clap: ['Clap', 'clap', 'CLAP', 'Clapping', 'Clap_01', 'clap_01'],
+      thumbsup: ['ThumbsUp', 'thumbsup', 'Thumbs_Up', 'thumbs_up', 'ThumbsUp_01', 'thumbsup_01'],
     };
 
     // Try to find animation by exact match or alternatives
@@ -410,6 +418,20 @@ export class AvatarManager {
       }
     }
 
+    // Fallback: Try to play first available animation if mapping fails
+    if (!action && avatar.animationActions.size > 0) {
+      const availableAnimations = Array.from(avatar.animationActions.keys());
+      const firstAnimation = availableAnimations[0];
+      if (firstAnimation) {
+        action = avatar.animationActions.get(firstAnimation);
+        if (action) {
+          console.log(
+            `[AvatarManager] 🔄 Falling back to first available animation: "${firstAnimation}" (requested: "${animationName}")`
+          );
+        }
+      }
+    }
+
     if (action) {
       action.reset().fadeIn(0.2).play();
       avatar.currentAnimationAction = action;
@@ -420,6 +442,8 @@ export class AvatarManager {
           console.warn(
             `[AvatarManager] ⚠️ Animation "${animationName}" was started but is not running!`
           );
+          // Fallback to procedural idle if animation doesn't run
+          this.applyProceduralIdle(avatar);
         }
       }, 100);
     } else {
@@ -428,34 +452,41 @@ export class AvatarManager {
       console.warn(
         `[AvatarManager] ⚠️ Animation "${animationName}" not found. Available animations: ${availableAnimations.join(', ')}`
       );
-
-      // Fallback: Try to play first available animation if it's idle-like
-      if (availableAnimations.length > 0 && avatar.animationActions) {
-        const firstAnimation = availableAnimations[0];
-        if (firstAnimation) {
-          const firstAction = avatar.animationActions.get(firstAnimation);
-          if (firstAction) {
-            console.log(
-              `[AvatarManager] 🔄 Falling back to first available animation: "${firstAnimation}"`
-            );
-            firstAction.reset().fadeIn(0.2).play();
-            avatar.currentAnimationAction = firstAction;
-            // Verify fallback animation is running
-            setTimeout(() => {
-              if (firstAction && !firstAction.isRunning()) {
-                console.warn(
-                  `[AvatarManager] ⚠️ Fallback animation "${firstAnimation}" was started but is not running!`
-                );
-              }
-            }, 100);
-          }
-        }
-      } else {
-        console.error(
-          `[AvatarManager] ❌ No animations available for fallback! Avatar ${avatar.userId} will remain in T-Pose.`
-        );
-      }
+      console.warn(`[AvatarManager] Applying procedural idle fallback for avatar ${avatar.userId}`);
+      // Apply procedural idle fallback
+      this.applyProceduralIdle(avatar);
     }
+  }
+
+  /**
+   * Apply procedural idle animation (breathing + subtle rotation) for avatars without animations
+   */
+  private applyProceduralIdle(avatar: Avatar): void {
+    if (!avatar.object) return;
+
+    // Don't apply if already has procedural idle
+    if ((avatar as any).proceduralIdle) return;
+
+    const root = avatar.object;
+    let t = 0;
+    const baseY = root.position.y;
+    const baseRotY = root.rotation.y;
+
+    const idleFn = (dt: number) => {
+      t += dt;
+      if (!root) return;
+      // Subtle breathing effect (vertical oscillation)
+      const a = Math.sin(t * 1.2) * 0.005;
+      root.position.y = baseY + a;
+      // Subtle idle rotation (slow sway)
+      root.rotation.y = baseRotY + Math.sin(t * 0.6) * 0.02;
+    };
+
+    // Store procedural idle function in avatar
+    (avatar as any).proceduralIdle = idleFn;
+    console.info(
+      `[AvatarManager] ✅ Applied procedural idle fallback (breathing + subtle rotation) for avatar ${avatar.userId}`
+    );
   }
 
   updateAnimations(delta: number): void {
@@ -473,6 +504,16 @@ export class AvatarManager {
           );
           // Mark as logged to avoid spam
           (avatar as Avatar & { animationWarningLogged?: boolean }).animationWarningLogged = true;
+          // Fallback to procedural idle if animation doesn't run
+          this.applyProceduralIdle(avatar);
+        }
+      } else {
+        // Update procedural idle for avatars without animation mixer
+        if (
+          (avatar as any).proceduralIdle &&
+          typeof (avatar as any).proceduralIdle === 'function'
+        ) {
+          (avatar as any).proceduralIdle(delta);
         }
       }
     });
@@ -496,11 +537,20 @@ export class AvatarManager {
     // Interpolation: Setze Ziel-Position statt sofort zu bewegen
     avatar.targetPosition = { ...update.position };
     avatar.targetRotation = { ...update.rotation };
-    avatar.animation = update.animation;
     avatar.lastUpdateTime = Date.now();
+
+    // Update animation if changed
+    if (update.animation && update.animation !== avatar.animation) {
+      avatar.animation = update.animation;
+      this.playAnimation(avatar, update.animation);
+    } else if (!update.animation && avatar.animation) {
+      // If no animation specified, default to idle
+      avatar.animation = 'idle';
+      this.playAnimation(avatar, 'idle');
+    }
   }
 
-  updateInterpolation(_delta: number): void {
+  updateInterpolation(delta: number): void {
     const interpolationSpeed = 0.2; // Lerp-Faktor (0.1-0.3 für smooth movement)
 
     this.avatars.forEach((avatar) => {
@@ -534,6 +584,11 @@ export class AvatarManager {
         y: currentRot.y,
         z: currentRot.z,
       };
+
+      // Update procedural idle for remote avatars without animations
+      if ((avatar as any).proceduralIdle && typeof (avatar as any).proceduralIdle === 'function') {
+        (avatar as any).proceduralIdle(delta);
+      }
     });
   }
 
@@ -626,9 +681,14 @@ export class AvatarManager {
       if ((obj as Mesh).isMesh) {
         const mesh = obj as Mesh;
         const name = mesh.name.toLowerCase();
-        // Hide head meshes in first-person mode
-        if (/head|skull|face|hair|hat|cap/i.test(name)) {
+        // Hide only head/face meshes in first-person mode, but keep hair visible
+        // More specific matching: only hide actual head/face parts, not hair
+        if (/head|skull|face/i.test(name) && !/hair/i.test(name)) {
           mesh.visible = visible;
+        }
+        // Explicitly keep hair visible
+        if (/hair/i.test(name)) {
+          mesh.visible = true;
         }
       }
     });
@@ -773,28 +833,9 @@ export class AvatarManager {
           `[AvatarManager] Available animation names: ${animationActions ? Array.from(animationActions.keys()).join(', ') : 'none'}`
         );
 
-        // Procedural idle fallback: Subtle breathing and slight rotation
-        if (this.local?.object) {
-          const root = this.local.object;
-          let t = 0;
-          const baseY = root.position.y;
-          const baseRotY = root.rotation.y;
-
-          const idleFn = (dt: number) => {
-            t += dt;
-            if (!root) return;
-            // Subtle breathing effect (vertical oscillation)
-            const a = Math.sin(t * 1.2) * 0.005;
-            root.position.y = baseY + a;
-            // Subtle idle rotation (slow sway)
-            root.rotation.y = baseRotY + Math.sin(t * 0.6) * 0.02;
-          };
-
-          // Store procedural idle function in local object
-          (this.local as any).proceduralIdle = idleFn;
-          console.info(
-            '[AvatarManager] ✅ Applied procedural idle fallback (breathing + subtle rotation)'
-          );
+        // Procedural idle fallback: Use applyProceduralIdle helper
+        if (this.local && avatar) {
+          this.applyProceduralIdle(avatar);
         }
       }
 

@@ -1,0 +1,45 @@
+name: Validate Templates
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/public/templates/**'
+      - 'packages/assets/templates/**'
+      - 'scripts/validate-templates.ts'
+      - 'scripts/import-template*.js'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/web/public/templates/**'
+      - 'packages/assets/templates/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile
+      
+      - name: Validate all templates
+        run: pnpm exec tsx scripts/validate-templates.ts
+      
+      - name: Check template registration
+        run: |
+          if [ -f apps/web/public/templates.json ]; then
+            echo "✅ templates.json exists"
+            cat apps/web/public/templates.json | jq '.'
+          else
+            echo "⚠️  templates.json not found"
+          fi

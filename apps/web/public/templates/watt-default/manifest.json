@@ -26,13 +26,13 @@
     "sources": [
       {
         "id": "birds",
-        "file": "ambient/birds.mp3",
+        "file": "/templates/watt-default/ambient/birds.mp3",
         "volume": 0.3,
         "loop": true
       },
       {
         "id": "water",
-        "file": "ambient/water.mp3",
+        "file": "/templates/watt-default/ambient/water.mp3",
         "volume": 0.2,
         "loop": true,
         "position": {

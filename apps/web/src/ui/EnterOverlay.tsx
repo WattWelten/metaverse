@@ -161,6 +161,28 @@ export function EnterOverlay({ onEnter }: EnterOverlayProps) {
             >
               Bitte warten, während die Welt initialisiert wird.
             </p>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginBottom: '16px',
+              }}
+            >
+              <div
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: 'var(--color-accent)',
+                  animation: 'pulse 1s ease-in-out infinite',
+                }}
+              />
+              <span className="text-footnote" style={{ color: 'var(--color-label-secondary)' }}>
+                Avatar wird geladen...
+              </span>
+            </div>
           </>
         ) : (
           <>

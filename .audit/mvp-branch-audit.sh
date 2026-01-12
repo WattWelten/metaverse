@@ -39,14 +39,32 @@ check_file "docs/ENV.md"
 check_file "docs/MVP-Guide.md"
 
 check_file "apps/server/src/routes/rtc.ts"
+check_file "apps/rtc-api/package.json"
+check_file "apps/rtc-api/src/index.ts"
 check_file "packages/rtc-sfu/package.json"
 check_file "packages/rtc-sfu/src/index.ts"
 
 check_file "packages/voice/src/zone-engine.ts"
+check_file "packages/voice/src/zone-router.ts"
 
 check_file "apps/server/src/routes/yws.ts"
 check_file "packages/whiteboard/src/Whiteboard.tsx"
 check_file "packages/collab-docs/src/MarkdownEditor.tsx"
+check_file "packages/collab-docs/src/index.ts"
+
+check_file "apps/web/src/ui/RemoteController.tsx"
+
+check_file "packages/content/src/strapi.ts"
+check_file "packages/content/schemas/scene.schema.json"
+check_file "apps/web/src/components/PdfViewer.tsx"
+
+check_file "apps/web/src/moderation/hooks.ts"
+check_file "packages/moderation/src/roles.ts"
+
+check_file "apps/web/src/i18n/index.ts"
+check_file "apps/web/src/i18n/locales/de.json"
+check_file "apps/web/src/i18n/locales/en.json"
+check_file "apps/web/src/i18n/LangSwitcher.tsx"
 
 check_file "packages/core/src/schemas/scene.schema.json"
 

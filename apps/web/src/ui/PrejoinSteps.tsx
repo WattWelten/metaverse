@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { type Quality } from '../state/prefs';
 
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AvatarModal } from './AvatarModal';
 import { AvatarPreview } from './AvatarPreview';
 
@@ -55,7 +56,30 @@ export function AvatarSelectionStep({
           animation: avatarUrl ? 'scaleIn 0.5s var(--ease-spring)' : 'none',
         }}
       >
-        <AvatarPreview avatarUrl={avatarUrl} width={280} height={280} />
+        <ErrorBoundary
+          fallback={
+            <div
+              style={{
+                width: 280,
+                height: 280,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--color-background-secondary)',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)',
+                color: 'var(--color-label-secondary)',
+              }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', marginBottom: '8px' }}>👤</div>
+                <div className="text-footnote">Avatar-Vorschau nicht verfügbar</div>
+              </div>
+            </div>
+          }
+        >
+          <AvatarPreview avatarUrl={avatarUrl} width={280} height={280} />
+        </ErrorBoundary>
       </div>
 
       {/* Avatar Selection Button */}

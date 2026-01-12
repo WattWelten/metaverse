@@ -21,9 +21,10 @@ export function MarkdownEditor({ roomId, ywsUrl }: MarkdownEditorProps) {
     if (!editor) return;
 
     const ytext = doc.getText('content');
-    const wsUrl =
-      ywsUrl ||
-      `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:${location.port}/yws?room=${roomId}`;
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ywsPort = import.meta.env.VITE_YWS_PORT || 3001;
+    const hostname = location.hostname;
+    const wsUrl = ywsUrl || `${proto}://${hostname}:${ywsPort}/yws?room=${roomId}`;
 
     const provider = new WebsocketProvider(wsUrl, `md-${roomId}`, doc);
 

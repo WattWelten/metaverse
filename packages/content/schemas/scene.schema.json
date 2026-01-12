@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Scene",
+  "type": "object",
+  "required": ["name", "assets", "spawn"],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "src"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "src": {
+            "type": "string"
+          },
+          "draco": {
+            "type": "boolean"
+          },
+          "ktx2": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "spawn": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      }
+    },
+    "portals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "position": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        }
+      }
+    },
+    "audioBeacons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "url": {
+            "type": "string"
+          },
+          "radius": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "zones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "shape"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "shape": {
+            "type": "string",
+            "enum": ["circle", "polygon"]
+          },
+          "center": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "radius": {
+            "type": "number"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "isStage": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "properties": {
+        "showMinimap": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

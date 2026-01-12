@@ -1,3 +1,6 @@
+import { getFeatureFlags } from '../FeatureFlags';
+import { StrapiTemplateLoader } from './StrapiTemplateLoader';
+
 export type TemplateInfo = {
   id: string;
   name: string;
@@ -10,15 +13,41 @@ export type TemplateIndex = {
 };
 
 let cachedIndex: TemplateIndex | null = null;
+let strapiLoader: StrapiTemplateLoader | null = null;
+
+// Expose StrapiTemplateLoader globally for testing
+if (typeof window !== 'undefined') {
+  (window as any).__strapiTemplateLoader = strapiLoader;
+}
 
 /**
- * Lädt die Template-Index-Datei vom Server
+ * Lädt die Template-Index-Datei vom Server oder Strapi
  */
 export async function loadIndex(): Promise<TemplateIndex> {
   if (cachedIndex) {
     return cachedIndex;
   }
 
+  const flags = getFeatureFlags();
+
+  // Versuche Strapi zuerst, wenn aktiviert
+  if (flags.CMS_PROVIDER === 'strapi') {
+    if (!strapiLoader) {
+      strapiLoader = new StrapiTemplateLoader();
+      // Expose für Testing
+      if (typeof window !== 'undefined') {
+        (window as any).__strapiTemplateLoader = strapiLoader;
+      }
+    }
+
+    const strapiIndex = await strapiLoader.loadIndex();
+    if (strapiIndex) {
+      cachedIndex = strapiIndex;
+      return cachedIndex;
+    }
+  }
+
+  // Fallback zu lokalen Templates
   try {
     const res = await fetch('/templates.json');
     if (!res.ok) {
@@ -41,14 +70,45 @@ export async function loadIndex(): Promise<TemplateIndex> {
 }
 
 /**
- * Lädt das Manifest für eine Template-ID
+ * Lädt das Manifest für eine Template-ID (von Strapi oder lokal)
  */
 export async function loadManifest(id: string): Promise<any> {
+  const flags = getFeatureFlags();
+
+  // Versuche Strapi zuerst, wenn Template-ID mit 'strapi-' beginnt oder CMS_PROVIDER='strapi'
+  if (id.startsWith('strapi-') || flags.CMS_PROVIDER === 'strapi') {
+    if (!strapiLoader) {
+      strapiLoader = new StrapiTemplateLoader();
+    }
+
+    const strapiManifest = await strapiLoader.loadManifest(id);
+    if (strapiManifest) {
+      return strapiManifest;
+    }
+
+    // Falls Strapi-Manifest nicht gefunden, versuche lokales Template
+    if (id.startsWith('strapi-')) {
+      console.warn(`[TemplateRegistry] Strapi template "${id}" not found, falling back to local`);
+    }
+  }
+
+  // Lade lokales Template
   const idx = await loadIndex();
   const item = idx.items.find((i) => i.id === id) ?? idx.items.find((i) => i.id === idx.default);
 
   if (!item) {
     throw new Error(`Template "${id}" not found in index`);
+  }
+
+  // Wenn path mit 'strapi://' beginnt, nutze StrapiLoader
+  if (item.path.startsWith('strapi://')) {
+    if (!strapiLoader) {
+      strapiLoader = new StrapiTemplateLoader();
+    }
+    const strapiManifest = await strapiLoader.loadManifest(item.id);
+    if (strapiManifest) {
+      return strapiManifest;
+    }
   }
 
   try {

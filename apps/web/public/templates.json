@@ -10,6 +10,16 @@
       "id": "watt-eco",
       "name": "Watt Eco – Forest Sunset",
       "path": "/templates/watt-eco/manifest.json"
+    },
+    {
+      "id": "play-park-dirty",
+      "name": "Play Park Dirty",
+      "path": "/templates/play-park-dirty/manifest.json"
+    },
+    {
+      "id": "park",
+      "name": "Park",
+      "path": "/templates/park/manifest.json"
     }
   ]
 }

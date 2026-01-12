@@ -23,6 +23,8 @@ import {
   volumeFor,
   type Zone,
 } from '@metaverse/voice';
+import { ZoneRouter, type PeerMeta } from '@metaverse/voice/zone-router';
+import { RTCClient } from '@metaverse/rtc-sfu';
 import type { IXRAdapter } from '@metaverse/xr';
 import { createXRAdapter } from '@metaverse/xr';
 import {
@@ -114,6 +116,9 @@ export class World {
   private audioZones: Zone[] = []; // Zones from template manifest for audio isolation
   private currentZoneId: string | null = null; // Current zone membership for audio
   private zoneVisualizer: ZoneVisualizer | null = null;
+  private zoneRouter: ZoneRouter | null = null; // ZoneRouter for subscription management
+  private peerMetaMap = new Map<string, PeerMeta>(); // Map<participantSid, PeerMeta> - Cache for peer metadata
+  private rtcClient: RTCClient | null = null; // RTCClient for subscription management (optional)
   private ambience3D: Ambience3D | null = null;
   private screens: ScreenSurface[] = [];
   private emoteSystem: EmoteSystem | null = null;
@@ -258,9 +263,14 @@ export class World {
     }
 
     const key = e.key.toLowerCase();
+    // Handle WASD and arrow keys for movement (works with or without Pointer Lock)
     if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
       this.keysPressed.add(key);
       e.preventDefault();
+      // Debug log in dev mode (throttled)
+      if (import.meta.env.DEV && Math.random() < 0.1) {
+        logger.debug(`[World] Key pressed: ${key}, keysPressed:`, Array.from(this.keysPressed));
+      }
     }
   }
 
@@ -304,21 +314,66 @@ export class World {
     const worldMoveX = moveX * cosYaw - moveZ * sinYaw;
     const worldMoveZ = moveX * sinYaw + moveZ * cosYaw;
 
-    // Update avatar position
+    // Calculate intended position
     const speed = this.moveSpeed * delta;
-    this.avatarPosition.x += worldMoveX * speed;
-    this.avatarPosition.z += worldMoveZ * speed;
+    const intendedX = this.avatarPosition.x + worldMoveX * speed;
+    const intendedZ = this.avatarPosition.z + worldMoveZ * speed;
 
-    // Keep avatar on ground (simple ground plane at y=0)
-    this.avatarPosition.y = 1.6; // Eye height
+    // Use NavMesh if available for smooth movement and collision detection
+    let finalX = intendedX;
+    let finalZ = intendedZ;
+    let finalY = this.avatarPosition.y;
 
-    // Update avatar rotation to face movement direction
-    if (moveX !== 0 || moveZ !== 0) {
-      this.avatarRotation.y = Math.atan2(worldMoveX, worldMoveZ);
+    if (this.navController && this.navMeshSystem) {
+      const oldPos = new Vector3(
+        this.avatarPosition.x,
+        this.avatarPosition.y,
+        this.avatarPosition.z
+      );
+      const intendedPos = new Vector3(intendedX, this.avatarPosition.y, intendedZ);
+
+      // Get remote peer positions for collision avoidance
+      const peerPositions: Vector3[] = [];
+      if (this.avatarManager) {
+        this.avatarManager.getAllAvatars().forEach((avatar) => {
+          if (avatar.userId !== this.userId) {
+            peerPositions.push(
+              new Vector3(avatar.position.x, avatar.position.y, avatar.position.z)
+            );
+          }
+        });
+      }
+
+      // Use NavController to clamp movement to navmesh and avoid collisions
+      const clampedPos = this.navController.step(oldPos, intendedPos, peerPositions);
+      finalX = clampedPos.x;
+      finalZ = clampedPos.z;
+      finalY = clampedPos.y;
+    } else {
+      // Fallback: Keep avatar on ground (simple ground plane at y=0)
+      finalY = 1.6; // Eye height
     }
 
-    // Update avatar in AvatarManager
-    const animation = moveX !== 0 || moveZ !== 0 ? 'walk' : 'idle';
+    // Update avatar position
+    this.avatarPosition.x = finalX;
+    this.avatarPosition.z = finalZ;
+    this.avatarPosition.y = finalY;
+
+    // Update avatar rotation to face movement direction (smooth rotation)
+    if (moveX !== 0 || moveZ !== 0) {
+      const targetRotation = Math.atan2(worldMoveX, worldMoveZ);
+      // Smooth rotation interpolation
+      const rotationDiff = targetRotation - this.avatarRotation.y;
+      // Normalize angle difference to [-PI, PI]
+      const normalizedDiff = ((rotationDiff + Math.PI) % (2 * Math.PI)) - Math.PI;
+      this.avatarRotation.y += normalizedDiff * Math.min(1, delta * 8); // Smooth rotation speed
+    }
+
+    // Determine animation state: walk if moving, idle if stationary
+    const isMoving = moveX !== 0 || moveZ !== 0;
+    const animation = isMoving ? 'walk' : 'idle';
+
+    // Update avatar in AvatarManager (with smooth animation transitions)
     this.avatarManager.updateAvatar(
       this.userId,
       this.avatarPosition,
@@ -326,19 +381,29 @@ export class World {
       animation
     );
 
-    // Update camera to follow avatar (third-person view)
+    // Smooth camera follow (third-person view with damping)
     const cameraOffsetX = Math.sin(cameraYaw) * this.cameraDistance;
     const cameraOffsetZ = Math.cos(cameraYaw) * this.cameraDistance;
 
-    this.camera.position.set(
-      this.avatarPosition.x - cameraOffsetX,
-      this.avatarPosition.y + this.cameraHeight,
-      this.avatarPosition.z - cameraOffsetZ
+    const targetCameraX = this.avatarPosition.x - cameraOffsetX;
+    const targetCameraY = this.avatarPosition.y + this.cameraHeight;
+    const targetCameraZ = this.avatarPosition.z - cameraOffsetZ;
+
+    // Smooth camera interpolation
+    const cameraLerpSpeed = 0.1; // Adjust for smoother/faster camera follow
+    this.camera.position.lerp(
+      new Vector3(targetCameraX, targetCameraY, targetCameraZ),
+      Math.min(1, cameraLerpSpeed * delta * 60) // Frame-rate independent
     );
 
-    // Camera looks at avatar
-    this.camera.lookAt(this.avatarPosition.x, this.avatarPosition.y, this.avatarPosition.z);
-    this.controls.target.set(this.avatarPosition.x, this.avatarPosition.y, this.avatarPosition.z);
+    // Camera looks at avatar (smooth)
+    const lookAtTarget = new Vector3(
+      this.avatarPosition.x,
+      this.avatarPosition.y,
+      this.avatarPosition.z
+    );
+    this.camera.lookAt(lookAtTarget);
+    this.controls.target.lerp(lookAtTarget, Math.min(1, cameraLerpSpeed * delta * 60));
   }
 
   private generateUserId(): string {
@@ -492,6 +557,12 @@ export class World {
         netClient: this.netClient.asVoiceClient(),
       });
       logger.log(`[World] ✅ VoiceClient created (roomId=${roomId}, spatialAudio=true)`);
+
+      // Initialize RTCClient for subscription management (if RTC_TOKEN_ENDPOINT is available)
+      if (flags.RTC_TOKEN_ENDPOINT) {
+        this.rtcClient = new RTCClient();
+        logger.log('[World] ✅ RTCClient created for subscription management');
+      }
 
       // Initialize StageManager for moderation features
       if (import.meta.env.VITE_STAGE_ENABLED === 'true') {
@@ -658,12 +729,22 @@ export class World {
         this.avatarRotation = { ...existingAvatar.rotation };
       }
 
-      // Initialize CameraRig with local avatar as target
+      // Initialize CameraRig with local avatar as target (or camera as fallback)
       const localAvatar = this.avatarManager.getAvatar(this.userId);
-      if (localAvatar && !this.cameraRig) {
+      if (!this.cameraRig) {
+        // Use avatar object if available, otherwise use camera as target (will be updated when avatar loads)
+        const targetObject = localAvatar?.object || this.camera;
+        this.cameraRig = new CameraRig(this.camera, targetObject);
+        // Start in third-person mode (better for initial view)
+        this.cameraRig.switch('tp');
+        logger.log('[World] CameraRig initialized');
+      } else if (localAvatar && this.cameraRig) {
+        // Update CameraRig target if avatar was just loaded
+        // Note: CameraRig doesn't expose setTarget, so we recreate it
+        const currentMode = this.cameraRig.mode;
         this.cameraRig = new CameraRig(this.camera, localAvatar.object);
-        // Start in first-person mode
-        this.cameraRig.switch('fp');
+        this.cameraRig.switch(currentMode);
+        logger.log('[World] CameraRig updated with avatar object');
       }
     }
 
@@ -940,6 +1021,23 @@ export class World {
 
       this.zoneSystem = new ZoneSystem(zoneDefs);
       logger.log(`✅ Initialized ${manifest.zones.length} zones`);
+
+      // Initialize ZoneRouter if RTCClient is available and zones exist
+      if (this.rtcClient && this.audioZones.length > 0 && !this.zoneRouter) {
+        this.zoneRouter = new ZoneRouter(
+          () => Array.from(this.peerMetaMap.values()),
+          (sid: string, subscribed: boolean) => {
+            try {
+              if (this.rtcClient) {
+                this.rtcClient.setSubscribedFor(sid, subscribed);
+              }
+            } catch (error) {
+              logger.error(`[World] Failed to set subscription for ${sid}:`, error);
+            }
+          }
+        );
+        logger.log('[World] ✅ ZoneRouter initialized');
+      }
 
       // Store zones for audio isolation (zone-engine)
       // Convert ZoneSystem zones (sphere/box) to Zone format (circle/polygon) for audio engine
@@ -1385,21 +1483,12 @@ export class World {
 
     // Avatar-Interpolation für smooth movement
     if (this.avatarManager) {
+      // Update interpolation (includes procedural idle for remote avatars)
       this.avatarManager.updateInterpolation(delta);
-      // Update avatar animations
+      // Update avatar animations (includes procedural idle fallback)
       this.avatarManager.updateAnimations(delta);
       // Update locomotion controller
       this.avatarManager.update(delta);
-
-      // Update procedural idle fallback if no animations available
-      const local = this.avatarManager.getLocal();
-      if (
-        local &&
-        (local as any).proceduralIdle &&
-        typeof (local as any).proceduralIdle === 'function'
-      ) {
-        (local as any).proceduralIdle(delta);
-      }
     }
 
     // Avatar-Position synchronisieren (throttled) - nur wenn nicht WASD-Steuerung aktiv
@@ -1436,7 +1525,10 @@ export class World {
         );
         if (newZoneId !== this.currentZoneId) {
           this.currentZoneId = newZoneId;
-          // Zone changed - logged via debug overlay if enabled
+          // Zone changed - update ZoneRouter if available
+          if (this.zoneRouter) {
+            this.zoneRouter.updateMyZone(newZoneId);
+          }
         }
       }
 
@@ -1444,6 +1536,61 @@ export class World {
       if (this.avatarManager && getFeatureFlags().VOICE_ENABLED) {
         const allAvatars = this.avatarManager.getAllAvatars();
         const listenerPos: [number, number] = [cameraPos.x, cameraPos.z];
+
+        // Update peer metadata for ZoneRouter
+        if (this.zoneRouter && this.rtcClient && this.audioZones.length > 0) {
+          const peers: PeerMeta[] = [];
+          allAvatars.forEach((avatar) => {
+            if (avatar.userId !== this.userId) {
+              const peerZoneId = updateZoneMembership(
+                [avatar.position.x, avatar.position.y, avatar.position.z],
+                this.audioZones
+              );
+
+              // Get participant SID from RTCClient (cached lookup)
+              let participantSid: string | undefined;
+              const cachedPeer = Array.from(this.peerMetaMap.values()).find(
+                (p) => p.userId === avatar.userId
+              );
+              if (cachedPeer?.sid) {
+                participantSid = cachedPeer.sid;
+              } else {
+                // Fallback: lookup in RTCClient
+                try {
+                  const participants = this.rtcClient.getParticipants();
+                  for (const [sid, participant] of participants.entries()) {
+                    if (participant.identity === avatar.userId) {
+                      participantSid = sid;
+                      break;
+                    }
+                  }
+                } catch (error) {
+                  logger.warn(`[World] Failed to get participants for ${avatar.userId}:`, error);
+                }
+              }
+
+              if (participantSid) {
+                peers.push({
+                  userId: avatar.userId,
+                  pos: [avatar.position.x, avatar.position.z],
+                  zone: peerZoneId,
+                  sid: participantSid,
+                });
+              }
+            }
+          });
+          // Update peer metadata map
+          this.peerMetaMap.clear();
+          peers.forEach((peer) => {
+            if (peer.sid) {
+              this.peerMetaMap.set(peer.sid, peer);
+            }
+          });
+          // Trigger ZoneRouter update (throttled internally)
+          if (this.zoneRouter) {
+            this.zoneRouter.updatePeers();
+          }
+        }
 
         allAvatars.forEach((avatar) => {
           if (avatar.userId !== this.userId) {
@@ -1471,8 +1618,6 @@ export class World {
                   avatar.position.y,
                   avatar.position.z
                 );
-                // TODO: Apply volumeDb to GainNode when RTCClient supports it
-                // For now, zone-based muting is handled by not subscribing to tracks
               }
             } else {
               // No zones: standard spatial audio
@@ -1672,7 +1817,19 @@ export class World {
   lockPointer(): void {
     if (this.playerController) {
       this.playerController.lock();
-      logger.log('[PointerLock] Lock requested');
+      logger.log('[PointerLock] Lock requested via PlayerController');
+    } else {
+      // Fallback: Try to lock via canvas directly if PlayerController not available
+      const canvas = this.renderer.domElement;
+      if (canvas && canvas.requestPointerLock) {
+        canvas.focus();
+        canvas.requestPointerLock();
+        logger.log('[PointerLock] Lock requested via canvas (PlayerController not available)');
+      } else {
+        logger.warn(
+          '[PointerLock] Cannot lock pointer: PlayerController and canvas.requestPointerLock not available'
+        );
+      }
     }
   }
 
@@ -1748,6 +1905,18 @@ export class World {
 
       // Reinitialize navigation mesh for new template
       await this.initNavigation();
+
+      // Reload ambient audio from new template
+      if (this.ambientManager && template.manifest) {
+        // Stop old audio first
+        this.ambientManager.stopAll();
+        // Clear old sources and load new ones
+        this.ambientManager.loadFromTemplate(template.manifest);
+        // Play new audio
+        this.ambientManager.playAll().catch((error) => {
+          logger.warn('Failed to play ambient audio:', error);
+        });
+      }
 
       // Set camera to spawn position from manifest (even if PlayerController not yet created)
       if (template.manifest?.spawn) {
@@ -1895,6 +2064,21 @@ export class World {
       this.voiceClient.disable();
     }
 
+    // Cleanup ZoneRouter
+    if (this.zoneRouter) {
+      this.zoneRouter.dispose();
+      this.zoneRouter = null;
+    }
+
+    // Cleanup peer metadata cache
+    this.peerMetaMap.clear();
+
+    // Cleanup RTCClient
+    if (this.rtcClient) {
+      this.rtcClient.disconnect();
+      this.rtcClient = null;
+    }
+
     // Cleanup MicAnalyser & LipDriver
     if (this.micAnalyser) {
       this.micAnalyser.dispose();
@@ -1966,10 +2150,18 @@ export class World {
   }
 
   switchView(): void {
+    // Ensure CameraRig exists (initialize if needed)
+    if (!this.cameraRig) {
+      const localAvatar = this.avatarManager?.getAvatar(this.userId);
+      const targetObject = localAvatar?.object || this.camera;
+      this.cameraRig = new CameraRig(this.camera, targetObject);
+      logger.log('[World] CameraRig initialized in switchView()');
+    }
+
     if (this.cameraRig) {
       this.cameraRig.switch();
       const isFP = this.cameraRig.mode === 'fp';
-      // Hide local avatar head in FP mode
+      // Hide local avatar head in FP mode (but keep hair visible)
       if (this.avatarManager) {
         this.avatarManager.setLocalVisibleHead(!isFP, this.userId);
       }
@@ -1977,6 +2169,8 @@ export class World {
         '[CameraRig] Switched to',
         this.cameraRig.mode === 'fp' ? 'First-Person' : 'Third-Person'
       );
+    } else {
+      logger.warn('[World] switchView() called but CameraRig could not be initialized');
     }
   }
 

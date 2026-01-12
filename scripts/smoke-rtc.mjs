@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
-const TOKEN_API = process.env.RTC_TOKEN_URL || process.env.VITE_RTC_TOKEN_ENDPOINT || 'http://localhost:3001/api/rtc/token';
+// Try new rtc-api first (Port 8787), fallback to server endpoint
+const TOKEN_API = process.env.RTC_TOKEN_URL || process.env.VITE_RTC_TOKEN_ENDPOINT || 'http://localhost:8787/token';
 const ROOM = process.env.E2E_ROOM || 'plaza';
 
 const res = await fetch(TOKEN_API, {

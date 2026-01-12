@@ -29,3 +29,21 @@
 
 - `E2E_URL`: Base-URL für E2E-Tests (default: `http://localhost:5173`)
 - `E2E_ROOM`: Standard-Raumname für E2E-Tests (default: `plaza`)
+
+## RTC Token API
+
+- `RTC_TOKEN_URL`: URL des RTC Token-Endpoints (default: `http://localhost:8787/token`)
+- Wird von der neuen `apps/rtc-api` App bereitgestellt (Port 8787)
+- Fallback: Bestehender Endpoint in `apps/server` (`/api/rtc/token`)
+
+## i18n
+
+- `VITE_I18N_DEFAULT`: Standard-Sprache für die UI (default: `de`, Optionen: `de`, `en`)
+- Sprache kann in der UI umgeschaltet werden (LangSwitcher)
+- Übersetzungen in `apps/web/src/i18n/locales/`
+
+## Dynamic Breakouts
+
+- `VITE_DYNAMIC_BREAKOUTS`: Aktiviert dynamische Breakout-Instanzen (default: `false`)
+- MVP verwendet feste Räume/Zonen
+- Post-MVP Feature: Automatische Instanz-Zuweisung bei hoher Auslastung

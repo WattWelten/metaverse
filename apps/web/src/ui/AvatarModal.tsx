@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getFeatureFlags } from '../FeatureFlags';
 import { loadPrefs, savePrefs } from '../state/prefs';
 
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AvatarGallery } from './AvatarGallery';
 import { AvatarPreview } from './AvatarPreview';
 import { AvatarPresetPicker } from './AvatarPresetPicker';
@@ -204,31 +205,66 @@ export function AvatarModal({ open, onClose, onSelect }: AvatarModalProps) {
         title="Avatar auswählen"
         style={{ maxWidth: '600px' }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Avatar Preview - Always visible */}
-          {selectedUrl && (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <AvatarPreview avatarUrl={selectedUrl} width={250} height={250} />
+        <ErrorBoundary
+          fallback={
+            <div style={{ padding: '24px', textAlign: 'center' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+              <p className="text-body" style={{ marginBottom: '16px' }}>
+                Avatar-Vorschau konnte nicht geladen werden
+              </p>
+              <AppleButton onClick={onClose}>Schließen</AppleButton>
             </div>
-          )}
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Avatar Preview - Always visible */}
+            {selectedUrl && (
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <ErrorBoundary
+                  fallback={
+                    <div
+                      style={{
+                        width: 250,
+                        height: 250,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'var(--color-background-secondary)',
+                        borderRadius: '12px',
+                        border: '1px solid var(--glass-border)',
+                        color: 'var(--color-label-secondary)',
+                      }}
+                    >
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>⚠️</div>
+                        <div className="text-footnote">Vorschau nicht verfügbar</div>
+                      </div>
+                    </div>
+                  }
+                >
+                  <AvatarPreview avatarUrl={selectedUrl} width={250} height={250} />
+                </ErrorBoundary>
+              </div>
+            )}
 
-          {/* Tabs */}
-          <AppleTabs tabs={tabs} defaultTab="gallery" />
+            {/* Tabs */}
+            <AppleTabs tabs={tabs} defaultTab="gallery" />
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-            <AppleButton variant="secondary" onClick={onClose} style={{ flex: 1 }}>
-              Abbrechen
-            </AppleButton>
-            <AppleButton
-              onClick={() => handleSelect()}
-              disabled={!selectedUrl && !url.trim()}
-              style={{ flex: 1 }}
-            >
-              Übernehmen
-            </AppleButton>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <AppleButton variant="secondary" onClick={onClose} style={{ flex: 1 }}>
+                Abbrechen
+              </AppleButton>
+              <AppleButton
+                onClick={() => handleSelect()}
+                disabled={!selectedUrl && !url.trim()}
+                style={{ flex: 1 }}
+              >
+                Übernehmen
+              </AppleButton>
+            </div>
           </div>
-        </div>
+        </ErrorBoundary>
       </AppleModal>
 
       <RpmCreatorModal

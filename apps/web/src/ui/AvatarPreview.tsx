@@ -1,7 +1,16 @@
-import { loadReadyPlayerMeAvatar } from '@metaverse/avatars';
+import { loadRpm } from '@metaverse/avatars';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { Scene, PerspectiveCamera, WebGLRenderer, AmbientLight, DirectionalLight } from 'three';
+import {
+  Scene,
+  PerspectiveCamera,
+  WebGLRenderer,
+  AmbientLight,
+  DirectionalLight,
+  AnimationMixer,
+  AnimationAction,
+  LoopRepeat,
+} from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 interface AvatarPreviewProps {
@@ -26,6 +35,9 @@ export function AvatarPreview({
   const controlsRef = useRef<OrbitControls | null>(null);
   const avatarRef = useRef<THREE.Object3D | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const mixerRef = useRef<AnimationMixer | null>(null);
+  const idleActionRef = useRef<AnimationAction | null>(null);
+  const clockRef = useRef<THREE.Clock>(new THREE.Clock());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,6 +86,13 @@ export function AvatarPreview({
     // Animation loop
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
+      const delta = clockRef.current.getDelta();
+
+      // Update animation mixer
+      if (mixerRef.current) {
+        mixerRef.current.update(delta);
+      }
+
       if (controlsRef.current) {
         controlsRef.current.update();
       }
@@ -86,6 +105,14 @@ export function AvatarPreview({
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (idleActionRef.current) {
+        idleActionRef.current.stop();
+        idleActionRef.current = null;
+      }
+      if (mixerRef.current) {
+        mixerRef.current.stopAllAction();
+        mixerRef.current = null;
       }
       controls.dispose();
       renderer.dispose();
@@ -115,8 +142,8 @@ export function AvatarPreview({
       avatarRef.current = null;
     }
 
-    loadReadyPlayerMeAvatar(avatarUrl)
-      .then((avatar) => {
+    loadRpm(avatarUrl)
+      .then(({ object: avatar, animations }) => {
         if (!sceneRef.current) return;
 
         // Center avatar
@@ -139,6 +166,33 @@ export function AvatarPreview({
 
         sceneRef.current.add(avatar);
         avatarRef.current = avatar;
+
+        // Setup animations if available
+        if (animations && animations.length > 0) {
+          mixerRef.current = new AnimationMixer(avatar);
+
+          // Try to find idle animation
+          let idleClip = animations.find(
+            (clip) =>
+              clip.name.toLowerCase().includes('idle') ||
+              clip.name.toLowerCase().includes('tpose') ||
+              clip.name.toLowerCase() === 'idle'
+          );
+
+          // Fallback to first animation if no idle found
+          if (!idleClip && animations.length > 0) {
+            idleClip = animations[0];
+          }
+
+          if (idleClip) {
+            const action = mixerRef.current.clipAction(idleClip);
+            action.setLoop(LoopRepeat, Infinity);
+            action.play();
+            idleActionRef.current = action;
+            console.log(`[AvatarPreview] Playing idle animation: ${idleClip.name}`);
+          }
+        }
+
         setLoading(false);
       })
       .catch((err) => {
