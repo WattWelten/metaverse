@@ -1,3 +1,15 @@
+> ## ARCHIVED â€” 2026-07-19
+>
+> **Decision by:** CEO Henning Behrens (WattWelten UG / WattWeiser)
+> **Reason:** Generic WebXR multiplayer lab superseded by active BIM/civic immersive work.
+> **Canonical successor / current work:** https://github.com/WattWelten/ai_bim_360 (`web_native_bim/bim_metaverse_mvp`)
+>
+> **Do not** implement features, open product PRs, or treat this repository as WattOS / platform truth.
+> **Unarchive** only with explicit CEO/CTO decision and a written reason.
+>
+> Context: WattWeiser repository portfolio hygiene (GitHub cleanup / Forgejo preparation), 2026-07-19.
+
+---
 > 🧭 **Cursor Global Playbook aktiv** · Diesen Leitfaden nutzen wir als Source of Truth.
 > Datei: `docs/CURSOR_GLOBAL_PLAYBOOK.md` (oder zentral: `WattWelten/cursor.ai`).
 
