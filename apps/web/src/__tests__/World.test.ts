@@ -37,6 +37,23 @@ vi.mock('three', () => {
     Clock: vi.fn(() => ({
       getDelta: () => 0.016,
     })),
+    Raycaster: vi.fn(() => ({
+      setFromCamera: vi.fn(),
+      intersectObjects: vi.fn(() => []),
+    })),
+    Vector2: vi.fn(() => ({ x: 0, y: 0 })),
+    Vector3: vi.fn(() => ({ x: 0, y: 0, z: 0 })),
+    Object3D: vi.fn(() => ({
+      add: vi.fn(),
+      remove: vi.fn(),
+      traverse: vi.fn(),
+      position: { x: 0, y: 0, z: 0 },
+    })),
+    Box3: vi.fn(() => ({
+      setFromObject: vi.fn(() => ({
+        getCenter: vi.fn(() => ({ x: 0, y: 0, z: 0 })),
+      })),
+    })),
   };
 });
 
@@ -56,6 +73,8 @@ vi.mock('../TemplateHost', () => ({
   TemplateHost: vi.fn(() => ({
     loadTemplate: vi.fn().mockResolvedValue(undefined),
     getCurrentTemplate: vi.fn(() => null),
+    setCamera: vi.fn(),
+    setRenderer: vi.fn(),
     update: vi.fn(),
     dispose: vi.fn(),
   })),
@@ -101,6 +120,7 @@ vi.mock('@metaverse/avatars', () => ({
     setNetClient: vi.fn(),
     getAllAvatars: vi.fn(() => []),
     updateInterpolation: vi.fn(),
+    updateAnimations: vi.fn(),
   })),
 }));
 

@@ -16,14 +16,14 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@metaverse/core": "workspace:*",
-    "@metaverse/ui": "workspace:*",
-    "@metaverse/avatars": "workspace:*",
-    "@metaverse/voice": "workspace:*",
-    "@metaverse/audio": "workspace:*",
-    "@metaverse/net": "workspace:*",
     "@metaverse/ai": "workspace:*",
+    "@metaverse/audio": "workspace:*",
+    "@metaverse/avatars": "workspace:*",
     "@metaverse/content": "workspace:*",
+    "@metaverse/core": "workspace:*",
+    "@metaverse/net": "workspace:*",
+    "@metaverse/ui": "workspace:*",
+    "@metaverse/voice": "workspace:*",
     "@metaverse/xr": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -37,6 +37,7 @@
     "@types/react-dom": "^18.3.1",
     "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^27.3.0",
     "typescript": "^5.9.3",
     "vite": "^6.0.5",
     "vitest": "^2.1.8"

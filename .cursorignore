@@ -1,54 +1,315 @@
-# Build outputs - zu groß für Kontext
+﻿# Global .cursorignore · WattWeiser
+# Verhindert Serialisierungsfehler in Cursor durch Ausschluss großer/unnötiger Dateien
+#
+# QUALITÄTSSICHERUNG:
+# - Alle Code-Dateien bleiben indexiert (keine Qualitätseinbußen)
+# - Dokumentation bleibt indexiert (wichtig für Kontext)
+# - Konfigurationsdateien bleiben indexiert
+# - Nur große Binärdateien, Artefakte und Dependencies werden ausgeschlossen
+# - Kleine CSV/Test-Dateien bleiben verfügbar
+
+# Node.js / JavaScript / TypeScript
+node_modules/
 dist/
 build/
+.next/
 .turbo/
-*.tsbuildinfo
-
-# Dependencies
-node_modules/
-.pnp
+.nuxt/
+.output/
+coverage/
+.cache/
+.npm/
+.yarn/
+.pnp/
 .pnp.js
 
-# Assets - können sehr groß sein
-*.glb
-*.gltf
-*.hdr
-*.exr
-*.ktx2
-*.drc
-*.bin
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+cython_debug/
+.venv/
+venv/
+ENV/
+env/
+.conda/
 
-# Logs
+# Große Daten-Dateien (können Serialisierungsfehler verursachen)
+# WICHTIG: Kleine CSV/Test-Dateien werden NICHT ausgeschlossen für Qualität
+*.parquet
+# CSV: Nur große Dateien ausschließen (kleine Test-Daten bleiben)
+# *.csv  # AUSKOMMENTIERT: Kleine CSV-Dateien können wichtig sein
+*.xlsx
+*.xls
+*.xlsm
+*.ods
+*.pdf
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+*.gz
+*.bz2
+
+# Logs und Reports
+logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
+*.log.*
+reports/
+*.report
+*.out
 
-# Coverage
-coverage/
-.nyc_output/
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+!.env.template
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets/
 
-# Cache
-.cache/
-.temp/
-*.tmp
+# Dokumentation (wichtig für Kontext - wird NICHT ausgeschlossen)
+# docs/**  # AUSKOMMENTIERT: Dokumentation ist wichtig für Cursor-Kontext und Qualität
+# Alle Dokumentationsdateien bleiben indexiert für besseren Kontext
 
-# Lock files (zu groß)
-pnpm-lock.yaml
-package-lock.json
-yarn.lock
-
-# Git
-.git/
-
-# IDE
+# IDE & Editor
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
 
-# OS
+# OS-spezifische Dateien
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+System Volume Information/
+$RECYCLE.BIN/
+.directory
 
+# Temporäre Dateien
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+.cache/
+.temp/
+tmp/
+temp/
 
+# Build-Artefakte
+*.o
+*.a
+*.lib
+*.dll
+*.exe
+*.bin
+*.class
+*.jar
+*.war
+*.ear
 
+# Docker (Config-Dateien sind wichtig)
+# .dockerignore  # AUSKOMMENTIERT: Kann nützlich sein
+docker-compose.override.yml
+# *.dockerignore  # AUSKOMMENTIERT: Kann nützlich sein
 
+# Railway
+.railway/
+
+# Streamlit (Config kann wichtig sein)
+# .streamlit/  # AUSKOMMENTIERT: Config-Dateien können wichtig sein
+.streamlit/secrets.toml
+.streamlit/*.key
+
+# Cursor interne Verzeichnisse (können Serialisierungsprobleme verursachen)
+.cursor/
+.cursor-cache/
+.cursor-index/
+
+# Git (kann sehr groß sein und Serialisierungsfehler verursachen)
+.git/
+.git/objects/
+.git/logs/
+.git/hooks/
+.git/refs/
+.git/index
+.git/packed-refs
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Media-Dateien (können sehr groß sein)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+*.wma
+
+# Bilder (nur sehr große, normale sollten indexiert werden)
+# *.jpg
+# *.jpeg
+# *.png
+# *.gif
+# *.webp
+*.psd
+*.ai
+*.eps
+*.raw
+*.cr2
+*.nef
+*.orf
+*.sr2
+
+# Modelle & ML-Artefakte
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.pb
+*.tflite
+*.joblib
+models/
+checkpoints/
+weights/
+
+# Test-Coverage
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# TypeScript
+*.tsbuildinfo
+.tsbuildinfo
+
+# Svelte
+.svelte-kit/
+
+# Vue
+.vuepress/dist
+
+# Rust
+target/
+# Cargo.lock  # AUSKOMMENTIERT: Wichtig für Dependency-Management
+
+# Go
+vendor/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+.gradle/
+build/
+out/
+
+# Unity / Game Engines (können sehr groß sein)
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Assets/AssetStoreTools*
+_ReSharper*/
+.vs/
+*.csproj.user
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Erlaube wichtige Root-Configs und Code-Dateien
+!turbo.json
+!pnpm-workspace.yaml
+!vitest.config.ts
+!package.json
+!package-lock.json
+!yarn.lock
+!pnpm-lock.yaml
+!tsconfig.json
+!jsconfig.json
+!pyproject.toml
+!setup.py
+!requirements.txt
+!Pipfile
+!Pipfile.lock
+!poetry.lock
+
+# WICHTIG: Code-Dateien werden NIEMALS ausgeschlossen
+# Alle Source-Code-Dateien bleiben indexiert:
+# - *.py, *.ts, *.tsx, *.js, *.jsx, *.vue, *.svelte
+# - *.rs, *.go, *.java, *.kt, *.swift
+# - *.html, *.css, *.scss, *.less
+# - *.json, *.yaml, *.yml, *.toml, *.xml
+# - *.md, *.txt, *.rst (Dokumentation)
+# - Dockerfile, docker-compose.yml
+# - *.test.*, *.spec.* (Tests)
+# - *.config.*, *.conf (Konfigurationen)
+
+# Nur große Binärdateien und Artefakte werden ausgeschlossen

@@ -4,3 +4,4 @@ export * from './lighting/Preset.js';
 export * from './lighting/utils.js';
 export * from './render/loaders/index.js';
 export * from './render/PMREMCache.js';
+export * from './media/MediaBillboard.js';

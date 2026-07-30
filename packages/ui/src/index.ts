@@ -4,3 +4,6 @@ export * from './ConsentModal.js';
 export * from './RoomUI.js';
 export * from './TemplateSwitcher.js';
 export * from './OverlayHost.js';
+export * from './ChatUI.js';
+export * from './MediaUploadUI.js';
+export * from './EmoteUI.js';

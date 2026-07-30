@@ -1,7 +1,7 @@
 import { AmbientManager } from '@metaverse/audio';
 import { AvatarManager } from '@metaverse/avatars';
 import type { TemplateInstance } from '@metaverse/core';
-import { setPhysicallyCorrectLights } from '@metaverse/core';
+import { MediaBillboard, setPhysicallyCorrectLights } from '@metaverse/core';
 import { NetClient } from '@metaverse/net';
 import { VoiceClient } from '@metaverse/voice';
 import type { IXRAdapter } from '@metaverse/xr';
@@ -18,6 +18,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { getFeatureFlags, type FeatureFlags } from './FeatureFlags';
+import { InteractionManager } from './interactions/InteractionManager';
 import { PostProcessing } from './render/Post';
 import { TemplateHost } from './TemplateHost';
 
@@ -52,6 +53,19 @@ export class World {
 
   // Event listener cleanup
   private netClientEventCleanups: Array<() => void> = [];
+
+  // Chat
+  private chatMessages: Array<{ userId: string; message: string; timestamp: number }> = [];
+  private chatMessageCallbacks: Array<
+    (message: { userId: string; message: string; timestamp: number }) => void
+  > = [];
+
+  // Media Sharing
+  private mediaBillboards = new Map<string, MediaBillboard>();
+
+  // Interactions
+  private interactionManager: InteractionManager | null = null;
+  private isSitting = false;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -112,9 +126,15 @@ export class World {
     this.initMultiplayer(flags);
     this.initAudio(flags);
 
+    // Initialize Interaction Manager
+    this.interactionManager = new InteractionManager(this.scene);
+
     // Resize handler - bound function speichern für cleanup
     this.boundHandleResize = this.handleResize.bind(this);
     window.addEventListener('resize', this.boundHandleResize);
+
+    // Setup click handler for interactions
+    this.setupInteractionHandlers();
   }
 
   private generateUserId(): string {
@@ -293,6 +313,8 @@ export class World {
           this.netClient.joinRoom(roomId);
           // Lokalen Avatar erstellen
           await this.createLocalAvatar();
+          // Chat-Events setzen
+          this.setupChat();
         } else {
           console.log('Running in solo mode');
         }
@@ -363,6 +385,8 @@ export class World {
     // Avatar-Interpolation für smooth movement
     if (this.avatarManager) {
       this.avatarManager.updateInterpolation(delta);
+      // Update avatar animations
+      this.avatarManager.updateAnimations(delta);
     }
 
     // Avatar-Position synchronisieren (throttled)
@@ -380,17 +404,25 @@ export class World {
       const avatar = this.avatarManager.getAvatar(this.userId);
       let animation: string | undefined = 'idle';
       if (avatar) {
-        const lastPos = avatar.position;
-        const distance = Math.sqrt(
-          Math.pow(cameraPos.x - lastPos.x, 2) +
-            Math.pow(cameraPos.y - lastPos.y, 2) +
-            Math.pow(cameraPos.z - lastPos.z, 2)
-        );
-        const timeDelta = (now - this.lastAvatarUpdate) / 1000; // seconds
-        const velocity = timeDelta > 0 ? distance / timeDelta : 0;
+        // Wenn Avatar bereits eine Animation hat (z.B. emote), diese beibehalten
+        if (
+          avatar.animation &&
+          ['sitting', 'wave', 'dance', 'jump', 'clap', 'thumbsup'].includes(avatar.animation)
+        ) {
+          animation = avatar.animation;
+        } else {
+          const lastPos = avatar.position;
+          const distance = Math.sqrt(
+            Math.pow(cameraPos.x - lastPos.x, 2) +
+              Math.pow(cameraPos.y - lastPos.y, 2) +
+              Math.pow(cameraPos.z - lastPos.z, 2)
+          );
+          const timeDelta = (now - this.lastAvatarUpdate) / 1000; // seconds
+          const velocity = timeDelta > 0 ? distance / timeDelta : 0;
 
-        // Animation-State basierend auf Geschwindigkeit
-        animation = velocity > 0.01 ? 'walk' : 'idle';
+          // Animation-State basierend auf Geschwindigkeit
+          animation = velocity > 0.01 ? 'walk' : 'idle';
+        }
       }
 
       this.avatarManager.updateAvatar(
@@ -557,6 +589,13 @@ export class World {
       this.voiceClient.disable();
     }
 
+    // Cleanup media billboards
+    this.mediaBillboards.forEach((billboard) => {
+      billboard.dispose();
+      this.scene.remove(billboard.getObject());
+    });
+    this.mediaBillboards.clear();
+
     this.templateHost.dispose();
     this.postProcessing.dispose();
     if (this.xrAdapter && 'dispose' in this.xrAdapter) {
@@ -588,5 +627,205 @@ export class World {
 
   isSoloMode(): boolean {
     return this.soloMode;
+  }
+
+  getUserId(): string {
+    return this.userId;
+  }
+
+  private setupChat(): void {
+    if (!this.netClient) return;
+
+    this.netClient.onChat((data) => {
+      this.chatMessages.push(data);
+      // Limit to last 100 messages
+      if (this.chatMessages.length > 100) {
+        this.chatMessages.shift();
+      }
+      // Notify callbacks
+      this.chatMessageCallbacks.forEach((cb) => cb(data));
+    });
+
+    // Media Sharing
+    this.netClient.onMediaShare((data) => {
+      this.addMediaBillboard(data);
+    });
+  }
+
+  private addMediaBillboard(data: {
+    userId: string;
+    url: string;
+    type: 'image' | 'video';
+    position: { x: number; y: number; z: number };
+    width?: number;
+    height?: number;
+  }): void {
+    const billboardId = `media-${data.userId}-${Date.now()}`;
+    const billboard = new MediaBillboard({
+      url: data.url,
+      type: data.type,
+      position: data.position,
+      width: data.width,
+      height: data.height,
+    });
+
+    // Look at camera
+    billboard.lookAt(this.camera.position);
+    this.scene.add(billboard.getObject());
+    this.mediaBillboards.set(billboardId, billboard);
+
+    // Auto-remove after 5 minutes
+    setTimeout(
+      () => {
+        const b = this.mediaBillboards.get(billboardId);
+        if (b) {
+          b.dispose();
+          this.scene.remove(b.getObject());
+          this.mediaBillboards.delete(billboardId);
+        }
+      },
+      5 * 60 * 1000
+    );
+  }
+
+  shareMedia(
+    url: string,
+    type: 'image' | 'video',
+    position?: { x: number; y: number; z: number }
+  ): void {
+    if (!this.netClient || this.soloMode) return;
+
+    const pos = position || {
+      x: this.camera.position.x,
+      y: this.camera.position.y + 1,
+      z: this.camera.position.z + 2,
+    };
+
+    this.netClient.shareMedia({
+      url,
+      type,
+      position: pos,
+      width: 4,
+      height: 3,
+    });
+
+    // Add locally immediately
+    this.addMediaBillboard({ userId: this.userId, url, type, position: pos });
+  }
+
+  setAvatarAnimation(animation: string): void {
+    if (!this.avatarManager || !this.netClient || this.soloMode) return;
+    const avatar = this.avatarManager.getAvatar(this.userId);
+    if (!avatar) return;
+
+    // Handle sitting animation specially
+    if (animation === 'sit' && !this.isSitting) {
+      this.handleSit();
+      return;
+    } else if (animation !== 'sit' && this.isSitting) {
+      this.handleStand();
+      return;
+    }
+
+    const cameraPos = this.camera.position;
+    const cameraRot = this.camera.rotation;
+    this.avatarManager.updateAvatar(this.userId, cameraPos, cameraRot, animation);
+  }
+
+  private setupInteractionHandlers(): void {
+    this.renderer.domElement.addEventListener('click', (e) => {
+      if (!this.interactionManager || this.soloMode) return;
+
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const interactable = this.interactionManager.raycastFromCamera(
+        this.camera,
+        mouseX,
+        mouseY,
+        rect.width,
+        rect.height
+      );
+
+      if (interactable && interactable.type === 'chair' && !this.isSitting) {
+        this.handleSit(interactable);
+      }
+    });
+  }
+
+  private handleSit(interactable?: { position: { x: number; y: number; z: number } }): void {
+    if (this.isSitting) return;
+
+    let sitPosition: { x: number; y: number; z: number };
+
+    if (interactable) {
+      sitPosition = interactable.position;
+    } else {
+      // Find nearest interactable
+      const nearest = this.interactionManager?.findNearestInteractable(this.camera.position, 2.0);
+      if (nearest) {
+        sitPosition = nearest.position;
+      } else {
+        // Default sit position (slightly below camera)
+        sitPosition = {
+          x: this.camera.position.x,
+          y: this.camera.position.y - 1,
+          z: this.camera.position.z,
+        };
+      }
+    }
+
+    this.isSitting = true;
+
+    // Update avatar animation
+    if (this.avatarManager) {
+      this.avatarManager.updateAvatar(
+        this.userId,
+        sitPosition,
+        { x: 0, y: this.camera.rotation.y, z: 0 },
+        'sit'
+      );
+    }
+
+    // Lock camera position (optional - can be disabled for better UX)
+    // this.controls.enabled = false;
+  }
+
+  private handleStand(): void {
+    if (!this.isSitting) return;
+
+    this.isSitting = false;
+
+    // Restore camera controls
+    // this.controls.enabled = true;
+
+    // Update avatar animation back to idle
+    if (this.avatarManager) {
+      const cameraPos = this.camera.position;
+      const cameraRot = this.camera.rotation;
+      this.avatarManager.updateAvatar(this.userId, cameraPos, cameraRot, 'idle');
+    }
+  }
+
+  sendChatMessage(message: string): void {
+    if (!this.netClient || this.soloMode) return;
+    this.netClient.sendChat(message);
+  }
+
+  getChatMessages(): Array<{ userId: string; message: string; timestamp: number }> {
+    return [...this.chatMessages];
+  }
+
+  onChatMessage(
+    callback: (message: { userId: string; message: string; timestamp: number }) => void
+  ): () => void {
+    this.chatMessageCallbacks.push(callback);
+    return () => {
+      const index = this.chatMessageCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.chatMessageCallbacks.splice(index, 1);
+      }
+    };
   }
 }
